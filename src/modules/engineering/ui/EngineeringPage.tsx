@@ -34,13 +34,11 @@ const primarySections:ContractNavItem[]=[
   {id:'resumo',label:'Resumo',icon:'⌂'},
   {id:'contrato',label:'Contrato',icon:'▤'},
   {id:'planilhas',label:'Planilhas',icon:'▦'},
-  {id:'medicao',label:'Medição',icon:'▥'},
+  {id:'medicao',label:'Medições',icon:'▥'},
   {id:'producao',label:'Produção',icon:'⚒'},
 ];
 const secondarySections:ContractNavItem[]=[
   {id:'provisorios',label:'Provisórios',icon:'◇'},
-  {id:'fechamentos',label:'Fechamentos',icon:'✓'},
-  {id:'impostos',label:'Impostos',icon:'%'},
   {id:'saldos',label:'Saldos',icon:'≡'},
 ];
 
