@@ -1,0 +1,20 @@
+/* RH KPI isolation: Colaboradores only. Dashboard rules remain untouched. */
+.hr-workspace__kpis--small .ui-card:nth-child(1)::before{background-color:#eaf2ff!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'/%3E%3C/svg%3E")!important}
+.hr-workspace__kpis--small .ui-card:nth-child(2)::before{background-color:#f3eaff!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c3aed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='m16 11 2 2 4-4'/%3E%3C/svg%3E")!important}
+.hr-workspace__kpis--small .ui-card:nth-child(3)::before{background-color:#e8f8f1!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 20h20M4 20v-8a8 8 0 0 1 16 0v8M9 4v4M15 4v4M2 14h20'/%3E%3C/svg%3E")!important}
+.hr-workspace__kpis--small .ui-card:nth-child(4)::before{background-color:#fff4d8!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b7791f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")!important}
+@media(max-width:620px){
+ .hr-workspace__kpis--small .ui-card{min-width:0!important;min-height:122px!important;padding:14px!important;display:grid!important;grid-template-columns:46px minmax(0,1fr)!important;grid-template-rows:auto auto!important;column-gap:12px!important;row-gap:4px!important;align-content:center!important;overflow:hidden!important}
+ .hr-workspace__kpis--small .ui-card::before{position:relative!important;left:auto!important;top:auto!important;grid-column:1!important;grid-row:1/3!important;align-self:start!important;width:44px!important;height:44px!important;background-repeat:no-repeat!important;background-position:center!important;background-size:24px 24px!important}
+ .hr-workspace__kpis--small .ui-card__header{grid-column:2!important;grid-row:1!important;display:block!important;min-width:0!important;width:100%!important;padding:0!important;margin:0!important;align-self:end!important}
+ .hr-workspace__kpis--small .ui-card__header>div{min-width:0!important;width:100%!important}
+ .hr-workspace__kpis--small .ui-card__title{margin:0!important;font-size:.95rem!important;line-height:1.2!important;text-align:left!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important}
+ .hr-workspace__kpis--small .ui-card__content{grid-column:2!important;grid-row:2!important;display:grid!important;min-width:0!important;width:100%!important;padding:0!important;margin:0!important;align-content:start!important;gap:2px!important;text-align:left!important}
+ .hr-workspace__kpis--small .ui-card strong{font-size:1.25rem!important;line-height:1.15!important}
+}
+@media(max-width:430px){
+ .hr-workspace__kpis--small .ui-card{min-height:116px!important;padding:12px!important;grid-template-columns:42px minmax(0,1fr)!important;column-gap:10px!important}
+ .hr-workspace__kpis--small .ui-card::before{width:40px!important;height:40px!important;background-size:22px 22px!important}
+ .hr-workspace__kpis--small .ui-card__title{font-size:.9rem!important}
+ .hr-workspace__kpis--small .ui-card strong{font-size:1.15rem!important}
+}
