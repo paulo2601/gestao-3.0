@@ -77,18 +77,64 @@ export async function saveAttendance(input: {
   notes?: string | null;
 }): Promise<void> {
   const client = getSupabaseClient();
-  const result = await client.from('employee_attendance_daily').upsert({
+  const row: Record<string, string | null> = {
     tenant_id: input.tenantId,
     company_id: input.companyId,
     employment_contract_id: input.employmentContractId,
     attendance_date: input.attendanceDate,
     status: input.status,
-    check_in: input.checkIn ?? null,
-    check_out: input.checkOut ?? null,
-    notes: input.notes ?? null,
     source_system: 'gestao-3.0',
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'tenant_id,company_id,employment_contract_id,attendance_date' });
+  };
+
+  // Undefined means "do not change". This is important for point records:
+  // changing only the attendance status must never erase an existing punch.
+  if (input.checkIn !== undefined) row.check_in = input.checkIn;
+  if (input.checkOut !== undefined) row.check_out = input.checkOut;
+  if (input.notes !== undefined) row.notes = input.notes;
+
+  const result = await client.from('employee_attendance_daily').upsert(row, {
+    onConflict: 'tenant_id,company_id,employment_contract_id,attendance_date',
+  });
+  if (result.error) throw result.error;
+}
+
+export async function registerAttendancePunch(input: {
+  tenantId: string;
+  companyId: string;
+  employmentContractId: string;
+  attendanceDate: string;
+  punch: 'check_in' | 'check_out';
+  time: string;
+}): Promise<void> {
+  const client = getSupabaseClient();
+  const existing = await client
+    .from('employee_attendance_daily')
+    .select('id,check_in,check_out')
+    .eq('tenant_id', input.tenantId)
+    .eq('company_id', input.companyId)
+    .eq('employment_contract_id', input.employmentContractId)
+    .eq('attendance_date', input.attendanceDate)
+    .maybeSingle();
+  if (existing.error) throw existing.error;
+
+  if (input.punch === 'check_out' && !existing.data?.check_in) {
+    throw new Error('Registre a entrada antes de registrar a saída.');
+  }
+
+  const payload: Record<string, string> = {
+    tenant_id: input.tenantId,
+    company_id: input.companyId,
+    employment_contract_id: input.employmentContractId,
+    attendance_date: input.attendanceDate,
+    status: 'present',
+    source_system: 'gestao-3.0',
+    updated_at: new Date().toISOString(),
+    [input.punch]: input.time,
+  };
+  const result = await client.from('employee_attendance_daily').upsert(payload, {
+    onConflict: 'tenant_id,company_id,employment_contract_id,attendance_date',
+  });
   if (result.error) throw result.error;
 }
 
