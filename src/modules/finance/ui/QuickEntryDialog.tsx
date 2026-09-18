@@ -517,7 +517,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
         if (budgetUpdate.error) throw budgetUpdate.error;
         const account = parsePaymentRef(form.accountRef);
         if (account) await getFinanceRepositories().entries.setPlannedAccount(scope, created.entryId, account.resourceId, account.companyId);
-        if (form.paymentMethod === 'pix' && form.launchType === 'single') {
+        if (form.paymentMethod === 'pix' && form.launchType === 'single' && form.date <= today()) {
           if (!account || !created.installmentId) throw new Error('Não foi possível identificar a conta ou parcela para concluir o Pix.');
           await operations.settleInstallment({
             installmentId: created.installmentId,
