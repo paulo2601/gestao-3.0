@@ -1,4 +1,4 @@
-import { useEffect,useMemo,useState } from 'react';
+import { useCallback,useEffect,useMemo,useState } from 'react';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
 import { Button } from '../../../shared/ui/Button';
 import { deleteTravelBudget,listTravelBudgets,saveTravelBudget,type TravelBudget,type TravelBudgetDraft } from '../infrastructure/TravelBudgetRepository';
@@ -11,8 +11,8 @@ export function TravelBudgetPage({companies,initialCompanyId}:{companies:readonl
  const [companyId,setCompanyId]=useState(initialCompanyId??companies[0]?.id??''); const company=companies.find(c=>c.id===companyId)??companies[0];
  const [rows,setRows]=useState<TravelBudget[]>([]);const [editing,setEditing]=useState<TravelBudget|null>(null);const [open,setOpen]=useState(false);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
  const [form,setForm]=useState(()=>({name:'Nova viagem',origin:'',destination:'',startDate:today(),endDate:today(),travelers:2,vehicleName:'',fuelType:'Etanol',fuelPrice:0,avgConsumption:10,totalDistanceKm:0,reservePercent:10,notes:'',items:blankItems()}));
- const load=async()=>{if(!company)return;try{setRows(await listTravelBudgets(company.tenantId,company.id));setError('');}catch(e){setError(e instanceof Error?e.message:'Falha ao carregar viagens.');}};
- useEffect(()=>{void load();},[companyId]);
+ const load=useCallback(async()=>{if(!company)return;try{setRows(await listTravelBudgets(company.tenantId,company.id));setError('');}catch(e){setError(e instanceof Error?e.message:'Falha ao carregar viagens.');}},[company]);
+ useEffect(()=>{void load();},[load]);
  const fuel=Math.max(0,form.avgConsumption)>0?(Math.max(0,form.totalDistanceKm)/form.avgConsumption)*Math.max(0,form.fuelPrice):0;
  const base=useMemo(()=>fuel+form.items.reduce((s,i)=>s+(i.category==='Combustível'?0:Math.max(0,i.plannedAmount)),0),[fuel,form.items]);
  const reserve=base*Math.max(0,form.reservePercent)/100,total=base+reserve,actual=form.items.reduce((s,i)=>s+Math.max(0,i.actualAmount),0),available=total-actual;
