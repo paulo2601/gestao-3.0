@@ -192,7 +192,7 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
   const addenda=(addendaResponse.data??[]) as AddendumRow[];
   const measurements=(measurementsResponse.data??[]) as MeasurementRow[];
 
-  const addendumIds=addenda.filter(item=>item.status==='effective').map(item=>item.id);
+  const addendumIds=addenda.filter(item=>item.status!=='cancelled').map(item=>item.id);
   const addendumLinesResponse=addendumIds.length
     ? await client.from('contract_addendum_lines').select('id,addendum_id,description,unit,quantity_delta,unit_price,notes').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).in('addendum_id',addendumIds).order('created_at')
     : {data:[],error:null};
