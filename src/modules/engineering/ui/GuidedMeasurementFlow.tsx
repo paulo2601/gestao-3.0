@@ -15,6 +15,7 @@ import {
 } from '../infrastructure/LegacyMeasurementParityRepository';
 import './guided-measurement-flow.css';
 import './approved-measurement-sheet.css';
+import { buildMeasurementReferences } from './measurementStructure';
 
 interface Props {
   scope:{tenantId:string;companyId:string}; contractId:string; initialMeasurementId?:string;
@@ -34,20 +35,15 @@ const measurementLineOrigin=(notes:string|null)=>notes?.match(/(?:^|\|)\s*origin
 const countsAgainstMeasurementBalance=(status:string)=>['draft','closed','approved'].includes(status);
 
 function buildTowerReferences(model:MeasurementParityModel,origin:MeasurementParityOrigin):string[]{
-  if(model.enterpriseType==='casas'&&model.houses.length)return Array.from(new Set(model.houses.map(value=>value.trim()).filter(Boolean)));
-  const numericFloors=Math.max(0,Number(origin.floorCount||0));
-  const configuredLevelCount=numericFloors+(origin.hasGround?1:0);
-  const quantities=origin.services.filter(unitBased).map(service=>Number(service.contractedQuantity||0)).filter(value=>value>0);
-  const maxQuantity=quantities.length?Math.max(...quantities):0;
-  const isTowerFour=normalize(origin.name).includes('torre 4');
-  const perFloor=isTowerFour?8:(configuredLevelCount>0&&maxQuantity>0?Math.max(1,Math.round(maxQuantity/configuredLevelCount)):8);
-  const inferredLevelCount=isTowerFour&&maxQuantity>0&&maxQuantity%perFloor===0?maxQuantity/perFloor:configuredLevelCount;
-  const levelCount=Math.max(configuredLevelCount,inferredLevelCount);
-  const upperFloorCount=origin.hasGround?Math.max(0,levelCount-1):levelCount;
-  const references:string[]=[];
-  if(origin.hasGround)for(let unit=1;unit<=perFloor;unit++)references.push(`TR-${String(unit).padStart(2,'0')}`);
-  for(let floor=1;floor<=upperFloorCount;floor++)for(let unit=1;unit<=perFloor;unit++)references.push(`${floor}${String(unit).padStart(2,'0')}`);
-  return references;
+  return buildMeasurementReferences({
+    name:origin.name,
+    type:origin.type,
+    floorCount:origin.floorCount,
+    hasGround:origin.hasGround,
+    unitsPerFloor:origin.unitsPerFloor,
+    enterpriseType:model.enterpriseType,
+    houses:model.houses,
+  });
 }
 function genericUnitReferences(stage:MeasurementParityStage):string[]{
   const total=Math.max(0,Math.floor(stage.contractedQuantity));

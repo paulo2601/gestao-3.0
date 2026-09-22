@@ -26,6 +26,7 @@ export interface MeasurementParityOrigin {
   type:MeasurementOriginType;
   floorCount:number;
   hasGround:boolean;
+  unitsPerFloor:number;
   modes:string[];
   services:MeasurementParityStage[];
 }
@@ -55,7 +56,7 @@ type AddendumRow={id:string;addendum_number:string;status:string};
 type AddendumLineRow={id:string;addendum_id:string;description:string;unit:string;quantity_delta:number|string;unit_price:number|string;notes:string|null};
 type MeasurementRow={id:string;competence:string;status:string;measurement_number:string|null};
 type MeasurementLineRow={id:string;measurement_id:string;contract_service_id:string|null;contract_addendum_line_id:string|null;measured_quantity:number|string;notes:string|null};
-type OriginProfileRow={id:string;origin_key:string;origin_name:string;origin_type:MeasurementOriginType;floor_count:number|string;has_ground:boolean;modes:string[]|null;enterprise_type:string;houses:string[]|null;legacy_origin_id:string|null};
+type OriginProfileRow={id:string;origin_key:string;origin_name:string;origin_type:MeasurementOriginType;floor_count:number|string;has_ground:boolean;units_per_floor:number|string;modes:string[]|null;enterprise_type:string;houses:string[]|null;legacy_origin_id:string|null};
 type ScopeRow={origin_key:string;service_code:string;scope_active:boolean;start_floor:number|string|null;scope_floors:string[]|null;scope_units:string[]|null};
 
 const safeText=(value:unknown)=>typeof value==='string'?value:typeof value==='number'||typeof value==='boolean'?String(value):'';
@@ -176,7 +177,7 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
   const contract=contractResponse.data as ContractRow;
 
   const [profilesResponse,scopesResponse,contractServicesResponse,addendaResponse,measurementsResponse]=await Promise.all([
-    client.from('engineering_measurement_origin_profiles').select('id,origin_key,origin_name,origin_type,floor_count,has_ground,modes,enterprise_type,houses,legacy_origin_id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',contract.work_id).eq('status','active').order('origin_name'),
+    client.from('engineering_measurement_origin_profiles').select('id,origin_key,origin_name,origin_type,floor_count,has_ground,units_per_floor,modes,enterprise_type,houses,legacy_origin_id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',contract.work_id).eq('status','active').order('origin_name'),
     client.from('engineering_measurement_service_scopes').select('origin_key,service_code,scope_active,start_floor,scope_floors,scope_units').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',contract.work_id),
     client.from('contract_services').select('id,description,unit,contracted_quantity,unit_price,notes').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('contract_id',contractId).eq('status','active').order('created_at'),
     client.from('contract_addenda').select('id,addendum_number,status').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('contract_id',contractId),
@@ -219,6 +220,7 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
       type:profile.origin_type,
       floorCount:number(profile.floor_count),
       hasGround:Boolean(profile.has_ground),
+      unitsPerFloor:number(profile.units_per_floor),
       modes:Array.isArray(profile.modes)?profile.modes.map(value=>safeText(value)):[],
       services:[...contractStages,...addendumStages],
     };
@@ -233,6 +235,7 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
       type:'other',
       floorCount:0,
       hasGround:false,
+      unitsPerFloor:0,
       modes:['unidade','valor'],
       services:[...unassignedContract,...unassignedAddenda],
     });
