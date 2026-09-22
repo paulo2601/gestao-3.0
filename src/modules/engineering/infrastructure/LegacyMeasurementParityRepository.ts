@@ -235,6 +235,7 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
       type:'other',
       floorCount:0,
       hasGround:false,
+      unitsPerFloor:0,
       modes:['unidade','valor'],
       services:[...unassignedContract,...unassignedAddenda],
     });
