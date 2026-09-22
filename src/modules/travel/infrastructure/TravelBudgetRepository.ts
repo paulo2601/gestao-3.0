@@ -18,6 +18,7 @@ export async function saveTravelBudget(d:TravelBudgetDraft):Promise<string>{
  if(id){const r=await client.from('travel_budgets').update(payload).eq('id',id).eq('tenant_id',d.tenantId).eq('company_id',d.companyId);if(r.error)throw r.error;const del=await client.from('travel_budget_items').delete().eq('budget_id',id).eq('tenant_id',d.tenantId).eq('company_id',d.companyId);if(del.error)throw del.error;}
  else{const r=await client.from('travel_budgets').insert(payload).select('id').single();if(r.error)throw r.error;id=String(r.data.id);}
  if(d.items.length){const r=await client.from('travel_budget_items').insert(d.items.map((i,n)=>({tenant_id:d.tenantId,company_id:d.companyId,budget_id:id,category:i.category,description:i.description,planned_amount:i.plannedAmount,actual_amount:i.actualAmount,due_date:i.dueDate,sort_order:n+1})));if(r.error)throw r.error;}
- return id!;
+ if (!id) throw new Error('Não foi possível identificar o orçamento de viagem salvo.');
+ return id;
 }
 export async function deleteTravelBudget(tenantId:string,companyId:string,id:string){const r=await getSupabaseClient().from('travel_budgets').delete().eq('id',id).eq('tenant_id',tenantId).eq('company_id',companyId);if(r.error)throw r.error;}
