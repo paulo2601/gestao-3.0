@@ -29,6 +29,7 @@ export function MonthlyAccountActionDialog({ company, entry, balance, open, onCl
   const scope = useMemo(() => ({ tenantId: company.tenantId, companyId: company.id }), [company.id, company.tenantId]);
   const operations = useFinanceOperations(scope);
   const references = operations.state.references;
+  const clearFeedback = operations.clearFeedback;
   const [action, setAction] = useState<Action>('details');
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -57,8 +58,8 @@ export function MonthlyAccountActionDialog({ company, entry, balance, open, onCl
     setAction('details'); setLocalError(null); setMaintenanceScope('single'); setPaymentMode('total'); setPaymentError(null); setDifferenceConfirm(false);
     setPaymentForm({ accountId: '', settledOn: today(), amount: remaining, notes: '' });
     setEditForm({ description: entry.description, counterparty: entry.counterpartyName ?? '', categoryId: entry.categoryId, costCenterId: entry.costCenterId ?? '', dueDate: entry.dueDate, amount: entry.amount, notes: entry.notes ?? '' });
-    operations.clearFeedback();
-  }, [open, entry.installmentId, entry.description, entry.counterpartyName, entry.categoryId, entry.costCenterId, entry.dueDate, entry.amount, entry.notes, remaining, operations.clearFeedback]);
+    clearFeedback();
+  }, [open, entry.installmentId, entry.description, entry.counterpartyName, entry.categoryId, entry.costCenterId, entry.dueDate, entry.amount, entry.notes, remaining, clearFeedback]);
 
   useEffect(() => {
     if (!open) return;
