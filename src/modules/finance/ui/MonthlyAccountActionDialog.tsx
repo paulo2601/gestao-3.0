@@ -49,6 +49,7 @@ export function MonthlyAccountActionDialog({ company, entry, balance, open, onCl
   const paymentAmount = paymentForm.amount;
   const settlementDifference = paymentAmount - remaining;
   const absoluteDifference = Math.abs(settlementDifference);
+  const clearFeedback = operations.clearFeedback;
   const differsFromRemaining = absoluteDifference > 0.005;
   const remainingAfter = Math.max(remaining - paymentAmount, 0);
 
@@ -57,8 +58,8 @@ export function MonthlyAccountActionDialog({ company, entry, balance, open, onCl
     setAction('details'); setLocalError(null); setMaintenanceScope('single'); setPaymentMode('total'); setPaymentError(null); setDifferenceConfirm(false);
     setPaymentForm({ accountId: '', settledOn: today(), amount: remaining, notes: '' });
     setEditForm({ description: entry.description, counterparty: entry.counterpartyName ?? '', categoryId: entry.categoryId, costCenterId: entry.costCenterId ?? '', dueDate: entry.dueDate, amount: entry.amount, notes: entry.notes ?? '' });
-    operations.clearFeedback();
-  }, [open, entry.installmentId]);
+    clearFeedback();
+  }, [open, entry.installmentId, entry.description, entry.counterpartyName, entry.categoryId, entry.costCenterId, entry.dueDate, entry.amount, entry.notes, remaining, clearFeedback]);
 
   useEffect(() => {
     if (!open) return;
