@@ -23,3 +23,19 @@ export function buildMeasurementReferences(config:MeasurementStructureConfig):st
   }
   return references;
 }
+
+
+export function filterMeasurementReferencesByFloors(references:string[], floors:string[]):string[]{
+  if(!floors.length)return references;
+  const allowed=new Set(floors.map(value=>{
+    const normalized=String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('pt-BR');
+    if(normalized==='terreo'||normalized==='0')return '0';
+    const numeric=Number(value);
+    return Number.isFinite(numeric)?String(numeric):normalized;
+  }));
+  return references.filter(reference=>{
+    if(reference.startsWith('TR-'))return allowed.has('0');
+    const match=reference.match(/^(\d{1,2})\d{2}$/);
+    return match?allowed.has(String(Number(match[1]))):false;
+  });
+}
