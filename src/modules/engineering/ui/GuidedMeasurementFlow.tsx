@@ -57,7 +57,7 @@ function stageReferences(model:MeasurementParityModel,origin:MeasurementParityOr
   // salvo antes da correção do quantitativo (ex.: 56 -> 96 apartamentos).
   if(unitBased(stage)&&base.length>0&&stage.contractedQuantity>=base.length)return base;
   if(stage.scopeUnits.length){const allowed=new Set(stage.scopeUnits.map(normalize));return base.filter(reference=>allowed.has(normalize(reference)));}
-  if(stage.scopeFloors.length){const allowed=new Set(stage.scopeFloors.map(value=>String(Number(value))));return base.filter(reference=>{const floor=referenceFloor(reference);return floor!==null&&allowed.has(floor);});}
+  if(stage.scopeFloors.length){const allowed=new Set(stage.scopeFloors.map(value=>{const normalized=normalize(value);if(normalized==='terreo'||normalized==='0')return '0';const numeric=Number(value);return Number.isFinite(numeric)?String(numeric):normalized;}));return base.filter(reference=>{const floor=referenceFloor(reference);return floor!==null&&allowed.has(floor);});}
   if(stage.scopeActive&&stage.startFloor!==null)return base.filter(reference=>{const floor=referenceFloor(reference);return floor!==null&&Number(floor)>=Number(stage.startFloor);});
   return base;
 }
