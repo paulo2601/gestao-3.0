@@ -40,7 +40,8 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const availableEmployees=useMemo(()=>snapshot.employees.filter(item=>!participants.some(p=>p.id===item.id)).map(item=>({value:item.id,label:item.name})),[snapshot.employees,participants]);
   const periodOptions=[{value:'',label:'Selecione…'},...openPeriods.map(item=>({value:item.id,label:item.competence.slice(0,7).split('-').reverse().join('/')}))];
   const structureOptions=[{value:'',label:'Selecione…'},...snapshot.structures.map(item=>({value:item.id,label:item.name}))];
-  const serviceOptions=[{value:'',label:'Selecione…'},...snapshot.services.map(item=>({value:item.id,label:item.name}))];
+  const allowedServiceIds=new Set(snapshot.serviceIdsByStructure[structureId]??[]);
+  const serviceOptions=[{value:'',label:structureId?(allowedServiceIds.size?'Selecione…':'Nenhum serviço distribuído nesta estrutura'):'Selecione a estrutura primeiro'},...snapshot.services.filter(item=>allowedServiceIds.has(item.id)).map(item=>({value:item.id,label:item.name}))];
 
   function addParticipant(id:string){
     const employee=snapshot.employees.find(item=>item.id===id);if(!employee)return;
@@ -76,7 +77,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
       <div className="engineering-production-entry-form__grid">
         <Select label="Competência" value={periodId} onChange={event=>setPeriodId(event.target.value)} options={periodOptions} required/>
         <Select label="Estrutura" value={structureId} onChange={event=>setStructureId(event.target.value)} options={structureOptions} required/>
-        <Select label="Serviço" value={serviceId} onChange={event=>setServiceId(event.target.value)} options={serviceOptions} required/>
+        <Select label="Serviço" value={serviceId} onChange={event=>setServiceId(event.target.value)} options={serviceOptions} required disabled={!structureId||allowedServiceIds.size===0}/>
         <Input label="Data" type="date" value={productionDate} onChange={event=>setProductionDate(event.target.value)} required/>
         <Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>
         <Input label="Valor unitário" type="number" value={unitValue} onChange={event=>setUnitValue(event.target.value)} required/>
