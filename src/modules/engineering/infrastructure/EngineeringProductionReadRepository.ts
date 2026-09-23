@@ -32,7 +32,7 @@ export async function loadEngineeringProduction(scope:EngineeringProductionScope
   const serviceByContract=new Map((contractServices.data??[]).map(item=>[item.id,item.service_id]));
   const serviceIdsByStructure:Record<string,string[]>={};
   for(const allocation of allocations.data??[]){const serviceId=serviceByContract.get(allocation.contract_service_id);if(!serviceId||!serviceIds.has(serviceId))continue;const list=serviceIdsByStructure[allocation.structure_id]??[];if(!list.includes(serviceId))list.push(serviceId);serviceIdsByStructure[allocation.structure_id]=list;}
-  if(periodRows.length===0)return {periods:[],entries:[],employees:employeeRefs,structures:structureRefs,services:serviceRefs};
+  if(periodRows.length===0)return {periods:[],entries:[],employees:employeeRefs,structures:structureRefs,services:serviceRefs,serviceIdsByStructure};
   const periodIds=periodRows.map(item=>item.id);
   const entries=await client.from('engineering_production_entries').select('id,production_period_id,employment_contract_id,structure_id,service_id,production_date,executed_quantity,unit_value,production_value,notes').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).in('production_period_id',periodIds).order('production_date',{ascending:false}).returns<EntryRow[]>();if(entries.error)throw entries.error;
   const entryRows=entries.data??[];const entryIds=entryRows.map(item=>item.id);
