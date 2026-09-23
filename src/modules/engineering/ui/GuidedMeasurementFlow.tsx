@@ -15,7 +15,7 @@ import {
 } from '../infrastructure/LegacyMeasurementParityRepository';
 import './guided-measurement-flow.css';
 import './approved-measurement-sheet.css';
-import { buildMeasurementReferences } from './measurementStructure';
+import { buildMeasurementReferences, filterMeasurementReferencesByFloors } from './measurementStructure';
 
 interface Props {
   scope:{tenantId:string;companyId:string}; contractId:string; initialMeasurementId?:string;
@@ -57,7 +57,7 @@ function stageReferences(model:MeasurementParityModel,origin:MeasurementParityOr
   // salvo antes da correção do quantitativo (ex.: 56 -> 96 apartamentos).
   if(unitBased(stage)&&base.length>0&&stage.contractedQuantity>=base.length)return base;
   if(stage.scopeUnits.length){const allowed=new Set(stage.scopeUnits.map(normalize));return base.filter(reference=>allowed.has(normalize(reference)));}
-  if(stage.scopeFloors.length){const allowed=new Set(stage.scopeFloors.map(value=>String(Number(value))));return base.filter(reference=>{const floor=referenceFloor(reference);return floor!==null&&allowed.has(floor);});}
+  if(stage.scopeFloors.length)return filterMeasurementReferencesByFloors(base,stage.scopeFloors);
   if(stage.scopeActive&&stage.startFloor!==null)return base.filter(reference=>{const floor=referenceFloor(reference);return floor!==null&&Number(floor)>=Number(stage.startFloor);});
   return base;
 }

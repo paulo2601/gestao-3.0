@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMeasurementReferences } from './measurementStructure';
+import { buildMeasurementReferences, filterMeasurementReferencesByFloors } from './measurementStructure';
 
 const tower=(name:string,floorCount:number,hasGround:boolean,unitsPerFloor:number)=>({
   name,type:'tower' as const,floorCount,hasGround,unitsPerFloor,enterpriseType:'apartamentos',houses:[],
@@ -22,4 +22,11 @@ describe('measurement structure references',()=>{
   it('does not infer apartment count from service quantity when structure is unconfigured',()=>{
     expect(buildMeasurementReferences(tower('TORRE FUTURA',10,true,0))).toEqual([]);
   });
+});
+
+
+it('keeps ground-floor units when the scope uses floor zero or térreo',()=>{
+  const references=buildMeasurementReferences(tower('TORRE 4',2,true,2));
+  expect(filterMeasurementReferencesByFloors(references,['0'])).toEqual(['TR-01','TR-02']);
+  expect(filterMeasurementReferencesByFloors(references,['térreo'])).toEqual(['TR-01','TR-02']);
 });
