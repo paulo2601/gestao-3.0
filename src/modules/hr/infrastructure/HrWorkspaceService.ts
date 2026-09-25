@@ -229,3 +229,49 @@ export async function transferEmployeeCompany(input: {
   if (!isTransferResultRow(row)) throw new Error('A transferência foi concluída sem retornar o novo vínculo.');
   return row.new_contract_id;
 }
+
+
+export type HrComplianceRecord = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  employmentContractId: string;
+  kind: 'aso' | 'nr' | 'vacation';
+  title: string;
+  startsOn: string | null;
+  endsOn: string | null;
+  expiresOn: string | null;
+  notes: string | null;
+};
+
+export async function listHrComplianceRecords(scopes: readonly { tenantId: string; companyId: string }[]): Promise<HrComplianceRecord[]> {
+  if (scopes.length === 0) return [];
+  const client = getSupabaseClient();
+  const groups = await Promise.all(scopes.map(async (scope) => {
+    const [documents, occurrences] = await Promise.all([
+      client.from('employee_documents').select('id,tenant_id,company_id,employment_contract_id,document_type,document_number,issued_on,expires_on,notes').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).in('document_type',['aso','other']),
+      client.from('employee_occurrences').select('id,tenant_id,company_id,employment_contract_id,occurrence_type,starts_on,ends_on,description').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('status','active').eq('occurrence_type','vacation'),
+    ]);
+    if (documents.error) throw documents.error;
+    if (occurrences.error) throw occurrences.error;
+    const documentRows=(documents.data??[]).map((row:any):HrComplianceRecord=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,employmentContractId:row.employment_contract_id,kind:row.document_type==='aso'?'aso':'nr',title:row.document_type==='aso'?'ASO':(row.document_number||'NR / treinamento'),startsOn:row.issued_on,endsOn:null,expiresOn:row.expires_on,notes:row.notes}));
+    const occurrenceRows=(occurrences.data??[]).map((row:any):HrComplianceRecord=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,employmentContractId:row.employment_contract_id,kind:'vacation',title:'Férias',startsOn:row.starts_on,endsOn:row.ends_on,expiresOn:null,notes:row.description}));
+    return [...documentRows,...occurrenceRows];
+  }));
+  return groups.flat().sort((a,b)=>(b.startsOn??b.expiresOn??'').localeCompare(a.startsOn??a.expiresOn??''));
+}
+
+export async function saveHrComplianceRecord(input: {
+  tenantId:string; companyId:string; employmentContractId:string; kind:'aso'|'nr'|'vacation';
+  title?:string; startsOn:string; endsOn?:string|null; expiresOn?:string|null; notes?:string|null;
+}): Promise<void> {
+  const client=getSupabaseClient();
+  if(input.kind==='vacation'){
+    const result=await client.from('employee_occurrences').insert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,occurrence_type:'vacation',starts_on:input.startsOn,ends_on:input.endsOn||input.startsOn,excused:true,payroll_effect:'none',description:input.notes??null,status:'active'});
+    if(result.error)throw result.error;
+    await saveAttendancePeriod({tenantId:input.tenantId,companyId:input.companyId,employmentContractId:input.employmentContractId,startDate:input.startsOn,endDate:input.endsOn||input.startsOn,status:'vacation',notes:input.notes});
+    return;
+  }
+  const result=await client.from('employee_documents').insert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,document_type:input.kind==='aso'?'aso':'other',document_number:input.kind==='nr'?(input.title||'NR / treinamento'):null,issued_on:input.startsOn,expires_on:input.expiresOn??null,status:'valid',notes:input.notes??null});
+  if(result.error)throw result.error;
+}
