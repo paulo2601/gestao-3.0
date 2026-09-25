@@ -9,7 +9,7 @@ import { Card } from '../../../shared/ui/Card';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
-import { SearchableSelect, type SearchableSelectOption } from '../../../shared/ui/SearchableSelect';
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect';
 import { Select } from '../../../shared/ui/Select';
 import { currentHrCompetence } from './useHrBudgetOverview';
 import { HrComplianceSection } from './HrComplianceSection';
@@ -61,9 +61,6 @@ const tabs: Array<{ id: HrWorkspaceTab; label: string; icon: typeof BarChart3 }>
 const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const employmentTypeOptions = [
   { value:'clt',label:'CLT' },{ value:'pj',label:'PJ' },{ value:'autonomo',label:'Autônomo' },{ value:'temporario',label:'Temporário' },{ value:'estagio',label:'Estágio' },{ value:'prestador',label:'Prestador' },{ value:'outro',label:'Outro' },
-];
-const attendanceOptions = [
-  { value:'',label:'Não registrado' },{ value:'present',label:'Presente' },{ value:'absence',label:'Falta' },{ value:'medical_certificate',label:'Atestado' },{ value:'vacation',label:'Férias' },{ value:'day_off',label:'Folga' },{ value:'other',label:'Outro' },
 ];
 
 
