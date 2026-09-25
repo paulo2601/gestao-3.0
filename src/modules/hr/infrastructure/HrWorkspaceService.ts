@@ -278,3 +278,39 @@ export async function saveHrComplianceRecord(input: {
   const result=await client.from('employee_documents').insert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,document_type:input.kind==='aso'?'aso':'other',document_number:input.kind==='nr'?(input.title||'NR / treinamento'):null,issued_on:input.startsOn,expires_on:input.expiresOn??null,status:'valid',notes:input.notes??null});
   if(result.error)throw result.error;
 }
+
+
+type EpiDeliveryDbRow={id:string;tenant_id:string;company_id:string;employment_contract_id:string;epi_name:string;quantity:number;delivered_on:string;ca_number:string|null;notes:string|null;created_at:string};
+
+export type HrEpiDelivery={
+  id:string; tenantId:string; companyId:string; employmentContractId:string;
+  epiName:string; quantity:number; deliveredOn:string; caNumber:string|null; notes:string|null; createdAt:string;
+};
+
+export async function listEpiDeliveries(scopes: readonly {tenantId:string;companyId:string}[]):Promise<HrEpiDelivery[]>{
+  if(scopes.length===0)return[];
+  const client=getSupabaseClient();
+  const groups=await Promise.all(scopes.map(async scope=>{
+    const result=await client.from('employee_epi_deliveries')
+      .select('id,tenant_id,company_id,employment_contract_id,epi_name,quantity,delivered_on,ca_number,notes,created_at')
+      .eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId)
+      .order('delivered_on',{ascending:false}).order('created_at',{ascending:false})
+      .returns<EpiDeliveryDbRow[]>();
+    if(result.error)throw result.error;
+    return result.data??[];
+  }));
+  return groups.flat().map(row=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,employmentContractId:row.employment_contract_id,epiName:row.epi_name,quantity:row.quantity,deliveredOn:row.delivered_on,caNumber:row.ca_number,notes:row.notes,createdAt:row.created_at}))
+    .sort((a,b)=>b.deliveredOn.localeCompare(a.deliveredOn)||b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function saveEpiDelivery(input:{tenantId:string;companyId:string;employmentContractId:string;epiName:string;quantity:number;deliveredOn:string;caNumber?:string|null;notes?:string|null}):Promise<void>{
+  const epiName=input.epiName.trim();
+  if(!epiName)throw new Error('Informe o EPI entregue.');
+  if(!Number.isInteger(input.quantity)||input.quantity<=0)throw new Error('Informe uma quantidade válida.');
+  const client=getSupabaseClient();
+  const result=await client.from('employee_epi_deliveries').insert({
+    tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,
+    epi_name:epiName,quantity:input.quantity,delivered_on:input.deliveredOn,ca_number:input.caNumber?.trim()||null,notes:input.notes?.trim()||null
+  });
+  if(result.error)throw result.error;
+}
