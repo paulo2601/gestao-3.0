@@ -231,6 +231,9 @@ export async function transferEmployeeCompany(input: {
 }
 
 
+type ComplianceDocumentDbRow={id:string;tenant_id:string;company_id:string;employment_contract_id:string;document_type:string;document_number:string|null;issued_on:string|null;expires_on:string|null;notes:string|null};
+type ComplianceOccurrenceDbRow={id:string;tenant_id:string;company_id:string;employment_contract_id:string;occurrence_type:string;starts_on:string;ends_on:string;description:string|null};
+
 export type HrComplianceRecord = {
   id: string;
   tenantId: string;
@@ -249,13 +252,13 @@ export async function listHrComplianceRecords(scopes: readonly { tenantId: strin
   const client = getSupabaseClient();
   const groups = await Promise.all(scopes.map(async (scope) => {
     const [documents, occurrences] = await Promise.all([
-      client.from('employee_documents').select('id,tenant_id,company_id,employment_contract_id,document_type,document_number,issued_on,expires_on,notes').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).in('document_type',['aso','other']),
-      client.from('employee_occurrences').select('id,tenant_id,company_id,employment_contract_id,occurrence_type,starts_on,ends_on,description').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('status','active').eq('occurrence_type','vacation'),
+      client.from('employee_documents').select('id,tenant_id,company_id,employment_contract_id,document_type,document_number,issued_on,expires_on,notes').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).in('document_type',['aso','other']).returns<ComplianceDocumentDbRow[]>(),
+      client.from('employee_occurrences').select('id,tenant_id,company_id,employment_contract_id,occurrence_type,starts_on,ends_on,description').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('status','active').eq('occurrence_type','vacation').returns<ComplianceOccurrenceDbRow[]>(),
     ]);
     if (documents.error) throw documents.error;
     if (occurrences.error) throw occurrences.error;
-    const documentRows=(documents.data??[]).map((row:any):HrComplianceRecord=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,employmentContractId:row.employment_contract_id,kind:row.document_type==='aso'?'aso':'nr',title:row.document_type==='aso'?'ASO':(row.document_number||'NR / treinamento'),startsOn:row.issued_on,endsOn:null,expiresOn:row.expires_on,notes:row.notes}));
-    const occurrenceRows=(occurrences.data??[]).map((row:any):HrComplianceRecord=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,employmentContractId:row.employment_contract_id,kind:'vacation',title:'Férias',startsOn:row.starts_on,endsOn:row.ends_on,expiresOn:null,notes:row.description}));
+    const documentRows=(documents.data??[]).map((row):HrComplianceRecord=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,employmentContractId:row.employment_contract_id,kind:row.document_type==='aso'?'aso':'nr',title:row.document_type==='aso'?'ASO':(row.document_number||'NR / treinamento'),startsOn:row.issued_on,endsOn:null,expiresOn:row.expires_on,notes:row.notes}));
+    const occurrenceRows=(occurrences.data??[]).map((row):HrComplianceRecord=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,employmentContractId:row.employment_contract_id,kind:'vacation',title:'Férias',startsOn:row.starts_on,endsOn:row.ends_on,expiresOn:null,notes:row.description}));
     return [...documentRows,...occurrenceRows];
   }));
   return groups.flat().sort((a,b)=>(b.startsOn??b.expiresOn??'').localeCompare(a.startsOn??a.expiresOn??''));
