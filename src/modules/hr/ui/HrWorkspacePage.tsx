@@ -9,7 +9,6 @@ import { Card } from '../../../shared/ui/Card';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
-import { SearchableSelect } from '../../../shared/ui/SearchableSelect';
 import { Select } from '../../../shared/ui/Select';
 import { currentHrCompetence } from './useHrBudgetOverview';
 import { HrComplianceSection } from './HrComplianceSection';
