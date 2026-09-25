@@ -13,6 +13,7 @@ import { SearchableSelect, type SearchableSelectOption } from '../../../shared/u
 import { Select } from '../../../shared/ui/Select';
 import { currentHrCompetence } from './useHrBudgetOverview';
 import { HrComplianceSection } from './HrComplianceSection';
+import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
 import './hr-workspace.css';
 
 type HrWorkspaceTab = 'dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
