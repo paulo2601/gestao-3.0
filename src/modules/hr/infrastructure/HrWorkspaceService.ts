@@ -314,3 +314,15 @@ export async function saveEpiDelivery(input:{tenantId:string;companyId:string;em
   });
   if(result.error)throw result.error;
 }
+
+
+type BankHourDbRow={id:string;tenant_id:string;company_id:string;employment_contract_id:string;occurred_on:string;minutes:number;description:string|null;created_at:string};
+export type HrBankHourMovement={id:string;tenantId:string;companyId:string;employmentContractId:string;occurredOn:string;minutes:number;description:string|null;createdAt:string};
+
+export async function listBankHourMovements(scopes:readonly {tenantId:string;companyId:string}[],competenceMonth:string):Promise<HrBankHourMovement[]>{
+ if(!scopes.length)return[];const client=getSupabaseClient();const start=competenceMonth.slice(0,7)+'-01';const end=new Date(Number(start.slice(0,4)),Number(start.slice(5,7)),0);const endDate=`${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+ const groups=await Promise.all(scopes.map(async scope=>{const result=await client.from('employee_bank_hour_movements').select('id,tenant_id,company_id,employment_contract_id,occurred_on,minutes,description,created_at').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).gte('occurred_on',start).lte('occurred_on',endDate).order('occurred_on',{ascending:false}).returns<BankHourDbRow[]>();if(result.error)throw result.error;return result.data??[];}));
+ return groups.flat().map(r=>({id:r.id,tenantId:r.tenant_id,companyId:r.company_id,employmentContractId:r.employment_contract_id,occurredOn:r.occurred_on,minutes:r.minutes,description:r.description,createdAt:r.created_at}));
+}
+export async function saveBankHourMovement(input:{tenantId:string;companyId:string;employmentContractId:string;occurredOn:string;minutes:number;description?:string|null}):Promise<void>{if(!Number.isInteger(input.minutes)||input.minutes===0)throw new Error('Informe minutos positivos para crédito ou negativos para débito.');const result=await getSupabaseClient().from('employee_bank_hour_movements').insert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,occurred_on:input.occurredOn,minutes:input.minutes,description:input.description?.trim()||null});if(result.error)throw result.error;}
+export async function closeBankHourCompetence(input:{tenantId:string;companyId:string;employmentContractId:string;competenceMonth:string}):Promise<void>{const result=await getSupabaseClient().from('employee_bank_hour_closings').upsert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,competence_month:input.competenceMonth.slice(0,7)+'-01'},{onConflict:'tenant_id,company_id,employment_contract_id,competence_month'});if(result.error)throw result.error;}
