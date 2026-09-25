@@ -65,7 +65,6 @@ const employmentTypeOptions = [
 const attendanceOptions = [
   { value:'',label:'Não registrado' },{ value:'present',label:'Presente' },{ value:'absence',label:'Falta' },{ value:'medical_certificate',label:'Atestado' },{ value:'vacation',label:'Férias' },{ value:'day_off',label:'Folga' },{ value:'other',label:'Outro' },
 ];
-function companyLabel(company: CompanySummary): string { const raw=`${company.tradeName??''} ${company.legalName}`.toLocaleUpperCase('pt-BR'); if(raw.includes('PESSOAL'))return'Pessoal'; if(raw.includes('PR-HIST')||/(^|\s)PR(\s|$)/.test(raw))return'PR'; if(raw.includes('CR-HIST')||/(^|\s)CR(\s|$)/.test(raw))return'CR'; return company.tradeName??company.legalName; }
 
 
 export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly CompanySummary[];initialCompanyId?:string}){
