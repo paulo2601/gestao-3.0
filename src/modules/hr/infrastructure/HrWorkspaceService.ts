@@ -269,7 +269,7 @@ export async function saveHrComplianceRecord(input: {
   if(input.kind==='vacation'){
     const result=await client.from('employee_occurrences').insert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,occurrence_type:'vacation',starts_on:input.startsOn,ends_on:input.endsOn||input.startsOn,excused:true,payroll_effect:'none',description:input.notes??null,status:'active'});
     if(result.error)throw result.error;
-    await saveAttendancePeriod({tenantId:input.tenantId,companyId:input.companyId,employmentContractId:input.employmentContractId,startDate:input.startsOn,endDate:input.endsOn||input.startsOn,status:'vacation',notes:input.notes});
+    await saveAttendancePeriod({tenantId:input.tenantId,companyId:input.companyId,employmentContractId:input.employmentContractId,startDate:input.startsOn,endDate:input.endsOn||input.startsOn,status:'vacation',notes:input.notes??null});
     return;
   }
   const result=await client.from('employee_documents').insert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,document_type:input.kind==='aso'?'aso':'other',document_number:input.kind==='nr'?(input.title||'NR / treinamento'):null,issued_on:input.startsOn,expires_on:input.expiresOn??null,status:'valid',notes:input.notes??null});
