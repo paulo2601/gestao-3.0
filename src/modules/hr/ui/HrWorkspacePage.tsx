@@ -14,6 +14,7 @@ import { Select } from '../../../shared/ui/Select';
 import { currentHrCompetence } from './useHrBudgetOverview';
 import { HrComplianceSection } from './HrComplianceSection';
 import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
+import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartMatches } from './hrWorkspaceHelpers';
 import './hr-workspace.css';
 
 type HrWorkspaceTab = 'dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
@@ -60,12 +61,6 @@ const attendanceOptions = [
   { value:'',label:'Não registrado' },{ value:'present',label:'Presente' },{ value:'absence',label:'Falta' },{ value:'medical_certificate',label:'Atestado' },{ value:'vacation',label:'Férias' },{ value:'day_off',label:'Folga' },{ value:'other',label:'Outro' },
 ];
 function companyLabel(company: CompanySummary): string { const raw=`${company.tradeName??''} ${company.legalName}`.toLocaleUpperCase('pt-BR'); if(raw.includes('PESSOAL'))return'Pessoal'; if(raw.includes('PR-HIST')||/(^|\s)PR(\s|$)/.test(raw))return'PR'; if(raw.includes('CR-HIST')||/(^|\s)CR(\s|$)/.test(raw))return'CR'; return company.tradeName??company.legalName; }
-function normalizeSearch(value:string){return value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').trim();}
-function smartMatches(values:Array<string|null|undefined>,query:string){const q=normalizeSearch(query);if(!q)return true;const tokens=q.split(/\s+/).filter(Boolean);const searchable=normalizeSearch(values.filter(Boolean).join(' '));const words=searchable.split(/\s+/).filter(Boolean);return tokens.every(t=>words.some(w=>w.startsWith(t))||searchable.includes(t));}
-function localToday(){const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
-function addDays(value:string,days:number){const date=new Date(`${value}T12:00:00`);date.setDate(date.getDate()+days);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
-function messageFrom(error: unknown){return error instanceof Error&&error.message?error.message:'Não foi possível concluir a operação.';}
-
 
 
 export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly CompanySummary[];initialCompanyId?:string}){
