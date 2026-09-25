@@ -17,6 +17,7 @@ import { HrEpiSection } from './HrEpiSection';
 import { HrAttendanceSection } from './HrAttendanceSection';
 import { HrBankHoursSection, type BankDraft } from './HrBankHoursSection';
 import { HrReceiptsSection, HrReportsSection } from './HrReportsSection';
+import { HrDocumentsSection, HrImportsSection } from './HrImportsSection';
 import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
 import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartMatches } from './hrWorkspaceHelpers';
 import './hr-workspace.css';
@@ -131,8 +132,8 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
   {!loading&&!errorMessage&&tab==='fechamento'&&<div className="hr-workspace__content"><Card title="Fechamento da folha" description={`Competência ${competence}`}><div className="hr-workspace__form"><Select label="Colaborador" value={payrollEmployeeId} onChange={e=>{setPayrollEmployeeId(e.target.value);setPayrollFeedback(null);}} options={[{value:'',label:'Selecione um colaborador'},...activeEmployees.map(item=>({value:item.employmentContractId,label:`${item.fullName} · ${item.companyName}`}))]}/>{payrollEmployeeId&&(()=>{const employee=activeEmployees.find(item=>item.employmentContractId===payrollEmployeeId);return employee?<div className="hr-workspace__actions"><Button onClick={()=>void closeEmployeePayroll(employee)} disabled={payrollSaving}>{payrollSaving?'Fechando...':'Fechar folha'}</Button></div>:null})()}{payrollFeedback&&<Feedback title="Folha" message={payrollFeedback} tone={payrollFeedback.includes('sucesso')?'success':'danger'}/>}<p className="ui-muted">O fechamento é registrado por vínculo e competência; o histórico permanece preservado.</p></div></Card></div>}
   {!loading&&!errorMessage&&tab==='relatorios'&&<HrReportsSection employees={activeEmployees} competence={competence}/>}
   {!loading&&!errorMessage&&tab==='recibos'&&<HrReceiptsSection employees={activeEmployees} competence={competence}/>} 
-  {!loading&&!errorMessage&&tab==='importacoes'&&<div className="hr-workspace__content"><Card title="Importação" description="Modelos CSV separados por ponto e vírgula."><div className="hr-workspace__upload"><label>Importar colaboradores<input type="file" accept=".csv,text/csv"/></label><label>Importar fechamento quinzenal<input type="file" accept=".csv,text/csv"/></label><label>Importar banco de horas<input type="file" accept=".csv,text/csv"/></label></div></Card></div>}
-  {!loading&&!errorMessage&&tab==='documentos'&&<div className="hr-workspace__content"><Card title="Importações RH" description="Holerites e documentos separados por módulo"><div className="hr-workspace__form"><label className="hr-workspace__file">Escolher arquivo<input type="file"/></label><Button>Importar documento RH</Button><p className="ui-muted">Nenhum documento RH importado.</p></div></Card></div>}
+  {!loading&&!errorMessage&&tab==='importacoes'&&<HrImportsSection/>}
+  {!loading&&!errorMessage&&tab==='documentos'&&<HrDocumentsSection/>}
 
   <Dialog open={Boolean(creatingEmployee&&newEmployeeDraft)} title="Novo colaborador" description="Cadastre o colaborador e, se necessário, já vincule a obra/centro de custo." loading={savingEmployee} onClose={()=>{if(!savingEmployee){setCreatingEmployee(false);setNewEmployeeDraft(null);setEmployeeFeedback(null);}}} onConfirm={()=>void saveNewEmployee()} confirmLabel="Cadastrar colaborador">
    {newEmployeeDraft&&<div className="hr-workspace__edit-grid">
