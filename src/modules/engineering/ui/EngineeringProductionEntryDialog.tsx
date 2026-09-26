@@ -70,7 +70,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     if(divisionMode==='percentage'&&Math.abs(payload.reduce((sum,item)=>sum+(item.percentage??0),0)-100)>0.01){setError('A soma dos percentuais deve ser 100%.');return;}
     if(divisionMode==='value'&&Math.abs(payload.reduce((sum,item)=>sum+(item.value??0),0)-total)>0.01){setError(`A soma dos valores deve ser ${currency.format(total)}.`);return;}
     setBusy(true);
-    try{await createSharedProductionEntry({tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,serviceId,productionDate,executedQuantity:numberValue(executedQuantity),unitValue:numberValue(unitValue),notes:notes||null,divisionMode,participants:payload});reset();onSaved();onClose();}
+    try{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço contratual não encontrado.');await createSharedProductionEntry({tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId,productionDate,executedQuantity:numberValue(executedQuantity),unitValue:numberValue(unitValue),notes:notes||null,divisionMode,participants:payload});reset();onSaved();onClose();}
     catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar a produção.');}
     finally{setBusy(false);}
   }
