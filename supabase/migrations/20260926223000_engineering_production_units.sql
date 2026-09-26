@@ -2,7 +2,7 @@ begin;
 alter table public.engineering_production_entries add column if not exists production_service_id uuid;
 alter table public.engineering_production_entries add column if not exists unit_structure_id uuid;
 alter table public.engineering_production_entries add constraint engineering_production_entries_production_service_fk foreign key(tenant_id,company_id,production_service_id) references public.engineering_production_services(tenant_id,company_id,id) on delete restrict;
-alter table public.engineering_production_entries add constraint engineering_production_entries_unit_structure_fk foreign key(tenant_id,company_id,unit_structure_id) references public.work_structures(tenant_id,company_id,id) on delete restrict;
+alter table public.engineering_production_entries add constraint engineering_production_entries_unit_structure_fk foreign key(unit_structure_id) references public.work_structures(id) on delete restrict;
 create index engineering_production_entries_unit_idx on public.engineering_production_entries(tenant_id,company_id,production_service_id,unit_structure_id) where unit_structure_id is not null;
 
 do $$
