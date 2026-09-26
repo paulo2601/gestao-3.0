@@ -10,10 +10,11 @@ export async function saveEngineeringProductionPrice(input:ProductionPriceInput)
  if(findError)throw findError;
  let productionServiceId=existing?.id as string|undefined;
  if(!productionServiceId){
-  const {data:contractService,error:serviceError}=await client.from('contract_services').select('description,unit').eq('tenant_id',input.tenantId).eq('company_id',input.companyId).eq('id',input.contractServiceId).single();
-  if(serviceError)throw serviceError;
-  const {data:created,error:createError}=await client.from('engineering_production_services').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,contract_service_id:input.contractServiceId,name:contractService.description,unit:contractService.unit,kind:'linked',status:'active'}).select('id').single();
-  if(createError)throw createError;productionServiceId=created.id as string;
+  const contractResponse:unknown=await client.from('contract_services').select('description,unit').eq('tenant_id',input.tenantId).eq('company_id',input.companyId).eq('id',input.contractServiceId).single();
+  const contractTyped=contractResponse as {data:{description:string;unit:string|null}|null;error:{message?:string}|null};
+  if(contractTyped.error)throw new Error(contractTyped.error.message??'Não foi possível carregar o serviço contratual.');if(!contractTyped.data)throw new Error('Serviço contratual não encontrado.');
+  const createResponse:unknown=await client.from('engineering_production_services').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,contract_service_id:input.contractServiceId,name:contractTyped.data.description,unit:contractTyped.data.unit,kind:'linked',status:'active'}).select('id').single();
+  const createTyped=createResponse as {data:{id:string}|null;error:{message?:string}|null};if(createTyped.error)throw new Error(createTyped.error.message??'Não foi possível criar o serviço de produção.');if(!createTyped.data)throw new Error('Serviço de produção não foi criado.');productionServiceId=createTyped.data.id;
  }
  const {error}=await client.from('engineering_production_prices').upsert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,production_service_id:productionServiceId,contract_service_id:input.contractServiceId,structure_id:input.structureId,unit_value:input.unitValue,status:'active'},{onConflict:'tenant_id,company_id,production_service_id,structure_id'});
  if(error)throw error;
@@ -21,9 +22,9 @@ export async function saveEngineeringProductionPrice(input:ProductionPriceInput)
 
 export async function createManualProductionService(input:ProductionPriceScope&{workId:string;name:string;unit:string|null;kind:'manual'|'discount';structureId:string|null;unitValue:number}):Promise<void>{
  const client=getSupabaseClient();
- const {data:service,error:serviceError}=await client.from('engineering_production_services').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,contract_service_id:null,name:input.name.trim(),unit:input.unit?.trim()||null,kind:input.kind,status:'active'}).select('id').single();
- if(serviceError)throw serviceError;
- const {error}=await client.from('engineering_production_prices').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,production_service_id:service.id,contract_service_id:null,structure_id:input.structureId,unit_value:input.unitValue,status:'active'});
+ const serviceResponse:unknown=await client.from('engineering_production_services').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,contract_service_id:null,name:input.name.trim(),unit:input.unit?.trim()||null,kind:input.kind,status:'active'}).select('id').single();
+ const serviceTyped=serviceResponse as {data:{id:string}|null;error:{message?:string}|null};if(serviceTyped.error)throw new Error(serviceTyped.error.message??'Não foi possível criar o serviço manual.');if(!serviceTyped.data)throw new Error('Serviço manual não foi criado.');
+ const {error}=await client.from('engineering_production_prices').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,production_service_id:serviceTyped.data.id,contract_service_id:null,structure_id:input.structureId,unit_value:input.unitValue,status:'active'});
  if(error)throw error;
 }
 
