@@ -416,9 +416,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
 
   function resetAfterSave(keepData: boolean) {
     setLocalSuccess(null);
-    setForm((current) => keepData ? {
-      ...current, date: today(), description: '', amountDigits: '', counterparty: '', notes: '', includeInBudget: false,
-    } : {
+    if (keepData) return;
+    setForm({
       entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: 'pix', launchType: 'single',
       installmentCount: '2', recurrenceCount: '12', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
       counterparty: '', notes: '', includeInBudget: false,
@@ -552,7 +551,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
 
       await operations.loadReferences();
       resetAfterSave(keepData);
-      setLocalSuccess(keepData ? 'Lançamento concluído. Dados principais mantidos.' : 'Lançamento concluído. Pronto para o próximo lançamento.');
+      setLocalSuccess(keepData ? 'Lançamento concluído. Todos os dados foram mantidos.' : 'Lançamento concluído. Pronto para o próximo lançamento.');
     } catch (error) {
       setLocalError(error instanceof Error && error.message ? error.message : 'Não foi possível concluir o lançamento.');
     } finally {
