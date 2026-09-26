@@ -3,7 +3,7 @@ import { Button } from '../../../shared/ui/Button';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
-export type HrEmployeeDraft={fullName:string;companyId:string;jobTitle:string;cpf:string;pix:string;phone:string;email:string;notes:string;employmentType:EmploymentType;sector:string;supervisor:string;weeklyHours:string;bankHoursEnabled:string;baseSalary:string;costCenterId:string;effectiveOn:string};
+type HrEmployeeDraft={fullName:string;companyId:string;jobTitle:string;cpf:string;pix:string;phone:string;email:string;notes:string;employmentType:EmploymentType;sector:string;supervisor:string;weeklyHours:string;bankHoursEnabled:string;baseSalary:string;costCenterId:string;effectiveOn:string};
 type Option={value:string;label:string};
 export function HrEmployeeForm({draft,setDraft,step,setStep,feedback,companyOptions,costCenterOptions,employmentTypeOptions}:{draft:HrEmployeeDraft;setDraft:(v:HrEmployeeDraft)=>void;step:1|2;setStep:(v:1|2)=>void;feedback:string|null;companyOptions:Option[];costCenterOptions:Option[];employmentTypeOptions:Option[]}){
  const set=<K extends keyof HrEmployeeDraft>(key:K,value:HrEmployeeDraft[K])=>setDraft({...draft,[key]:value});
