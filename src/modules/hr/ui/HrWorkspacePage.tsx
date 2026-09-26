@@ -17,7 +17,7 @@ import { HrAttendanceSection } from './HrAttendanceSection';
 import { HrBankHoursSection, type BankDraft } from './HrBankHoursSection';
 import { HrReceiptsSection, HrReportsSection } from './HrReportsSection';
 import { HrDocumentsSection, HrImportsSection } from './HrImportsSection';
-import { HrEmployeeForm, type HrEmployeeDraft } from './HrEmployeeForm';
+import { HrEmployeeForm } from './HrEmployeeForm';
 import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
 import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartMatches } from './hrWorkspaceHelpers';
 import './hr-workspace.css';
@@ -25,7 +25,7 @@ import './hr-workspace.css';
 type HrWorkspaceTab = 'dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
 type CompanyData = { company: CompanySummary; operations: HrOperationalSnapshot; overview: Awaited<ReturnType<ReturnType<typeof getHrBudgetRepository>['getOverview']>>; };
 type WorkspaceEmployee = HrEmployeeRow & { companyId: string; companyName: string; tenantId: string };
-type EmployeeDraft = HrEmployeeDraft;
+type EmployeeDraft = { fullName:string; companyId:string; jobTitle:string; cpf:string; pix:string; phone:string; email:string; notes:string; employmentType:EmploymentType; sector:string; supervisor:string; weeklyHours:string; bankHoursEnabled:string; baseSalary:string; costCenterId:string; effectiveOn:string };
 type EpiDraft = { employmentContractId:string; epiName:string; quantity:string; deliveredOn:string; caNumber:string; notes:string; };
 type ComplianceDraft = { kind:'aso'|'nr'|'vacation'; employmentContractId:string; title:string; startsOn:string; endsOn:string; expiresOn:string; notes:string; };
 type AttendancePeriodDraft = {
