@@ -33,4 +33,3 @@ export function HrFortnightClosingSection({employees,fixedItems,competence,onClo
  {feedback&&<Feedback title="Fechamento quinzenal" message={feedback} tone={feedback.includes('sucesso')||feedback.includes('salvo')?'success':'danger'}/>}
  </Card></div>;
 }
-}
