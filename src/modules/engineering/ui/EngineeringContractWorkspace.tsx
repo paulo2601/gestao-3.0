@@ -85,7 +85,6 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged,o
   }),[provisionals,data?.provisionalLines]);
   const progress=Math.max(0,Math.min(100,contract.measuredPercent));
   const measurementValue=(measurementId:string)=>(data?.measurementLines??[]).filter(line=>line.measurementId===measurementId).reduce((sum,line)=>sum+line.grossValue,0);
-  const draftMeasurementValue=measurements.filter(item=>item.status==='draft').reduce((sum,item)=>sum+measurementValue(item.id),0);
   const measuredGrossIncludingDrafts=measurements.reduce((sum,item)=>sum+measurementValue(item.id),0);
   const measurementProgress=contract.updatedContractValue>0?Math.max(0,Math.min(100,(measuredGrossIncludingDrafts/contract.updatedContractValue)*100)):0;
   const measurementFinancial=(measurementId:string)=>{const gross=measurementValue(measurementId);const inss=gross*retentionRates.inss/100;const iss=gross*retentionRates.iss/100;const rt=gross*retentionRates.rt/100;return {gross,inss,iss,rt,net:Math.max(0,gross-inss-iss-rt)};};
