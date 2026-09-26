@@ -89,8 +89,6 @@ export function GuidedMeasurementFlow({scope,contractId,initialMeasurementId='',
   const measurementNet=Math.max(0,measurementGross-inssValue-issValue-rtValue);
   const originRows=useMemo(()=>{if(!model||!activeMeasurementId)return [];return model.origins.map(itemOrigin=>{const keys=new Set(itemOrigin.services.map(item=>`${item.targetKind}:${item.targetId}`));const lines=model.lines.filter(line=>line.measurementId===activeMeasurementId&&(keys.has(`${line.targetKind}:${line.targetId}`)||normalize(measurementLineOrigin(line.notes))===normalize(itemOrigin.name)));return {origin:itemOrigin,gross:lines.reduce((sum,line)=>sum+(line.exactGrossValue??line.measuredQuantity*(stagePriceByTarget.get(`${line.targetKind}:${line.targetId}`)??0)),0),serviceCount:new Set(lines.map(line=>`${line.targetKind}:${line.targetId}`)).size};}).filter(row=>row.serviceCount>0||row.gross>0);},[model,activeMeasurementId,stagePriceByTarget]);
 
-  const manualRows=useMemo(()=>!model||!activeMeasurementId?[]:model.lines.filter(line=>line.measurementId===activeMeasurementId&&line.targetKind==='manual'),[model,activeMeasurementId]);
-
   const refs=useMemo(()=>model&&origin&&stage?stageReferences(model,origin,stage):[],[model,origin,stage]);
   const targetLines=useMemo(()=>model&&stage?model.lines.filter(line=>line.targetKind===stage.targetKind&&line.targetId===stage.targetId):[],[model,stage]);
   const currentLines=useMemo(()=>targetLines.filter(line=>line.measurementId===activeMeasurementId),[targetLines,activeMeasurementId]);
