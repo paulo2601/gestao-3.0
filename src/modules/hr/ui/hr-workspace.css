@@ -52,3 +52,14 @@
 .hr-dashboard__works>div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface-subtle)}
 .hr-dashboard__works span{font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hr-dashboard__works strong{font-size:.9rem}
 @media(max-width:760px){.hr-dashboard__headline,.hr-dashboard__grid{grid-template-columns:1fr}.hr-dashboard__works{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Employee form: Gestao 2.0 interaction pattern on the 3.0 design system */
+.hr-employee-form{display:grid;gap:12px}
+.hr-employee-form__tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;border:1px solid var(--border);border-radius:11px;background:var(--surface-subtle)}
+.hr-employee-form__tabs button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;border:0;border-radius:8px;background:transparent;color:var(--muted);font:inherit;font-size:.8rem;font-weight:750;cursor:pointer}
+.hr-employee-form__tabs button span{display:grid;place-items:center;width:22px;height:22px;border-radius:999px;border:1px solid var(--border);font-size:.72rem}
+.hr-employee-form__tabs button.is-active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgb(15 23 42 / .08)}
+.hr-employee-form__tabs button.is-active span{background:var(--primary);border-color:var(--primary);color:white}
+.hr-employee-form__summary{display:grid;gap:4px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-subtle)}
+.hr-employee-form__summary strong{font-size:.85rem}.hr-employee-form__summary span{font-size:.76rem;color:var(--muted)}
+@media(min-width:761px){.hr-employee-form .hr-workspace__edit-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 10px}.hr-employee-form .ui-field__control,.hr-employee-form .ui-input{min-height:38px;height:38px}.hr-employee-form .ui-field__label{font-size:.72rem}}
