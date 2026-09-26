@@ -141,13 +141,23 @@ export function GuidedMeasurementFlow({scope,contractId,initialMeasurementId='',
     document.getElementById('measurement-print-root')?.remove();
     document.getElementById('measurement-print-style')?.remove();
     const esc=(value:unknown)=>safeText(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]??char));
-    const measurement=model.measurements.find(item=>item.id===activeMeasurementId);
-    const status=measurement?.status==='draft'?'RASCUNHO':(measurement?.status??'').toLocaleUpperCase('pt-BR');
-    const rows=model.origins.flatMap(origin=>origin.services.map(service=>{
-      const quantity=model.lines.filter(line=>line.measurementId===activeMeasurementId&&line.targetKind===service.targetKind&&line.targetId===service.targetId).reduce((sum,line)=>sum+line.measuredQuantity,0);
-      if(quantity<=0)return null;
-      return `<tr><td>${esc(originLabel(origin))}</td><td>${esc(service.code||'—')}</td><td>${esc(service.description)}</td><td>${esc(service.unit)}</td><td class="num">${esc(quantity.toLocaleString('pt-BR',{maximumFractionDigits:3}))}</td><td class="num">${esc(currency.format(service.unitPrice))}</td><td class="num strong">${esc(currency.format(quantity*service.unitPrice))}</td></tr>`;
-    }).filter((row):row is string=>Boolean(row))).join('');
+    const groupedRows=model.origins.map(origin=>{
+      const services=origin.services.flatMap(service=>{
+        const lines=model.lines.filter(line=>line.measurementId===activeMeasurementId&&line.targetKind===service.targetKind&&line.targetId===service.targetId);
+        if(!lines.length)return [];
+        const quantity=lines.reduce((sum,line)=>sum+line.measuredQuantity,0);
+        const total=lines.reduce((sum,line)=>sum+(line.exactGrossValue??line.measuredQuantity*service.unitPrice),0);
+        return [{code:service.code||'—',description:service.description,unit:service.unit,quantity,unitPrice:service.unitPrice,total}];
+      });
+      if(!services.length)return '';
+      const subtotal=services.reduce((sum,item)=>sum+item.total,0);
+      const rows=services.map(item=>`<tr><td>${esc(item.code)}</td><td>${esc(item.description)}</td><td>${esc(item.unit)}</td><td class="num">${esc(item.quantity.toLocaleString('pt-BR',{maximumFractionDigits:3}))}</td><td class="num">${esc(currency.format(item.unitPrice))}</td><td class="num strong">${esc(currency.format(item.total))}</td></tr>`).join('');
+      return `<section class="print-group"><div class="print-group-title"><strong>${esc(originLabel(origin))}</strong><strong>Subtotal: ${esc(currency.format(subtotal))}</strong></div><table><thead><tr><th>Código</th><th>Descrição</th><th>Un.</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    }).join('');
+    const manualLines=model.lines.filter(line=>line.measurementId===activeMeasurementId&&line.targetKind==='manual');
+    const manualRows=manualLines.map(line=>`<tr><td>AVULSO</td><td>${esc(line.manualDescription||'Serviço avulso')}</td><td>${esc(line.manualUnit||'—')}</td><td class="num">${esc(line.measuredQuantity.toLocaleString('pt-BR',{maximumFractionDigits:3}))}</td><td class="num">${esc(currency.format(line.unitPriceSnapshot))}</td><td class="num strong">${esc(currency.format(line.exactGrossValue??line.measuredQuantity*line.unitPriceSnapshot))}</td></tr>`).join('');
+    const manualTotal=manualLines.reduce((sum,line)=>sum+(line.exactGrossValue??line.measuredQuantity*line.unitPriceSnapshot),0);
+    const manualBlock=manualLines.length?`<section class="print-group"><div class="print-group-title"><strong>SERVIÇOS AVULSOS</strong><strong>Subtotal: ${esc(currency.format(manualTotal))}</strong></div><table><thead><tr><th>Código</th><th>Descrição</th><th>Un.</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead><tbody>${manualRows}</tbody></table></section>`:'';
     const competence=header.competence?new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(new Date(`${header.competence}-01T12:00:00`)):'—';
     const formatDate=(value:string)=>{if(!value)return '—';const [y,m,d]=value.split('-');return y&&m&&d?`${d}/${m}/${y}`:value;};
     const root=document.createElement('div');
