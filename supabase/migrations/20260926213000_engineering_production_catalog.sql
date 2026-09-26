@@ -28,7 +28,7 @@ alter table public.engineering_production_prices add column production_service_i
 alter table public.engineering_production_prices alter column contract_service_id drop not null;
 alter table public.engineering_production_prices alter column structure_id drop not null;
 alter table public.engineering_production_prices add constraint engineering_production_prices_production_service_fk foreign key(tenant_id,company_id,production_service_id) references public.engineering_production_services(tenant_id,company_id,id) on delete restrict;
-drop index if exists public.engineering_production_prices_tenant_id_company_id_contract_key;
+alter table public.engineering_production_prices drop constraint if exists engineering_production_prices_tenant_id_company_id_contract_key;
 create unique index engineering_production_prices_service_structure_uq on public.engineering_production_prices(tenant_id,company_id,production_service_id,coalesce(structure_id,'00000000-0000-0000-0000-000000000000'::uuid)) where production_service_id is not null;
 
 insert into public.engineering_production_services(tenant_id,company_id,work_id,contract_service_id,name,unit,kind)
