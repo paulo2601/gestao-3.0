@@ -15,6 +15,7 @@ import {
 } from '../infrastructure/LegacyMeasurementParityRepository';
 import './guided-measurement-flow.css';
 import { ManualMeasurementItemDialog } from './ManualMeasurementItemDialog';
+import { printMeasurement } from './printMeasurementReport';
 import './approved-measurement-sheet.css';
 import { buildMeasurementReferences, filterMeasurementReferencesByFloors } from './measurementStructure';
 
@@ -136,54 +137,8 @@ export function GuidedMeasurementFlow({scope,contractId,initialMeasurementId='',
   }
   async function saveHeader(){if(!activeMeasurementId)return;const measurementNumber=header.measurementNumber.trim(),competence=header.competence.trim();if(!measurementNumber){setError('Informe o número da medição.');return;}if(!competence){setError('Informe a competência.');return;}setHeaderSaving(true);setError(null);try{await operations.updateMeasurement({measurementId:activeMeasurementId,measurementNumber,competence,dueDate:header.dueDate||null,expectedPaymentDate:header.expectedPaymentDate||null,paymentMethod:header.paymentMethod||null,notes:header.notes||null});await reload();}catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar os dados da medição.');throw cause;}finally{setHeaderSaving(false);}}
   async function finalizeMeasurement(){if(!activeMeasurementId){setError('Salve ao menos um serviço antes de finalizar a medição.');return;}try{await saveHeader();await operations.setMeasurementStatus(activeMeasurementId,'close');onChanged();onClose();}catch{return;}}
-  function printMeasurement(){
-    if(!model||!activeMeasurementId||measurementGross<=0)return;
-    document.getElementById('measurement-print-root')?.remove();
-    document.getElementById('measurement-print-style')?.remove();
-    const esc=(value:unknown)=>safeText(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]??char));
-    const groupedRows=model.origins.map(origin=>{
-      const services=origin.services.flatMap(service=>{
-        const lines=model.lines.filter(line=>line.measurementId===activeMeasurementId&&line.targetKind===service.targetKind&&line.targetId===service.targetId);
-        if(!lines.length)return [];
-        const quantity=lines.reduce((sum,line)=>sum+line.measuredQuantity,0);
-        const total=lines.reduce((sum,line)=>sum+(line.exactGrossValue??line.measuredQuantity*service.unitPrice),0);
-        return [{code:service.code||'—',description:service.description,unit:service.unit,quantity,unitPrice:service.unitPrice,total}];
-      });
-      if(!services.length)return '';
-      const subtotal=services.reduce((sum,item)=>sum+item.total,0);
-      const rows=services.map(item=>`<tr><td>${esc(item.code)}</td><td>${esc(item.description)}</td><td>${esc(item.unit)}</td><td class="num">${esc(item.quantity.toLocaleString('pt-BR',{maximumFractionDigits:3}))}</td><td class="num">${esc(currency.format(item.unitPrice))}</td><td class="num strong">${esc(currency.format(item.total))}</td></tr>`).join('');
-      return `<section class="print-group"><div class="print-group-title"><strong>${esc(originLabel(origin))}</strong><strong>Subtotal: ${esc(currency.format(subtotal))}</strong></div><table><thead><tr><th>Código</th><th>Descrição</th><th>Un.</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead><tbody>${rows}</tbody></table></section>`;
-    }).join('');
-    const manualLines=model.lines.filter(line=>line.measurementId===activeMeasurementId&&line.targetKind==='manual');
-    const manualRows=manualLines.map(line=>`<tr><td>AVULSO</td><td>${esc(line.manualDescription||'Serviço avulso')}</td><td>${esc(line.manualUnit||'—')}</td><td class="num">${esc(line.measuredQuantity.toLocaleString('pt-BR',{maximumFractionDigits:3}))}</td><td class="num">${esc(currency.format(line.unitPriceSnapshot))}</td><td class="num strong">${esc(currency.format(line.exactGrossValue??line.measuredQuantity*line.unitPriceSnapshot))}</td></tr>`).join('');
-    const manualTotal=manualLines.reduce((sum,line)=>sum+(line.exactGrossValue??line.measuredQuantity*line.unitPriceSnapshot),0);
-    const manualBlock=manualLines.length?`<section class="print-group"><div class="print-group-title"><strong>SERVIÇOS AVULSOS</strong><strong>Subtotal: ${esc(currency.format(manualTotal))}</strong></div><table><thead><tr><th>Código</th><th>Descrição</th><th>Un.</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead><tbody>${manualRows}</tbody></table></section>`:'';
-    const competence=header.competence?new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(new Date(`${header.competence}-01T12:00:00`)):'—';
-    const formatDate=(value:string)=>{if(!value)return '—';const [y,m,d]=value.split('-');return y&&m&&d?`${d}/${m}/${y}`:value;};
-    const root=document.createElement('div');
-    root.id='measurement-print-root';
-    const companyLogos:Record<string,string>={
-      '1ac1cde3-30fa-4fab-9ea0-8afbb34732e5':'/company-cr.webp',
-      '68e55f19-6d77-45cf-a86b-6a661f4c285a':'/company-pr.webp',
-    };
-    const companyLogo=companyLogos[scope.companyId]??'/gestao-brand.svg';
-    root.innerHTML=`<header><div class="brand"><img id="measurement-print-logo" src="${companyLogo}" alt="Logo da empresa"></div><div class="title"><h1>Medição ${esc(header.measurementNumber||'—')}</h1></div></header><section class="meta"><div class="box"><span>Competência</span><strong>${esc(competence)}</strong></div><div class="box"><span>Vencimento previsto</span><strong>${esc(formatDate(header.dueDate))}</strong></div><div class="box"><span>Forma de pagamento</span><strong>${esc(header.paymentMethod||'—')}</strong></div></section><section class="financial"><div class="box"><span>Bruto</span><strong>${esc(currency.format(measurementGross))}</strong></div><div class="box"><span>INSS</span><strong>${esc(currency.format(inssValue))}</strong></div><div class="box"><span>ISS</span><strong>${esc(currency.format(issValue))}</strong></div><div class="box"><span>Retenção</span><strong>${esc(currency.format(rtValue))}</strong></div><div class="box net"><span>Líquido</span><strong>${esc(currency.format(measurementNet))}</strong></div></section><h2>Serviços desta medição</h2>${groupedRows}${manualBlock}<div class="obs"><strong>Observações:</strong> ${esc(header.notes||'—')}</div><div class="footer"><span>Gestão 3.0 · Engenharia</span><span>Documento emitido em ${esc(new Date().toLocaleString('pt-BR'))}</span></div>`;
-    const style=document.createElement('style');
-    style.id='measurement-print-style';
-    style.textContent=`#measurement-print-root{position:fixed;left:-100000px;top:0;width:794px;visibility:hidden;background:#fff;color:#111827}@media print{@page{size:A4 portrait;margin:12mm}html,body{background:#fff!important}body>*{display:none!important}#measurement-print-root{display:block!important;position:static!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;visibility:visible!important;color:#111827!important;font-family:Arial,Helvetica,sans-serif!important;font-size:10.5px!important}#measurement-print-root *{visibility:visible!important;box-sizing:border-box!important}#measurement-print-root header{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;border-bottom:2px solid #1d4ed8!important;padding-bottom:10px!important;margin-bottom:14px!important}#measurement-print-root .brand{display:flex!important;align-items:center!important}#measurement-print-root .brand img{display:block!important;width:150px!important;max-height:54px!important;object-fit:contain!important;object-position:left center!important}#measurement-print-root .title{text-align:right!important}#measurement-print-root .title h1{font-size:18px!important;margin:0 0 4px!important}#measurement-print-root .print-group{display:block!important;border:1px solid #d1d5db!important;border-radius:8px!important;margin:0 0 10px!important;overflow:hidden!important;break-inside:avoid!important}#measurement-print-root .print-group-title{display:flex!important;justify-content:space-between!important;padding:7px 9px!important;background:#eef2ff!important;border-bottom:1px solid #d1d5db!important}#measurement-print-root .meta{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:8px!important;margin-bottom:12px!important}#measurement-print-root .box{display:block!important;border:1px solid #d1d5db!important;border-radius:8px!important;padding:8px!important}#measurement-print-root .box span{display:block!important;color:#6b7280!important;font-size:8.5px!important;margin-bottom:3px!important;text-transform:uppercase!important}#measurement-print-root .box strong{font-size:11px!important}#measurement-print-root .financial{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:6px!important;margin:12px 0!important}#measurement-print-root .financial .box{padding:7px!important}#measurement-print-root .financial .net{border-color:#86efac!important;background:#f0fdf4!important}#measurement-print-root h2{font-size:12px!important;margin:14px 0 7px!important}#measurement-print-root table{display:table!important;width:100%!important;border-collapse:collapse!important;table-layout:fixed!important}#measurement-print-root thead{display:table-header-group!important}#measurement-print-root tbody{display:table-row-group!important}#measurement-print-root tr{display:table-row!important;break-inside:avoid!important}#measurement-print-root th,#measurement-print-root td{display:table-cell!important;border-bottom:1px solid #e5e7eb!important;padding:6px 5px!important;vertical-align:top!important;word-wrap:break-word!important}#measurement-print-root th{background:#f3f4f6!important;text-align:left!important;font-size:8px!important;text-transform:uppercase!important;color:#4b5563!important}#measurement-print-root .num{text-align:right!important}#measurement-print-root .strong{font-weight:700!important}#measurement-print-root .obs{display:block!important;margin-top:12px!important;border:1px solid #e5e7eb!important;border-radius:8px!important;padding:8px!important;min-height:34px!important}#measurement-print-root .footer{display:flex!important;margin-top:16px!important;padding-top:8px!important;border-top:1px solid #e5e7eb!important;color:#6b7280!important;font-size:8px!important;justify-content:space-between!important}body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}`;
-    document.head.appendChild(style);
-    document.body.appendChild(root);
-    const trigger=()=>requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
-    const logo=root.querySelector<HTMLImageElement>('#measurement-print-logo');
-    const printWithLogo=()=>setTimeout(trigger,150);
-    const failLogo=()=>{root.remove();style.remove();setError('O logo da empresa não pôde ser renderizado. A impressão foi cancelada para não gerar um documento sem identificação.');};
-    if(!logo){failLogo();return;}
-    if(logo.complete){if(logo.naturalWidth>0)printWithLogo();else failLogo();}
-    else{logo.addEventListener('load',printWithLogo,{once:true});logo.addEventListener('error',failLogo,{once:true});}
-    // Deliberately keep the print DOM alive. Android's print spooler can snapshot
-    // the page after window.print()/afterprint returns; removing it early creates
-    // a blank PDF preview. It is removed on the next print invocation instead.
-  }
+  function handlePrintMeasurement(){printMeasurement({model,activeMeasurementId,measurementGross,header,scope,inssValue,issValue,rtValue,measurementNet,originLabel,setError});}
+
   function closeFlow(){onClose();}
 
   if(loading&&!model)return <Dialog open variant="measurement-fullscreen" title="Medição" onClose={closeFlow} onBack={closeFlow}><LoadingState label="Carregando medição…"/></Dialog>;
