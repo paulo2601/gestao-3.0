@@ -23,7 +23,7 @@ import './engineering-parity-closing.css';
 import './engineering-parity-production.css';
 
 interface EngineeringPageProps { companies: readonly CompanySummary[]; initialCompanyId?: string; }
-type ContractPageSection=EngineeringContractSection|'producao';
+type ContractPageSection=EngineeringContractSection;
 type ContractNavItem={id:ContractPageSection;label:string;icon:string};
 
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -34,11 +34,9 @@ const primarySections:ContractNavItem[]=[
   {id:'resumo',label:'Resumo',icon:'⌂'},
   {id:'contrato',label:'Contrato',icon:'▤'},
   {id:'planilhas',label:'Planilhas',icon:'▦'},
-  {id:'medicao',label:'Medições',icon:'▥'},
-  {id:'producao',label:'Produção',icon:'⚒'},
-];
-const secondarySections:ContractNavItem[]=[
-  {id:'provisorios',label:'Provisórios',icon:'◇'},
+  {id:'medicao',label:'Medição',icon:'▥'},
+  {id:'fechamentos',label:'Fechamentos',icon:'✓'},
+  {id:'impostos',label:'Impostos',icon:'%'},
   {id:'saldos',label:'Saldos',icon:'≡'},
 ];
 
@@ -51,7 +49,6 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const [contractStatus,setContractStatus]=useState('all');
   const [selectedContract,setSelectedContract]=useState<EngineeringContractSummary|null>(null);
   const [contractSection,setContractSection]=useState<ContractPageSection>('resumo');
-  const [showMoreSections,setShowMoreSections]=useState(false);
   const [createOpen,setCreateOpen]=useState(false);
   const selectedCompany=initialCompanyId?companies.find(item=>item.id===initialCompanyId)??null:null;
   const engineeringCompanies=companies.filter(item=>companyLabel(item)!=='Pessoal');
@@ -73,9 +70,9 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const filteredContracts=data.contracts.filter(item=>{const matchesStatus=contractStatus==='all'||item.status===contractStatus;const company=companies.find(c=>c.id===item.companyId);const haystack=`${item.workName} ${item.clientName??''} ${item.contractNumber} ${statusLabel(item.status)} ${company?companyLabel(company):''}`.toLocaleLowerCase('pt-BR');return matchesStatus&&(normalizedSearch.length===0||haystack.includes(normalizedSearch));});
   const maintenanceCompany=selectedContract?companies.find(item=>item.id===selectedContract.companyId)??null:null;
   const maintenanceScope=maintenanceCompany?{tenantId:maintenanceCompany.tenantId,companyId:maintenanceCompany.id}:null;
-  const openContract=(contract:EngineeringContractSummary)=>{setContractSection(productionFocus?'producao':'resumo');setShowMoreSections(false);setSelectedContract(contract);};
-  const closeContract=()=>{setSelectedContract(null);setContractSection(productionFocus?'producao':'resumo');setShowMoreSections(false);};
-  const navigateContract=(section:ContractPageSection)=>{if(productionFocus)return;setContractSection(section);if(secondarySections.some(item=>item.id===section))setShowMoreSections(true);};
+  const openContract=(contract:EngineeringContractSummary)=>{setContractSection('resumo');setSelectedContract(contract);};
+  const closeContract=()=>{setSelectedContract(null);setContractSection('resumo');};
+  const navigateContract=(section:ContractPageSection)=>{if(productionFocus)return;setContractSection(section);};
   const navigateLegacyContract=(section:EngineeringContractSection)=>navigateContract(section);
 
   return <section className="engineering-overview engineering-overview--contratos engineering-parity-overview" aria-labelledby="engineering-title">
@@ -107,14 +104,10 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
     <Dialog open={selectedContract!==null} title={selectedContract?.workName??(productionFocus?'Produção':'Contrato')} description={selectedContract?`${selectedContract.clientName??'Cliente'} · ${selectedContract.contractNumber} · ${statusLabel(selectedContract.status)}`:undefined} onClose={closeContract} onBack={closeContract}>
       {selectedContract&&maintenanceScope&&<div className="engineering-contract-workspace engineering-parity-contract">
         <div className="engineering-contract-workspace__summary"><span>Contratado <strong>{currency.format(selectedContract.updatedContractValue)}</strong></span><span>Medido <strong>{currency.format(selectedContract.measuredNet)}</strong></span><span>Saldo <strong>{currency.format(selectedContract.grossBalance)}</strong></span></div>
-        {!productionFocus&&<><nav className="engineering-contract-workspace__nav engineering-parity-primary-nav" aria-label="Áreas principais do contrato">
+        {!productionFocus&&<nav className="engineering-contract-workspace__nav engineering-parity-primary-nav" aria-label="Áreas do contrato">
           {primarySections.map(section=><Button key={section.id} size="sm" variant={contractSection===section.id?'primary':'secondary'} onClick={()=>navigateContract(section.id)}><span className="engineering-contract-workspace__nav-icon" aria-hidden="true">{section.icon}</span>{section.label}</Button>)}
-          <Button size="sm" variant={showMoreSections||secondarySections.some(item=>item.id===contractSection)?'primary':'secondary'} onClick={()=>setShowMoreSections(value=>!value)}>••• Mais</Button>
-        </nav>
-        {showMoreSections&&<nav className="engineering-parity-secondary-nav" aria-label="Outras áreas do contrato">
-          {secondarySections.map(section=><Button key={section.id} size="sm" variant={contractSection===section.id?'primary':'tertiary'} onClick={()=>navigateContract(section.id)}><span aria-hidden="true">{section.icon}</span>{section.label}</Button>)}
-        </nav>}</>}
-        {productionFocus?<EngineeringProductionWorkspace scope={maintenanceScope} workName={selectedContract.workName} contractNumber={selectedContract.contractNumber} onChanged={refresh}/>:contractSection==='resumo'?<EngineeringContractSummaryDashboard contract={selectedContract} onNavigate={navigateLegacyContract}/>:contractSection==='producao'?<EngineeringProductionWorkspace scope={maintenanceScope} workName={selectedContract.workName} contractNumber={selectedContract.contractNumber} onChanged={refresh}/>:<EngineeringContractWorkspace section={contractSection} scope={maintenanceScope} contract={selectedContract} onChanged={refresh} onNavigate={navigateLegacyContract}/>} 
+        </nav>}
+        {productionFocus?<EngineeringProductionWorkspace scope={maintenanceScope} workName={selectedContract.workName} contractNumber={selectedContract.contractNumber} onChanged={refresh}/>:contractSection==='resumo'?<EngineeringContractSummaryDashboard contract={selectedContract} onNavigate={navigateLegacyContract}/>:<EngineeringContractWorkspace section={contractSection} scope={maintenanceScope} contract={selectedContract} onChanged={refresh} onNavigate={navigateLegacyContract}/>} 
       </div>}
     </Dialog>
   </section>;
