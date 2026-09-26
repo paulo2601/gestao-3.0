@@ -4,7 +4,7 @@ const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const safeText=(value:unknown)=>typeof value==='string'?value:typeof value==='number'||typeof value==='boolean'?String(value):'';
 export interface PrintMeasurementInput{model:MeasurementParityModel|null;activeMeasurementId:string;measurementGross:number;header:Record<string,string>;scope:{tenantId:string;companyId:string};inssValue:number;issValue:number;rtValue:number;measurementNet:number;originLabel:(origin:MeasurementParityOrigin)=>string;setError:(message:string)=>void;}
 
-export async function printMeasurement(input:PrintMeasurementInput){
+export function printMeasurement(input:PrintMeasurementInput){
     const {model,activeMeasurementId,measurementGross,header,scope,inssValue,issValue,rtValue,measurementNet,originLabel,setError}=input;
     if(!model||!activeMeasurementId||measurementGross<=0)return;
     document.getElementById('measurement-print-root')?.remove();
