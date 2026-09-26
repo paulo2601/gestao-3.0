@@ -3,7 +3,6 @@ import { Button } from '../../../shared/ui/Button';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
-import { SearchableSelect } from '../../../shared/ui/SearchableSelect';
 import { Select } from '../../../shared/ui/Select';
 import type { EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
 import { createSharedProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
@@ -39,7 +38,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState<string|null>(null);
   const openPeriods=snapshot.periods.filter(item=>item.status==='open');
-  const availableEmployees=useMemo(()=>snapshot.employees.filter(item=>!participants.some(p=>p.id===item.id)).map(item=>({value:item.id,label:item.name})),[snapshot.employees,participants]);
+  const filteredEmployees=useMemo(()=>snapshot.employees.filter(item=>item.name.toLocaleLowerCase('pt-BR').includes(employeeSearch.trim().toLocaleLowerCase('pt-BR'))),[snapshot.employees,employeeSearch]);
   const periodOptions=[{value:'',label:'Selecione…'},...openPeriods.map(item=>({value:item.id,label:item.competence.slice(0,7).split('-').reverse().join('/')}))];
   const generalServices=snapshot.productionPrices.filter(item=>item.structureId===null&&item.productionServiceId&&item.productionServiceKind!=='linked');
   const structureOptions=[{value:'',label:'Selecione…'},...(generalServices.length?[{value:'__GENERAL__',label:'SEM ESTRUTURA / SERVIÇOS GERAIS'}]:[]),...snapshot.structures.map(item=>({value:item.id,label:item.name}))];
@@ -61,11 +60,13 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   function addParticipant(id:string){
     const employee=snapshot.employees.find(item=>item.id===id);if(!employee)return;
     const next=[...participants,{id:employee.id,name:employee.name,percentage:'',value:''}];
-    setParticipants(next);setEmployeeSearch('');
+    setParticipants(next);
     if(divisionMode==='percentage'){const share=(100/next.length).toFixed(2);setParticipants(next.map(item=>({...item,percentage:share})));}
     if(divisionMode==='value'&&total>0){const share=(total/next.length).toFixed(2);setParticipants(next.map(item=>({...item,value:share})));}
   }
   function removeParticipant(id:string){setParticipants(current=>current.filter(item=>item.id!==id));}
+  function toggleParticipant(id:string){if(participants.some(item=>item.id===id)){removeParticipant(id);return;}addParticipant(id);}
+  function distributeEqually(){if(!participants.length)return;if(divisionMode==='percentage'){const share=(100/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,percentage:share})));}if(divisionMode==='value'){const share=(total/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,value:share})));}}
   function updateParticipant(id:string,key:'percentage'|'value',value:string){setParticipants(current=>current.map(item=>item.id===id?{...item,[key]:value}:item));}
   function changeDivision(mode:DivisionMode){setDivisionMode(mode);if(mode==='percentage'&&participants.length){const share=(100/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,percentage:share})));}if(mode==='value'&&participants.length&&total>0){const share=(total/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,value:share})));}}
   function reset(){setPeriodId('');setStructureId('');setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');setError(null);}
@@ -100,8 +101,17 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
       <div className="engineering-production-entry-form__total"><span>Total da produção</span><strong>{currency.format(total)}</strong></div>
       <section className="engineering-production-entry-form__participants">
         <div className="engineering-production-entry-form__participant-head"><div><h3>Colaboradores</h3><p className="ui-muted">O mesmo serviço pode ser dividido entre várias pessoas.</p></div><Select label="Divisão" value={divisionMode} onChange={event=>changeDivision(event.target.value as DivisionMode)} options={[{value:'equal',label:'Igual'},{value:'percentage',label:'Percentual'},{value:'value',label:'Valor'}]}/></div>
-        <SearchableSelect label="Adicionar colaborador" options={availableEmployees} value={employeeSearch} onChange={addParticipant} placeholder="Digite o nome do colaborador" emptyMessage="Todos os colaboradores já foram selecionados."/>
-        {participants.length===0?<p className="ui-muted engineering-production-entry-form__empty">Nenhum colaborador selecionado.</p>:<div className="engineering-production-entry-form__participant-list">{participants.map(item=><div key={item.id} className="engineering-production-entry-form__participant"><strong>{item.name}</strong><span>{divisionMode==='equal'?`${(100/participants.length).toFixed(2)}% · ${currency.format(participants.length?total/participants.length:0)}`:''}</span>{divisionMode==='percentage'&&<Input label="Percentual (%)" type="number" value={item.percentage} onChange={event=>updateParticipant(item.id,'percentage',event.target.value)}/>} {divisionMode==='value'&&<Input label="Valor" type="number" value={item.value} onChange={event=>updateParticipant(item.id,'value',event.target.value)}/>}<Button size="sm" variant="tertiary" onClick={()=>removeParticipant(item.id)}>Remover</Button></div>)}</div>}
+        <div className="engineering-production-entry-form__participant-workspace">
+          <div className="engineering-production-entry-form__employee-picker">
+            <strong>Selecionar colaboradores</strong>
+            <Input label="Buscar colaborador" value={employeeSearch} onChange={event=>setEmployeeSearch(event.target.value)} placeholder="Buscar colaborador por nome..."/>
+            <div className="engineering-production-entry-form__employee-list">{filteredEmployees.map(employee=>{const checked=participants.some(item=>item.id===employee.id);return <label key={employee.id} className={checked?'is-selected':''}><input type="checkbox" checked={checked} onChange={()=>toggleParticipant(employee.id)}/><span className="engineering-production-entry-form__avatar">{employee.name.split(' ').slice(0,2).map(part=>part[0]).join('').toUpperCase()}</span><strong>{employee.name}</strong></label>;})}</div>
+          </div>
+          <div className="engineering-production-entry-form__selected">
+            <div className="engineering-production-entry-form__selected-head"><strong>Colaboradores selecionados ({participants.length})</strong>{participants.length>1&&<Button size="sm" variant="tertiary" onClick={distributeEqually}>Distribuir igualmente</Button>}</div>
+            {participants.length===0?<p className="ui-muted engineering-production-entry-form__empty">Nenhum colaborador selecionado.</p>:<div className="engineering-production-entry-form__participant-list">{participants.map(item=><div key={item.id} className="engineering-production-entry-form__participant"><div className="engineering-production-entry-form__participant-name"><span className="engineering-production-entry-form__avatar">{item.name.split(' ').slice(0,2).map(part=>part[0]).join('').toUpperCase()}</span><strong>{item.name}</strong></div>{divisionMode==='equal'?<><span>{(100/participants.length).toFixed(2)}%</span><span>{currency.format(participants.length?total/participants.length:0)}</span></>:divisionMode==='percentage'?<Input label="Percentual (%)" type="number" value={item.percentage} onChange={event=>updateParticipant(item.id,'percentage',event.target.value)}/>:<Input label="Valor (R$)" type="number" value={item.value} onChange={event=>updateParticipant(item.id,'value',event.target.value)}/>}<Button size="sm" variant="tertiary" onClick={()=>removeParticipant(item.id)}>Remover</Button></div>)}<div className="engineering-production-entry-form__participant-total"><strong>Total</strong><span>{divisionMode==='percentage'?participants.reduce((sum,item)=>sum+numberValue(item.percentage),0).toFixed(2)+'%':'100,00%'}</span><strong>{currency.format(total)}</strong></div></div>}
+          </div>
+        </div>
       </section>
       <Input label="Observações" value={notes} onChange={event=>setNotes(event.target.value)}/>
     </div>
