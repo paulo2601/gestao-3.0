@@ -66,6 +66,11 @@ export async function listAttendanceForDate(scopes: readonly { tenantId: string;
   }));
 }
 
+export async function listAttendanceForPeriod(scopes: readonly {tenantId:string;companyId:string}[], startDate:string, endDate:string):Promise<AttendanceRecord[]> {
+ if(!scopes.length)return[];const client=getSupabaseClient();const groups=await Promise.all(scopes.map(async scope=>{const result=await client.from('employee_attendance_daily').select('id,tenant_id,company_id,employment_contract_id,attendance_date,status,check_in,check_out,notes').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).gte('attendance_date',startDate).lte('attendance_date',endDate).order('attendance_date').returns<AttendanceDbRow[]>();if(result.error)throw result.error;return result.data??[];}));
+ return groups.flat().map(row=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,employmentContractId:row.employment_contract_id,attendanceDate:row.attendance_date,status:row.status as AttendanceStatus,checkIn:row.check_in,checkOut:row.check_out,notes:row.notes}));
+}
+
 export async function saveAttendance(input: {
   tenantId: string;
   companyId: string;
