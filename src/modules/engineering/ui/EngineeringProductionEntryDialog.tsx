@@ -6,7 +6,8 @@ import { Input } from '../../../shared/ui/Input';
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect';
 import { Select } from '../../../shared/ui/Select';
 import type { EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
-import { createSharedProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';\nimport { resolveEngineeringProductionPrice } from '../infrastructure/EngineeringProductionPriceRepository';
+import { createSharedProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
+import { resolveEngineeringProductionPrice } from '../infrastructure/EngineeringProductionPriceRepository';
 import './engineering-production-entry-dialog.css';
 
 type DivisionMode='equal'|'percentage'|'value';
