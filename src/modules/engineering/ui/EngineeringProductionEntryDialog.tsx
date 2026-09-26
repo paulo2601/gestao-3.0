@@ -40,14 +40,14 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const openPeriods=snapshot.periods.filter(item=>item.status==='open');
   const availableEmployees=useMemo(()=>snapshot.employees.filter(item=>!participants.some(p=>p.id===item.id)).map(item=>({value:item.id,label:item.name})),[snapshot.employees,participants]);
   const periodOptions=[{value:'',label:'Selecione…'},...openPeriods.map(item=>({value:item.id,label:item.competence.slice(0,7).split('-').reverse().join('/')}))];
-  const structureOptions=[{value:'',label:'Selecione…'},...snapshot.structures.map(item=>({value:item.id,label:item.name}))];
+  const generalServices=snapshot.productionPrices.filter(item=>item.structureId===null&&item.productionServiceId&&item.productionServiceKind!=='linked');\n  const structureOptions=[{value:'',label:'Selecione…'},...(generalServices.length?[{value:'__GENERAL__',label:'SEM ESTRUTURA / SERVIÇOS GERAIS'}]:[]),...snapshot.structures.map(item=>({value:item.id,label:item.name}))];
   const allowedServiceIds=new Set(snapshot.serviceIdsByStructure[structureId]??[]);
   const pricedContractServiceIds=new Set(snapshot.productionPrices.filter(item=>item.structureId===structureId).map(item=>item.contractServiceId));
-  const allowedServices=snapshot.services.filter(item=>allowedServiceIds.has(item.id)&&pricedContractServiceIds.has(item.contractServiceId));
+  const allowedServices=snapshot.services.filter(item=>allowedServiceIds.has(item.id)&&pricedContractServiceIds.has(item.contractServiceId));\n  const isGeneral=structureId==='__GENERAL__';
   const selectedService=allowedServices.find(item=>item.id===serviceId);
-  const serviceOptions=[{value:'',label:structureId?(allowedServices.length?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`}))];
+  const serviceOptions=[{value:'',label:structureId?((isGeneral?generalServices.length:allowedServices.length)?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...(isGeneral?generalServices.map(item=>({value:`general:${item.productionServiceId}`,label:`${item.productionServiceKind==='discount'?'Desconto · ':''}${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})):allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`})))];
   function changeStructure(id:string){setStructureId(id);setServiceId('');setUnitValue('');}
-  async function changeService(id:string){setServiceId(id);setUnitValue('');if(!id||!structureId)return;const service=snapshot.services.find(item=>item.id===id);if(!service)return;try{const price=await resolveEngineeringProductionPrice({...scope,workId:snapshot.workId,contractServiceId:service.contractServiceId,structureId});setUnitValue(price===null?'':String(price));if(price===null)setError('Este serviço ainda não possui valor de produção cadastrado para a estrutura selecionada.');else setError(null);}catch(c){setError(c instanceof Error?c.message:'Não foi possível carregar o valor de produção.');}}
+  async function changeService(id:string){setServiceId(id);setUnitValue('');if(!id||!structureId)return;if(structureId==='__GENERAL__'){const price=generalServices.find(item=>`general:${item.productionServiceId}`===id);setUnitValue(price?String(price.unitValue):'');setError(price?null:'Serviço geral sem valor cadastrado.');return;}const service=snapshot.services.find(item=>item.id===id);if(!service)return;try{const price=await resolveEngineeringProductionPrice({...scope,workId:snapshot.workId,contractServiceId:service.contractServiceId,structureId});setUnitValue(price===null?'':String(price));if(price===null)setError('Este serviço ainda não possui valor de produção cadastrado para a estrutura selecionada.');else setError(null);}catch(c){setError(c instanceof Error?c.message:'Não foi possível carregar o valor de produção.');}}
 
   function addParticipant(id:string){
     const employee=snapshot.employees.find(item=>item.id===id);if(!employee)return;
@@ -83,7 +83,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
       <div className="engineering-production-entry-form__grid">
         <Select label="Competência" value={periodId} onChange={event=>setPeriodId(event.target.value)} options={periodOptions} required/>
         <Select label="Estrutura" value={structureId} onChange={event=>changeStructure(event.target.value)} options={structureOptions} required/>
-        <Select label="Serviço" value={serviceId} onChange={event=>void changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||allowedServices.length===0}/>
+        <Select label="Serviço" value={serviceId} onChange={event=>void changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||(isGeneral?generalServices.length===0:allowedServices.length===0)}/>
         <Input label="Data" type="date" value={productionDate} onChange={event=>setProductionDate(event.target.value)} required/>
         <Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>
         <Input label={`Valor unitário${selectedService?.unit?` (${selectedService.unit})`:''}`} type="number" value={unitValue} readOnly required/>
