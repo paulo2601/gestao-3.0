@@ -17,6 +17,7 @@ import { HrAttendanceSection } from './HrAttendanceSection';
 import { HrBankHoursSection, type BankDraft } from './HrBankHoursSection';
 import { HrReceiptsSection, HrReportsSection } from './HrReportsSection';
 import { HrDocumentsSection, HrImportsSection } from './HrImportsSection';
+import { HrEmployeeForm, type HrEmployeeDraft } from './HrEmployeeForm';
 import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
 import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartMatches } from './hrWorkspaceHelpers';
 import './hr-workspace.css';
@@ -24,24 +25,7 @@ import './hr-workspace.css';
 type HrWorkspaceTab = 'dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
 type CompanyData = { company: CompanySummary; operations: HrOperationalSnapshot; overview: Awaited<ReturnType<ReturnType<typeof getHrBudgetRepository>['getOverview']>>; };
 type WorkspaceEmployee = HrEmployeeRow & { companyId: string; companyName: string; tenantId: string };
-type EmployeeDraft = {
-  fullName: string;
-  companyId: string;
-  jobTitle: string;
-  cpf: string;
-  pix: string;
-  phone: string;
-  email: string;
-  notes: string;
-  employmentType: EmploymentType;
-  sector: string;
-  supervisor: string;
-  weeklyHours: string;
-  bankHoursEnabled: string;
-  baseSalary: string;
-  costCenterId: string;
-  effectiveOn: string;
-};
+type EmployeeDraft = HrEmployeeDraft;
 type EpiDraft = { employmentContractId:string; epiName:string; quantity:string; deliveredOn:string; caNumber:string; notes:string; };
 type ComplianceDraft = { kind:'aso'|'nr'|'vacation'; employmentContractId:string; title:string; startsOn:string; endsOn:string; expiresOn:string; notes:string; };
 type AttendancePeriodDraft = {
@@ -135,35 +119,7 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
   {!loading&&!errorMessage&&tab==='documentos'&&<HrDocumentsSection employees={activeEmployees} documents={documents} saving={documentSaving} feedback={documentFeedback} onUpload={(employee,type,file,notes)=>void uploadDocument(employee,type,file,notes)} onOpen={doc=>void openDocument(doc)}/>}
 
   <Dialog open={Boolean(creatingEmployee&&newEmployeeDraft)} title="Novo colaborador" description="Cadastro completo do colaborador." loading={savingEmployee} onClose={()=>{if(!savingEmployee){setCreatingEmployee(false);setNewEmployeeDraft(null);setNewEmployeeStep(1);setEmployeeFeedback(null);}}} onConfirm={newEmployeeStep===1?()=>setNewEmployeeStep(2):()=>void saveNewEmployee()} confirmLabel={newEmployeeStep===1?'Continuar':'Cadastrar colaborador'}>
-   {newEmployeeDraft&&<div className="hr-employee-form">
-    <div className="hr-employee-form__tabs" role="tablist" aria-label="Etapas do cadastro do colaborador">
-     <button type="button" role="tab" aria-selected={newEmployeeStep===1} className={newEmployeeStep===1?'is-active':''} onClick={()=>setNewEmployeeStep(1)}><span>1</span>Dados e salário</button>
-     <button type="button" role="tab" aria-selected={newEmployeeStep===2} className={newEmployeeStep===2?'is-active':''} onClick={()=>setNewEmployeeStep(2)}><span>2</span>Valores e resumo</button>
-    </div>
-    {employeeFeedback&&<Feedback tone="danger" title="Não foi possível cadastrar" message={employeeFeedback}/>}
-    {newEmployeeStep===1&&<div className="hr-workspace__edit-grid">
-     <Input label="Nome" value={newEmployeeDraft.fullName} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,fullName:e.target.value})}/>
-     <Input label="CPF" value={newEmployeeDraft.cpf} placeholder="000.000.000-00" onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,cpf:e.target.value})}/>
-     <Input label="Telefone" value={newEmployeeDraft.phone} placeholder="(00) 00000-0000" onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,phone:e.target.value})}/>
-     <Input label="PIX" value={newEmployeeDraft.pix} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,pix:e.target.value})}/>
-     <Select label="Empresa" value={newEmployeeDraft.companyId} options={editCompanyOptions} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,companyId:e.target.value,costCenterId:''})}/>
-     <Select label="Obra / centro de custo" value={newEmployeeDraft.costCenterId} options={[{value:'',label:'Selecione'},...(companyData.find(item=>item.company.id===newEmployeeDraft.companyId)?.operations.costCenters.filter(item=>item.status==='active').map(item=>({value:item.id,label:item.name}))??[])]} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,costCenterId:e.target.value})}/>
-     <Input label="Setor" value={newEmployeeDraft.sector} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,sector:e.target.value})}/>
-     <Input label="Encarregado" value={newEmployeeDraft.supervisor} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,supervisor:e.target.value})}/>
-     <Input label="Função" value={newEmployeeDraft.jobTitle} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,jobTitle:e.target.value})}/>
-     <Select label="Tipo de vínculo" value={newEmployeeDraft.employmentType} options={employmentTypeOptions} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,employmentType:e.target.value as EmploymentType})}/>
-     <Input label="Data de admissão" type="date" value={newEmployeeDraft.effectiveOn} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,effectiveOn:e.target.value})}/>
-     <Input label="E-mail" value={newEmployeeDraft.email} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,email:e.target.value})}/>
-    </div>}
-    {newEmployeeStep===2&&<div className="hr-workspace__edit-grid">
-     <Input label="Salário de carteira" type="number" min="0" step="0.01" value={newEmployeeDraft.baseSalary} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,baseSalary:e.target.value})}/>
-     <Input label="Jornada semanal (h)" type="number" min="1" value={newEmployeeDraft.weeklyHours} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,weeklyHours:e.target.value})}/>
-     <Select label="Banco de horas" value={newEmployeeDraft.bankHoursEnabled} options={[{value:'yes',label:'Controlar banco de horas'},{value:'no',label:'Não controlar'}]} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,bankHoursEnabled:e.target.value})}/>
-     <Input label="Observações" value={newEmployeeDraft.notes} onChange={e=>setNewEmployeeDraft({...newEmployeeDraft,notes:e.target.value})}/>
-     <div className="hr-employee-form__summary hr-workspace__edit-wide"><strong>Resumo do colaborador</strong><span>{newEmployeeDraft.fullName||'Nome não informado'} · {editCompanyOptions.find(item=>item.value===newEmployeeDraft.companyId)?.label||'Empresa não informada'} · {newEmployeeDraft.jobTitle||'Função não informada'}</span></div>
-     <Button variant="secondary" onClick={()=>setNewEmployeeStep(1)}>Voltar</Button>
-    </div>}
-   </div>}
+   {newEmployeeDraft&&<HrEmployeeForm draft={newEmployeeDraft} setDraft={setNewEmployeeDraft} step={newEmployeeStep} setStep={setNewEmployeeStep} feedback={employeeFeedback} companyOptions={editCompanyOptions} costCenterOptions={[{value:'',label:'Selecione'},...(companyData.find(item=>item.company.id===newEmployeeDraft.companyId)?.operations.costCenters.filter(item=>item.status==='active').map(item=>({value:item.id,label:item.name}))??[])]} employmentTypeOptions={employmentTypeOptions}/>} 
   </Dialog>
 
   <Dialog open={Boolean(complianceDraft)} title={complianceDraft?.kind==='aso'?'Novo ASO':complianceDraft?.kind==='nr'?'Novo NR / treinamento':'Registrar férias'} loading={complianceSaving} onClose={()=>{if(!complianceSaving)setComplianceDraft(null);}} onConfirm={()=>void saveCompliance()} confirmLabel="Salvar registro">
