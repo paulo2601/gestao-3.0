@@ -11,6 +11,7 @@ import { EngineeringAddendumSheetDialog } from './EngineeringAddendumSheetDialog
 import { EditEngineeringStructureDialog } from './EditEngineeringStructureDialog';
 import { useEngineeringOperations } from './useEngineeringOperations';
 import { loadContractRetentions } from '../infrastructure/EngineeringContractModalRepository';
+import { loadMeasurementParity } from '../infrastructure/LegacyMeasurementParityRepository';
 
 export type EngineeringContractSection='resumo'|'contrato'|'planilhas'|'provisorios'|'medicao'|'fechamentos'|'impostos'|'saldos';
 type FormKind='contractStatus'|'structure'|'contractService'|'allocation'|'provisional'|'provisionalLine'|'convert'|'addendum'|'addendumLine'|'measurement'|'measurementLine'|'retention'|'measurementStatus'|'receivable'|'receive';
@@ -65,6 +66,7 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged,o
   const [measurementReopenId,setMeasurementReopenId]=useState<string|null>(null);
   const [measurementReopening,setMeasurementReopening]=useState(false);
   const [retentionRates,setRetentionRates]=useState({inss:0,iss:0,rt:0});
+  const [parityMeasurementValues,setParityMeasurementValues]=useState<Record<string,number>>({});
   const data=operations.state.data;
   const normalized=search.trim().toLocaleLowerCase('pt-BR');
   const normalizedServiceSearch=serviceSearch.trim().toLocaleLowerCase('pt-BR');
@@ -84,11 +86,12 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged,o
     return {...item,itemCount:lines.length,total:lines.reduce((sum,line)=>sum+(line.quantity*line.unitPrice),0)};
   }),[provisionals,data?.provisionalLines]);
   const progress=Math.max(0,Math.min(100,contract.measuredPercent));
-  const measurementValue=(measurementId:string)=>(data?.measurementLines??[]).filter(line=>line.measurementId===measurementId).reduce((sum,line)=>sum+line.grossValue,0);
+  const measurementValue=(measurementId:string)=>parityMeasurementValues[measurementId]??(data?.measurementLines??[]).filter(line=>line.measurementId===measurementId).reduce((sum,line)=>sum+line.grossValue,0);
   const measuredGrossIncludingDrafts=measurements.reduce((sum,item)=>sum+measurementValue(item.id),0);
   const measurementProgress=contract.updatedContractValue>0?Math.max(0,Math.min(100,(measuredGrossIncludingDrafts/contract.updatedContractValue)*100)):0;
   const measurementFinancial=(measurementId:string)=>{const gross=measurementValue(measurementId);const inss=gross*retentionRates.inss/100;const iss=gross*retentionRates.iss/100;const rt=gross*retentionRates.rt/100;return {gross,inss,iss,rt,net:Math.max(0,gross-inss-iss-rt)};};
   useEffect(()=>{void loadContractRetentions(scope,contract.contractId).then(setRetentionRates).catch(()=>setRetentionRates({inss:0,iss:0,rt:0}));},[scope,contract.contractId]);
+  useEffect(()=>{void loadMeasurementParity(scope,contract.contractId).then(model=>{const prices=new Map<string,number>();for(const origin of model.origins)for(const service of origin.services)prices.set(`${service.targetKind}:${service.targetId}`,service.unitPrice);const values:Record<string,number>={};for(const line of model.lines){const key=`${line.targetKind}:${line.targetId}`;values[line.measurementId]=(values[line.measurementId]??0)+(line.exactGrossValue??line.measuredQuantity*(prices.get(key)??line.unitPriceSnapshot??0));}setParityMeasurementValues(values);}).catch(()=>setParityMeasurementValues({}));},[scope,contract.contractId,data?.measurementLines]);
 
   function open(kind:FormKind){if(kind==='measurementLine'){setGuidedMeasurementId('');setGuidedMeasurementOriginId('');setGuidedMeasurementOriginName('');setGuidedMeasurementDraft(null);setGuidedMeasurementOpen(true);return;}setFormKind(kind);}
   function openExistingMeasurement(measurementId:string){setGuidedMeasurementId(measurementId);setGuidedMeasurementOriginName('');setGuidedMeasurementOriginId('');setGuidedMeasurementDraft(null);setGuidedMeasurementOpen(true);}
