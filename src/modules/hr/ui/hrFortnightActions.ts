@@ -1,9 +1,9 @@
-import type { PayrollEventRow, RecordPayrollEventInput } from '../application/HrOperationsRepository';
+import type { RecordPayrollEventInput } from '../application/HrOperationsRepository';
 import { getHrOperationsRepository } from '../infrastructure/HrOperationsFactory';
 
 type FortnightAdjustmentInput={
  tenantId:string; companyId:string; employmentContractId:string; costCenterId?:string|null;
- competenceMonth:string; eventKind:PayrollEventRow['eventKind']; amount:number; description?:string|null; payrollHalf:1|2;
+ competenceMonth:string; eventKind:'adjustment_earning'|'adjustment_deduction'; amount:number; description?:string|null; payrollHalf:1|2;
 };
 
 export async function saveFortnightAdjustment(input:FortnightAdjustmentInput){
