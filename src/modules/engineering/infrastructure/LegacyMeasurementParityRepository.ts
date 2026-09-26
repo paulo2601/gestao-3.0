@@ -37,6 +37,7 @@ export interface MeasurementParityLine {
   targetKind:MeasurementTargetKind;
   targetId:string;
   measuredQuantity:number;
+  exactGrossValue:number|null;
   reference:string|null;
   notes:string|null;
 }
@@ -55,7 +56,7 @@ type ContractServiceRow={id:string;description:string;unit:string;contracted_qua
 type AddendumRow={id:string;addendum_number:string;status:string};
 type AddendumLineRow={id:string;addendum_id:string;description:string;unit:string;quantity_delta:number|string;unit_price:number|string;notes:string|null};
 type MeasurementRow={id:string;competence:string;status:string;measurement_number:string|null};
-type MeasurementLineRow={id:string;measurement_id:string;contract_service_id:string|null;contract_addendum_line_id:string|null;measured_quantity:number|string;notes:string|null};
+type MeasurementLineRow={id:string;measurement_id:string;contract_service_id:string|null;contract_addendum_line_id:string|null;measured_quantity:number|string;exact_gross_value:number|string|null;notes:string|null};
 type OriginProfileRow={id:string;origin_key:string;origin_name:string;origin_type:MeasurementOriginType;floor_count:number|string;has_ground:boolean;units_per_floor:number|string;modes:string[]|null;enterprise_type:string;houses:string[]|null;legacy_origin_id:string|null};
 type ScopeRow={origin_key:string;service_code:string;scope_active:boolean;start_floor:number|string|null;scope_floors:string[]|null;scope_units:string[]|null};
 
@@ -156,7 +157,7 @@ async function loadAllMeasurementLines(scope:MeasurementParityScope,measurementI
   for(let from=0;;from+=pageSize){
     const response=await client
       .from('measurement_lines')
-      .select('id,measurement_id,contract_service_id,contract_addendum_line_id,measured_quantity,notes')
+      .select('id,measurement_id,contract_service_id,contract_addendum_line_id,measured_quantity,exact_gross_value,notes')
       .eq('tenant_id',scope.tenantId)
       .eq('company_id',scope.companyId)
       .in('measurement_id',measurementIds)
@@ -252,6 +253,7 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
       targetKind,
       targetId,
       measuredQuantity:number(row.measured_quantity),
+      exactGrossValue:row.exact_gross_value==null?null:number(row.exact_gross_value),
       reference:referenceFromNotes(row.notes),
       notes:row.notes,
     }];
@@ -277,6 +279,7 @@ export async function replaceMeasurementParityStage(scope:MeasurementParityScope
   references:string[];
   originName:string;
   legacyServiceId:string;
+  exactValue?:number|null;
 }){
   const client=getSupabaseClient();
 
@@ -307,6 +310,7 @@ export async function replaceMeasurementParityStage(scope:MeasurementParityScope
     p_quantity:normalizedReferences.length?null:input.quantity,
     p_references:normalizedReferences.length?normalizedReferences:null,
     p_notes:`origin=${input.originName} | legacy_service=${input.legacyServiceId}`,
+    p_exact_value:input.exactValue??null,
   });
   if(response.error)throw response.error;
 }
