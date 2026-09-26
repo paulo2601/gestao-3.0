@@ -6,7 +6,7 @@ import { Input } from '../../../shared/ui/Input';
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect';
 import { Select } from '../../../shared/ui/Select';
 import type { EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
-import { createSharedProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
+import { createSharedProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';\nimport { resolveEngineeringProductionPrice } from '../infrastructure/EngineeringProductionPriceRepository';
 import './engineering-production-entry-dialog.css';
 
 type DivisionMode='equal'|'percentage'|'value';
@@ -45,7 +45,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const selectedService=allowedServices.find(item=>item.id===serviceId);
   const serviceOptions=[{value:'',label:structureId?(allowedServiceIds.size?'Selecione…':'Nenhum serviço distribuído nesta estrutura'):'Selecione a estrutura primeiro'},...allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`}))];
   function changeStructure(id:string){setStructureId(id);setServiceId('');setUnitValue('');}
-  function changeService(id:string){setServiceId(id);const service=snapshot.services.find(item=>item.id===id);setUnitValue(service?String(service.unitPrice):'');}
+  async function changeService(id:string){setServiceId(id);setUnitValue('');if(!id||!structureId)return;const service=snapshot.services.find(item=>item.id===id);if(!service)return;try{const price=await resolveEngineeringProductionPrice({...scope,workId:snapshot.workId,contractServiceId:service.contractServiceId,structureId});setUnitValue(price===null?'':String(price));if(price===null)setError('Este serviço ainda não possui valor de produção cadastrado para a estrutura selecionada.');else setError(null);}catch(c){setError(c instanceof Error?c.message:'Não foi possível carregar o valor de produção.');}}
 
   function addParticipant(id:string){
     const employee=snapshot.employees.find(item=>item.id===id);if(!employee)return;
@@ -64,7 +64,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     setError(null);
     if(!periodId||!structureId||!serviceId){setError('Selecione competência, estrutura e serviço.');return;}
     if(numberValue(executedQuantity)<=0){setError('Informe uma quantidade maior que zero.');return;}
-    if(numberValue(unitValue)<0||unitValue.trim()===''){setError('Informe o valor unitário.');return;}
+    if(numberValue(unitValue)<0||unitValue.trim()===''){setError('Cadastre o valor de produção deste serviço antes de lançar.');return;}
     if(participants.length===0){setError('Selecione ao menos um colaborador.');return;}
     const payload:SharedProductionParticipantInput[]=participants.map(item=>({employmentContractId:item.id,...(divisionMode==='percentage'?{percentage:numberValue(item.percentage)}:{}),...(divisionMode==='value'?{value:numberValue(item.value)}:{})}));
     if(divisionMode==='percentage'&&Math.abs(payload.reduce((sum,item)=>sum+(item.percentage??0),0)-100)>0.01){setError('A soma dos percentuais deve ser 100%.');return;}
@@ -81,7 +81,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
       <div className="engineering-production-entry-form__grid">
         <Select label="Competência" value={periodId} onChange={event=>setPeriodId(event.target.value)} options={periodOptions} required/>
         <Select label="Estrutura" value={structureId} onChange={event=>changeStructure(event.target.value)} options={structureOptions} required/>
-        <Select label="Serviço" value={serviceId} onChange={event=>changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||allowedServiceIds.size===0}/>
+        <Select label="Serviço" value={serviceId} onChange={event=>void changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||allowedServiceIds.size===0}/>
         <Input label="Data" type="date" value={productionDate} onChange={event=>setProductionDate(event.target.value)} required/>
         <Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>
         <Input label={`Valor unitário${selectedService?.unit?` (${selectedService.unit})`:''}`} type="number" value={unitValue} readOnly required/>
