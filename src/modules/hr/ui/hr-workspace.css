@@ -33,3 +33,9 @@
 .hr-workspace__employee-row span{font-size:.76rem}
 .hr-workspace__employee-actions .ui-button{min-height:32px;padding:0 10px;font-size:.74rem}
 }
+
+.hr-workspace__dashboard-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.hr-workspace__dashboard-summary>div{display:grid;gap:4px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-subtle)}
+.hr-workspace__dashboard-summary span{font-size:.76rem;color:var(--muted)}
+.hr-workspace__dashboard-summary strong{font-size:1.05rem}
+@media(max-width:620px){.hr-workspace__dashboard-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
