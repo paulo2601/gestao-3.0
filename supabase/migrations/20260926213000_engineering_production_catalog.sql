@@ -14,7 +14,7 @@ create table public.engineering_production_services (
  foreign key(tenant_id,company_id,work_id) references public.works(tenant_id,company_id,id) on delete restrict,
  foreign key(tenant_id,company_id,contract_service_id) references public.contract_services(tenant_id,company_id,id) on delete restrict
 );
-create unique index engineering_production_services_linked_uq on public.engineering_production_services(tenant_id,company_id,work_id,contract_service_id) where contract_service_id is not null and status='active';
+alter table public.engineering_production_services add constraint engineering_production_services_tenant_company_id_uq unique(tenant_id,company_id,id);\ncreate unique index engineering_production_services_linked_uq on public.engineering_production_services(tenant_id,company_id,work_id,contract_service_id) where contract_service_id is not null and status='active';
 create index engineering_production_services_work_idx on public.engineering_production_services(tenant_id,company_id,work_id,status);
 alter table public.engineering_production_services enable row level security;
 create policy engineering_production_services_select on public.engineering_production_services for select to authenticated using(app_private.can_access_company(tenant_id,company_id));
