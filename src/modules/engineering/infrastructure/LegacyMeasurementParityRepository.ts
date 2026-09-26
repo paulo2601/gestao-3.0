@@ -2,7 +2,7 @@ import { getSupabaseClient } from '../../../shared/infrastructure/supabase/clien
 
 export interface MeasurementParityScope { tenantId:string; companyId:string }
 export type MeasurementOriginType='tower'|'addendum'|'provisional'|'other';
-export type MeasurementTargetKind='contract'|'addendum';
+export type MeasurementTargetKind='contract'|'addendum'|'manual';
 
 export interface MeasurementParityMeasurement { id:string; competence:string; status:string; measurementNumber:string }
 export interface MeasurementParityStage {
@@ -17,7 +17,7 @@ export interface MeasurementParityStage {
   startFloor:number|null;
   scopeFloors:string[];
   scopeUnits:string[];
-  targetKind:MeasurementTargetKind|'manual';
+  targetKind:MeasurementTargetKind;
   targetId:string;
 }
 export interface MeasurementParityOrigin {
@@ -246,7 +246,7 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
   }
 
   const lines:MeasurementParityLine[]=measurementRows.flatMap(row=>{
-    const targetKind:MeasurementTargetKind|'manual'|null=row.contract_service_id?'contract':row.contract_addendum_line_id?'addendum':row.manual_description?'manual':null;
+    const targetKind:MeasurementTargetKind|null=row.contract_service_id?'contract':row.contract_addendum_line_id?'addendum':row.manual_description?'manual':null;
     const targetId=row.contract_service_id??row.contract_addendum_line_id??(row.manual_description?`manual:${row.id}`:null);
     if(!targetKind||!targetId)return [];
     return [{
