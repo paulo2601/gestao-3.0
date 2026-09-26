@@ -50,7 +50,7 @@ const employmentTypeOptions = [
 export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly CompanySummary[];initialCompanyId?:string}){
  const requestedTab=new URLSearchParams(window.location.search).get('tab');
  const [tab,setTab]=useState<HrWorkspaceTab>(()=>tabs.some(item=>item.id===requestedTab)?requestedTab as HrWorkspaceTab:'dashboard');
- const [competence,setCompetence]=useState(()=>currentHrCompetence().month.slice(0,7));
+ const [competence]=useState(()=>currentHrCompetence().month.slice(0,7));
  const [companyFilter,setCompanyFilter]=useState(()=>initialCompanyId&&companies.some(i=>i.id===initialCompanyId)?initialCompanyId:ALL_HR_COMPANIES);
  const [employeeSearch,setEmployeeSearch]=useState(''); const [employeeStatus,setEmployeeStatus]=useState('active');
  const [companyData,setCompanyData]=useState<CompanyData[]>([]); const [loading,setLoading]=useState(false); const [errorMessage,setErrorMessage]=useState<string|null>(null); const [refreshToken,setRefreshToken]=useState(0);
