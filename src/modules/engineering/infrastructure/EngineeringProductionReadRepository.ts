@@ -14,15 +14,16 @@ export async function loadEngineeringProduction(scope:EngineeringProductionScope
   const client=getSupabaseClient();
   const works=await client.from('works').select('id,name').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('name',workName).limit(1).returns<WorkRow[]>();if(works.error)throw works.error;
   const workId=works.data?.[0]?.id;if(!workId)return emptySnapshot();
-  const [periods,structures,services,employees,allocations,measurementLines]=await Promise.all([
+  const [periods,structures,services,employees,allocations,measurementLines,productionPrices]=await Promise.all([
     client.from('engineering_production_periods').select('id,work_id,competence,status').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',workId).order('competence',{ascending:false}).returns<PeriodRow[]>(),
     client.from('work_structures').select('id,name').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',workId).eq('status','active').order('sort_order').returns<StructureRow[]>(),
     client.from('engineering_services').select('id,name').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('status','active').order('name').returns<ServiceRow[]>(),
     client.from('employment_contracts').select('id,employees!inner(full_name)').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('status','active').order('hired_on').returns<EmployeeRow[]>(),
     client.from('contract_service_allocations').select('structure_id,contract_service_id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',workId).eq('status','active').returns<{structure_id:string;contract_service_id:string}[]>(),
     client.from('measurement_lines').select('structure_id,contract_service_id,measurements!inner(engineering_contracts!inner(work_id))').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('measurements.engineering_contracts.work_id',workId).not('structure_id','is',null).returns<{structure_id:string|null;contract_service_id:string}[]>(),
+    client.from('engineering_production_prices').select('structure_id,contract_service_id,unit_value').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',workId).eq('status','active').returns<{structure_id:string;contract_service_id:string;unit_value:number|string}[]>(),
   ]);
-  const baseError=[periods.error,structures.error,services.error,employees.error,allocations.error,measurementLines.error].find(Boolean);if(baseError)throw baseError;
+  const baseError=[periods.error,structures.error,services.error,employees.error,allocations.error,measurementLines.error,productionPrices.error].find(Boolean);if(baseError)throw baseError;
   const periodRows=periods.data??[];
   const employeeRefs=(employees.data??[]).map(item=>({id:item.id,name:item.employees[0]?.full_name??'Colaborador'}));
   const structureRefs=(structures.data??[]).map(item=>({id:item.id,name:item.name}));
@@ -34,7 +35,8 @@ export async function loadEngineeringProduction(scope:EngineeringProductionScope
   const contractServices=contractServiceIds.length?await client.from('contract_services').select('id,service_id,description,unit,unit_price').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).in('id',contractServiceIds).returns<ContractServiceRow[]>():{data:[] as ContractServiceRow[],error:null};
   if(contractServices.error)throw contractServices.error;
   const contractServiceById=new Map((contractServices.data??[]).map(item=>[item.id,item]));
-  const serviceRefs:EngineeringProductionServiceView[]=(contractServices.data??[]).map(item=>({id:item.id,serviceId:item.service_id&&serviceIds.has(item.service_id)?item.service_id:null,name:item.description||(item.service_id?serviceNameById.get(item.service_id):null)||'Serviço',unit:item.unit,unitPrice:Number(item.unit_price),contractServiceId:item.id})).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+  const productionPriceByContractService=new Map<string,number>();for(const price of productionPrices.data??[]){if(!productionPriceByContractService.has(price.contract_service_id))productionPriceByContractService.set(price.contract_service_id,Number(price.unit_value));}
+  const serviceRefs:EngineeringProductionServiceView[]=(contractServices.data??[]).map(item=>({id:item.id,serviceId:item.service_id&&serviceIds.has(item.service_id)?item.service_id:null,name:item.description||(item.service_id?serviceNameById.get(item.service_id):null)||'Serviço',unit:item.unit,unitPrice:productionPriceByContractService.get(item.id)??0,contractServiceId:item.id})).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
   const serviceIdsByStructure:Record<string,string[]>={};
   for(const allocation of [...allocationMappings,...historicalMappings]){if(!contractServiceById.has(allocation.contract_service_id))continue;const list=serviceIdsByStructure[allocation.structure_id]??[];if(!list.includes(allocation.contract_service_id))list.push(allocation.contract_service_id);serviceIdsByStructure[allocation.structure_id]=list;}
   if(periodRows.length===0)return {periods:[],entries:[],employees:employeeRefs,structures:structureRefs,services:serviceRefs,serviceIdsByStructure};
