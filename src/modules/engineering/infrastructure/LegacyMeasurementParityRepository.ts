@@ -279,6 +279,25 @@ export async function replaceMeasurementParityStage(scope:MeasurementParityScope
   legacyServiceId:string;
 }){
   const client=getSupabaseClient();
+
+  // Contract services can share the same visible code across towers (for example
+  // 25.3 in TORRE 4 and TORRE 6). Never allow a stage opened from one origin to
+  // persist a service that belongs to another origin.
+  if(input.targetKind==='contract'){
+    const sourceResponse=await client
+      .from('contract_services')
+      .select('id,notes')
+      .eq('tenant_id',scope.tenantId)
+      .eq('company_id',scope.companyId)
+      .eq('id',input.targetId)
+      .single();
+    if(sourceResponse.error)throw sourceResponse.error;
+    const sourceOrigin=originFromNotes((sourceResponse.data as {notes:string|null}).notes);
+    if(sourceOrigin&&normalize(sourceOrigin)!==normalize(input.originName)){
+      throw new Error(`Este serviço pertence a ${sourceOrigin} e não pode ser lançado em ${input.originName}.`);
+    }
+  }
+
   const normalizedReferences=Array.from(new Set(input.references.map(value=>value.trim()).filter(Boolean)));
   if(normalizedReferences.length!==input.references.filter(value=>value.trim()).length)throw new Error('Há unidades duplicadas na seleção. Revise antes de confirmar.');
   const response=await client.rpc('replace_measurement_stage',{
