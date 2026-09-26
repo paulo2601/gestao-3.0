@@ -13,8 +13,7 @@ const numberValue=(v:string)=>{const n=Number(v.replace(',','.'));return Number.
 export function EngineeringProductionPriceDialog({open,scope,snapshot,onClose,onSaved}:Props){
  const [structureId,setStructureId]=useState('');const[serviceId,setServiceId]=useState('');const[value,setValue]=useState('');const[busy,setBusy]=useState(false);const[error,setError]=useState<string|null>(null);
  const structureOptions=[{value:'',label:'Selecione…'},...snapshot.structures.map(s=>({value:s.id,label:s.name}))];
- const allowed=new Set(snapshot.serviceIdsByStructure[structureId]??[]);
- const services=useMemo(()=>snapshot.services.filter(s=>allowed.has(s.id)),[snapshot.services,structureId]);
+ const services=useMemo(()=>{const allowed=new Set(snapshot.serviceIdsByStructure[structureId]??[]);return snapshot.services.filter(s=>allowed.has(s.id));},[snapshot.services,snapshot.serviceIdsByStructure,structureId]);
  const serviceOptions=[{value:'',label:structureId?(services.length?'Selecione…':'Nenhum serviço nesta estrutura'):'Selecione a estrutura primeiro'},...services.map(s=>({value:s.id,label:`${s.name}${s.unit?` · ${s.unit}`:''}`}))];
  const existing=serviceId?snapshot.productionPrices.find(p=>p.structureId===structureId&&p.contractServiceId===serviceId):undefined;
  function changeStructure(id:string){setStructureId(id);setServiceId('');setValue('');setError(null);}
