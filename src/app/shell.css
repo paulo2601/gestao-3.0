@@ -9,3 +9,13 @@
 @media(min-width:1600px){
 .app-header__top,.app-nav,.app-page{width:calc(100% - 64px);max-width:1760px}
 }
+
+/* Compact desktop company switcher */
+@media(min-width:761px){
+.app-header__actions{align-items:center}
+.app-header__actions .ui-field{min-width:190px;width:210px;gap:0}
+.app-header__actions .ui-field__label-row{display:none}
+.app-header__actions .ui-field__control,.app-header__actions .ui-input{min-height:40px;height:40px}
+.app-header__actions .ui-field__control-icon{width:38px}
+.app-header__actions .ui-field--adorned .ui-input{padding-left:42px;font-size:.84rem;font-weight:750}
+}
