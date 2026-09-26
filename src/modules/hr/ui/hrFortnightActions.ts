@@ -1,5 +1,5 @@
 import type { RecordPayrollEventInput } from '../application/HrOperationsRepository';
-import { getHrOperationsRepository } from '../infrastructure/HrOperationsFactory';
+import { getHrOperationsRepository } from '../infrastructure/createHrRepositories';
 
 type FortnightAdjustmentInput={
  tenantId:string; companyId:string; employmentContractId:string; costCenterId?:string|null;
@@ -8,6 +8,6 @@ type FortnightAdjustmentInput={
 
 export async function saveFortnightAdjustment(input:FortnightAdjustmentInput){
  const idempotencyKey=['fortnight',input.competenceMonth,input.payrollHalf,input.employmentContractId,input.eventKind,input.description??'',input.amount,Date.now()].join(':');
- const event:RecordPayrollEventInput={tenantId:input.tenantId,companyId:input.companyId,employmentContractId:input.employmentContractId,costCenterId:input.costCenterId,competenceMonth:input.competenceMonth,eventKind:input.eventKind,amount:input.amount,description:input.description,idempotencyKey};
+ const event:RecordPayrollEventInput={tenantId:input.tenantId,companyId:input.companyId,employmentContractId:input.employmentContractId,costCenterId:input.costCenterId??null,competenceMonth:input.competenceMonth,eventKind:input.eventKind,amount:input.amount,description:input.description??null,idempotencyKey};
  await getHrOperationsRepository().recordPayrollEvent(event);
 }
