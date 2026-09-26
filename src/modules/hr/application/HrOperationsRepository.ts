@@ -27,6 +27,8 @@ export interface HrEmployeeRow {
   allocationPercent: number | null;
 }
 
+export interface FixedCompensationItem { id:string; employmentContractId:string; description:string; kind:'earning'|'deduction'; destination:'advance'|'payment'; valueType:'fixed'|'percent'; value:number; recurring:boolean; active:boolean; affectsInss:boolean; affectsIrrf:boolean; affectsFgts:boolean; }
+
 export interface PayrollEventRow {
   id: string;
   employmentContractId: string;
@@ -65,6 +67,7 @@ export interface BudgetLimitRow {
 
 export interface HrOperationalSnapshot {
   employees: readonly HrEmployeeRow[];
+  fixedCompensationItems: readonly FixedCompensationItem[];
   payrollEvents: readonly PayrollEventRow[];
   payrollClosings: readonly PayrollClosingRow[];
   budgetLimits: readonly BudgetLimitRow[];
@@ -123,6 +126,7 @@ export interface HrOperationsRepository {
   getSnapshot(scope: CompanyScope, competenceMonth: string): Promise<HrOperationalSnapshot>;
   createEmployeeBundle(input: CreateEmployeeBundleInput): Promise<void>;
   updateEmployeeProfile(scope: CompanyScope, employmentContractId: string, input: EmployeeProfileInput): Promise<void>;
+  replaceFixedCompensationItems(scope: CompanyScope, employmentContractId: string, items: readonly Omit<FixedCompensationItem,'id'|'employmentContractId'>[]): Promise<void>;
   changeSalary(scope: CompanyScope, employmentContractId: string, effectiveFrom: string, baseSalary: number): Promise<void>;
   changeAllocation(scope: CompanyScope, employmentContractId: string, effectiveFrom: string, costCenterId: string, allocationPercent: number): Promise<void>;
   terminateContract(scope: CompanyScope, employmentContractId: string, terminatedOn: string): Promise<void>;
