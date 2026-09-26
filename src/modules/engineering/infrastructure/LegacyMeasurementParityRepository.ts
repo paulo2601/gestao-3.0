@@ -17,7 +17,7 @@ export interface MeasurementParityStage {
   startFloor:number|null;
   scopeFloors:string[];
   scopeUnits:string[];
-  targetKind:MeasurementTargetKind;
+  targetKind:MeasurementTargetKind|'manual';
   targetId:string;
 }
 export interface MeasurementParityOrigin {
@@ -38,6 +38,9 @@ export interface MeasurementParityLine {
   targetId:string;
   measuredQuantity:number;
   exactGrossValue:number|null;
+  manualDescription:string|null;
+  manualUnit:string|null;
+  unitPriceSnapshot:number;
   reference:string|null;
   notes:string|null;
 }
@@ -56,7 +59,7 @@ type ContractServiceRow={id:string;description:string;unit:string;contracted_qua
 type AddendumRow={id:string;addendum_number:string;status:string};
 type AddendumLineRow={id:string;addendum_id:string;description:string;unit:string;quantity_delta:number|string;unit_price:number|string;notes:string|null};
 type MeasurementRow={id:string;competence:string;status:string;measurement_number:string|null};
-type MeasurementLineRow={id:string;measurement_id:string;contract_service_id:string|null;contract_addendum_line_id:string|null;measured_quantity:number|string;exact_gross_value:number|string|null;notes:string|null};
+type MeasurementLineRow={id:string;measurement_id:string;contract_service_id:string|null;contract_addendum_line_id:string|null;measured_quantity:number|string;unit_price_snapshot:number|string;gross_value:number|string|null;exact_gross_value:number|string|null;manual_description:string|null;manual_unit:string|null;notes:string|null};
 type OriginProfileRow={id:string;origin_key:string;origin_name:string;origin_type:MeasurementOriginType;floor_count:number|string;has_ground:boolean;units_per_floor:number|string;modes:string[]|null;enterprise_type:string;houses:string[]|null;legacy_origin_id:string|null};
 type ScopeRow={origin_key:string;service_code:string;scope_active:boolean;start_floor:number|string|null;scope_floors:string[]|null;scope_units:string[]|null};
 
@@ -157,7 +160,7 @@ async function loadAllMeasurementLines(scope:MeasurementParityScope,measurementI
   for(let from=0;;from+=pageSize){
     const response=await client
       .from('measurement_lines')
-      .select('id,measurement_id,contract_service_id,contract_addendum_line_id,measured_quantity,exact_gross_value,notes')
+      .select('id,measurement_id,contract_service_id,contract_addendum_line_id,measured_quantity,unit_price_snapshot,gross_value,exact_gross_value,manual_description,manual_unit,notes')
       .eq('tenant_id',scope.tenantId)
       .eq('company_id',scope.companyId)
       .in('measurement_id',measurementIds)
@@ -243,8 +246,8 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
   }
 
   const lines:MeasurementParityLine[]=measurementRows.flatMap(row=>{
-    const targetKind:MeasurementTargetKind|null=row.contract_service_id?'contract':row.contract_addendum_line_id?'addendum':null;
-    const targetId=row.contract_service_id??row.contract_addendum_line_id;
+    const targetKind:MeasurementTargetKind|'manual'|null=row.contract_service_id?'contract':row.contract_addendum_line_id?'addendum':row.manual_description?'manual':null;
+    const targetId=row.contract_service_id??row.contract_addendum_line_id??(row.manual_description?`manual:${row.id}`:null);
     if(!targetKind||!targetId)return [];
     return [{
       id:row.id,
@@ -253,7 +256,10 @@ export async function loadMeasurementParity(scope:MeasurementParityScope,contrac
       targetKind,
       targetId,
       measuredQuantity:number(row.measured_quantity),
-      exactGrossValue:row.exact_gross_value==null?null:number(row.exact_gross_value),
+      exactGrossValue:row.exact_gross_value==null?(row.manual_description?number(row.gross_value):null):number(row.exact_gross_value),
+      manualDescription:row.manual_description,
+      manualUnit:row.manual_unit,
+      unitPriceSnapshot:number(row.unit_price_snapshot),
       reference:referenceFromNotes(row.notes),
       notes:row.notes,
     }];
