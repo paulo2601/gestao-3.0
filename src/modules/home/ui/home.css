@@ -13,3 +13,17 @@
 .balance-legend__item{min-height:30px!important}.balance-range{max-width:620px;margin-inline:auto}.balance-card__footer{padding:10px 4px 0}
 .home-two-column>.ui-card,.home-approved>.ui-card{border-color:color-mix(in srgb,var(--primary) 8%,var(--border))}
 }
+
+.home-hero__eyebrow{font-size:.68rem!important;letter-spacing:.16em;font-weight:900;opacity:.78}
+@media(min-width:761px){
+.home-hero{position:relative;overflow:hidden;min-height:112px;padding:22px 28px}
+.home-hero:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-70px;top:-130px;background:rgb(255 255 255/.09);pointer-events:none}
+.home-hero__greeting{position:relative;z-index:1;gap:5px!important}.home-hero__greeting strong{font-size:1.75rem}.home-hero__greeting>span:last-child{font-weight:600;opacity:.82}
+.home-hero__refresh{position:relative;z-index:1;min-width:118px!important;min-height:40px!important;border-radius:12px!important}
+.home-quick-card{border-radius:16px!important}.home-actions--three .ui-button{font-weight:850}
+.home-balance-card{border-radius:18px!important;padding:22px!important}.home-balance-card .balance-card{grid-template-columns:minmax(230px,.34fr) minmax(0,.66fr);column-gap:28px;align-items:start}
+.home-balance-card .home-eyebrow,.home-balance-card .balance-card__value{grid-column:1}.home-balance-card .balance-chart-head,.home-balance-card .balance-legend,.home-balance-card .balance-chart,.home-balance-card .balance-range{grid-column:2}
+.home-balance-card .home-eyebrow{align-self:end;margin-top:18px}.home-balance-card .balance-card__value{font-size:clamp(2.6rem,4.2vw,4rem);margin-bottom:8px}
+.home-balance-card .balance-chart-head{grid-row:1}.home-balance-card .balance-legend{grid-row:2}.home-balance-card .balance-chart{grid-row:3 / span 2;min-height:190px}
+.home-balance-card .balance-range{grid-row:5}.home-balance-card .balance-card__footer{grid-column:1;grid-row:3;align-self:start;margin-top:12px}
+}
