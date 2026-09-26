@@ -1,6 +1,7 @@
 from pathlib import Path
 
-p=Path('src/modules/engineering/ui/GuidedMeasurementFlow.tsx')
+candidates=[Path('src/modules/engineering/ui/printMeasurementReport.ts'),Path('src/modules/engineering/ui/GuidedMeasurementFlow.tsx')]
+p=next((candidate for candidate in candidates if candidate.exists()),candidates[-1])
 s=p.read_text(encoding='utf-8')
 start="""    const companyLogoFallbacks:Record<string,string>={
       '1ac1cde3-30fa-4fab-9ea0-8afbb34732e5':'/company-cr.svg',
