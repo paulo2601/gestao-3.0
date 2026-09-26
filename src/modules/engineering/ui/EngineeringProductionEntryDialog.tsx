@@ -46,9 +46,9 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const pricedContractServiceIds=new Set(snapshot.productionPrices.filter(item=>item.structureId===structureId).map(item=>item.contractServiceId));
   const allowedServices=snapshot.services.filter(item=>allowedServiceIds.has(item.id)&&pricedContractServiceIds.has(item.contractServiceId));
   const isGeneral=structureId==='__GENERAL__';
-  const selectedService=allowedServices.find(item=>item.id===serviceId);
+  const selectedService=allowedServices.find(item=>item.id===serviceId);\n  const floors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');\n  const units=snapshot.structureNodes.filter(item=>item.parentId===floorId&&item.structureType==='unit');
   const serviceOptions=[{value:'',label:structureId?((isGeneral?generalServices.length:allowedServices.length)?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...(isGeneral?generalServices.map(item=>({value:`general:${item.productionServiceId}`,label:`${item.productionServiceKind==='discount'?'Desconto · ':''}${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})):allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`})))];
-  function changeStructure(id:string){setStructureId(id);setServiceId('');setUnitValue('');}
+  function changeStructure(id:string){setStructureId(id);setFloorId('');setUnitIds([]);setServiceId('');setUnitValue('');}
   async function changeService(id:string){setServiceId(id);setUnitValue('');if(!id||!structureId)return;if(structureId==='__GENERAL__'){const price=generalServices.find(item=>`general:${item.productionServiceId}`===id);setUnitValue(price?String(price.unitValue):'');setError(price?null:'Serviço geral sem valor cadastrado.');return;}const service=snapshot.services.find(item=>item.id===id);if(!service)return;try{const price=await resolveEngineeringProductionPrice({...scope,workId:snapshot.workId,contractServiceId:service.contractServiceId,structureId});setUnitValue(price===null?'':String(price));if(price===null)setError('Este serviço ainda não possui valor de produção cadastrado para a estrutura selecionada.');else setError(null);}catch(c){setError(c instanceof Error?c.message:'Não foi possível carregar o valor de produção.');}}
 
   function addParticipant(id:string){
@@ -67,14 +67,14 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   async function submit(){
     setError(null);
     if(!periodId||!structureId||!serviceId){setError('Selecione competência, estrutura e serviço.');return;}
-    if(numberValue(executedQuantity)<=0){setError('Informe uma quantidade maior que zero.');return;}
+    if(usesApartmentUnits&&unitIds.length===0){setError('Selecione ao menos um apartamento/unidade.');return;}if(!usesApartmentUnits&&numberValue(executedQuantity)<=0){setError('Informe uma quantidade maior que zero.');return;}
     if(numberValue(unitValue)<0||unitValue.trim()===''){setError('Cadastre o valor de produção deste serviço antes de lançar.');return;}
     if(participants.length===0){setError('Selecione ao menos um colaborador.');return;}
     const payload:SharedProductionParticipantInput[]=participants.map(item=>({employmentContractId:item.id,...(divisionMode==='percentage'?{percentage:numberValue(item.percentage)}:{}),...(divisionMode==='value'?{value:numberValue(item.value)}:{})}));
     if(divisionMode==='percentage'&&Math.abs(payload.reduce((sum,item)=>sum+(item.percentage??0),0)-100)>0.01){setError('A soma dos percentuais deve ser 100%.');return;}
     if(divisionMode==='value'&&Math.abs(payload.reduce((sum,item)=>sum+(item.value??0),0)-total)>0.01){setError(`A soma dos valores deve ser ${currency.format(total)}.`);return;}
     setBusy(true);
-    try{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço contratual não encontrado.');await createSharedProductionEntry({tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId,productionDate,executedQuantity:numberValue(executedQuantity),unitValue:numberValue(unitValue),notes:notes||null,divisionMode,participants:payload});reset();onSaved();onClose();}
+    try{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço contratual não encontrado.');await createSharedProductionEntry({tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:numberValue(executedQuantity),unitValue:numberValue(unitValue),notes:notes||null,divisionMode,participants:payload});reset();onSaved();onClose();}
     catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar a produção.');}
     finally{setBusy(false);}
   }
