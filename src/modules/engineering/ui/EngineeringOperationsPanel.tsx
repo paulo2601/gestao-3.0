@@ -9,7 +9,7 @@ import { useEngineeringOperations } from './useEngineeringOperations';
 type TabId='contratos'|'medicoes'|'producao'|'aditivos'|'provisorios';
 type Kind='work'|'structure'|'contract'|'contractStatus'|'service'|'contractService'|'allocation'|'provisional'|'provisionalLine'|'convert'|'addendum'|'addendumLine'|'measurement'|'measurementLine'|'retention'|'measurementStatus'|'receivable'|'receive'|'productionPeriod'|'productionEntry'|'productionStatus'|null;
 type ActionsMode='default'|'contract-create'|'contract-maintenance'|'contract-data'|'contract-services'|'measurement-create'|'measurement-close'|'contract-taxes';
-interface Props { activeTab:TabId; scope:{tenantId:string;companyId:string}; onChanged:()=>void; actionsMode?:ActionsMode; focusedContractId?:string|null; initialKind?:Exclude<Kind,null>; hideActions?:boolean; onDialogClosed?:()=>void; onMeasurementCreated?:(originId:string)=>void; onMeasurementOriginSelected?:(originName:string,draft:Record<string,string>)=>void; }
+interface Props { activeTab:TabId; scope:{tenantId:string;companyId:string}; onChanged:()=>void; actionsMode?:ActionsMode; focusedContractId?:string|null; focusedWorkId?:string|null; initialKind?:Exclude<Kind,null>; hideActions?:boolean; onDialogClosed?:()=>void; onMeasurementCreated?:(originId:string)=>void; onMeasurementOriginSelected?:(originName:string,draft:Record<string,string>)=>void; }
 interface Option { value:string; label:string; }
 
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -25,7 +25,7 @@ const descriptions:Record<Exclude<Kind,null>,string>={
   work:'Cadastre os dados principais da obra.',structure:'Cadastre torre, bloco, pavimento, unidade ou outra estrutura da obra.',contract:'Cadastre os dados contratuais e as retenções padrão.',contractStatus:'Altere a situação atual do contrato.',service:'Cadastre um serviço para reutilização nas planilhas.',contractService:'Inclua quantidade e valor unitário na base contratual.',allocation:'Distribua a quantidade contratada por torre, pavimento ou unidade.',provisional:'Crie uma negociação antes de virar contrato ou aditivo.',provisionalLine:'Inclua um serviço na composição do provisório.',convert:'Converta o provisório aprovado preservando o histórico.',addendum:'Cadastre uma alteração vinculada ao contrato.',addendumLine:'Inclua o item que altera a composição contratual.',measurement:'Abra uma nova competência de medição.',measurementLine:'Registre quantidade e valor efetivamente medidos.',retention:'Registre INSS, ISS, retenção técnica ou outra retenção.',measurementStatus:'Feche, aprove, reabra ou cancele uma medição.',receivable:'Gere a conta a receber da medição aprovada.',receive:'Registre o recebimento financeiro da medição.',productionPeriod:'Abra uma competência para produção da equipe.',productionEntry:'Registre a produção executada por colaborador.',productionStatus:'Feche ou reabra o período de produção.',
 };
 
-export function EngineeringOperationsPanel({activeTab,scope,onChanged,actionsMode='default',focusedContractId=null,initialKind,hideActions=false,onDialogClosed,onMeasurementCreated,onMeasurementOriginSelected}:Props){
+export function EngineeringOperationsPanel({activeTab,scope,onChanged,actionsMode='default',focusedContractId=null,focusedWorkId=null,initialKind,hideActions=false,onDialogClosed,onMeasurementCreated,onMeasurementOriginSelected}:Props){
   const operations=useEngineeringOperations(scope);
   const data=operations.state.data;
   const [kind,setKind]=useState<Kind>(initialKind??null);
@@ -98,6 +98,7 @@ export function EngineeringOperationsPanel({activeTab,scope,onChanged,actionsMod
     const base={...defaults[next]};
     if(focusedContractId&&['contractStatus','contractService','allocation','addendum','measurement'].includes(next))base.contractId=focusedContractId;
     if(focusedContract?.workId&&['structure','allocation','provisional','productionPeriod'].includes(next))base.workId=focusedContract.workId;
+    if(focusedWorkId&&next==='productionPeriod')base.workId=focusedWorkId;
     if(next==='measurement'){
       if(suggestedMeasurementNumber)base.measurementNumber=suggestedMeasurementNumber;
       if(suggestedMeasurementCompetence)base.competence=suggestedMeasurementCompetence;
@@ -176,7 +177,7 @@ export function EngineeringOperationsPanel({activeTab,scope,onChanged,actionsMod
     case 'measurementStatus':content=shell(<>{select('Medição','measurementId',measurementOptions,true)}{select('Ação','action',[{value:'close',label:'Fechar'},{value:'approve',label:'Aprovar'},{value:'reopen',label:'Reabrir'},{value:'cancel',label:'Cancelar'}],true)}{input('Motivo','reason')}</>);break;
     case 'receivable':content=shell(<>{select('Medição','measurementId',measurementOptions,true)}{input('Vencimento','dueDate','date',true)}</>);break;
     case 'receive':content=shell(<>{select('Medição','measurementId',measurementOptions,true)}{select('Conta de recebimento','accountId',accountOptions,true)}{input('Recebido em','receivedOn','date',true)}{input('Valor','amount','number',true)}</>);break;
-    case 'productionPeriod':content=shell(<>{select('Obra','workId',workOptions,true)}{input('Competência','competence','month',true)}</>);break;
+    case 'productionPeriod':content=shell(<>{!focusedWorkId&&select('Obra','workId',workOptions,true)}{focusedWorkId&&<div className="engineering-form-context"><span>Obra</span><strong>{data?.works.find(item=>item.id===focusedWorkId)?.name??'Obra atual'}</strong></div>}{input('Competência','competence','month',true)}</>);break;
     case 'productionEntry':content=shell(<>{select('Período','periodId',periodOptions,true)}{select('Colaborador','employmentContractId',employeeOptions,true)}{select('Estrutura','structureId',structureOptions,true)}{select('Serviço','serviceId',serviceOptions,true)}{input('Data','productionDate','date',true)}{input('Quantidade','executedQuantity','number',true)}{input('Valor unitário','unitValue','number')}{input('Observações','notes')}</>);break;
     case 'productionStatus':content=shell(<>{select('Período','periodId',periodOptions,true)}{select('Ação','action',[{value:'close',label:'Fechar'},{value:'reopen',label:'Reabrir'}],true)}{input('Motivo','reason')}</>);break;
     default:break;
