@@ -38,8 +38,6 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const [employeeSearch,setEmployeeSearch]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState<string|null>(null);
-  const baseQuantity=usesApartmentUnits?unitIds.length:numberValue(executedQuantity);
-  const total=baseQuantity*numberValue(unitValue);
   const openPeriods=snapshot.periods.filter(item=>item.status==='open');
   const availableEmployees=useMemo(()=>snapshot.employees.filter(item=>!participants.some(p=>p.id===item.id)).map(item=>({value:item.id,label:item.name})),[snapshot.employees,participants]);
   const periodOptions=[{value:'',label:'Selecione…'},...openPeriods.map(item=>({value:item.id,label:item.competence.slice(0,7).split('-').reverse().join('/')}))];
@@ -52,6 +50,8 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const selectedService=allowedServices.find(item=>item.id===serviceId);
   const selectedServiceUnit=selectedService?.unit?.toUpperCase()??'';
   const usesApartmentUnits=!isGeneral&&['APTO','APT','APARTAMENTO'].includes(selectedServiceUnit);
+  const baseQuantity=usesApartmentUnits?unitIds.length:numberValue(executedQuantity);
+  const total=baseQuantity*numberValue(unitValue);
   const floors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');
   const units=snapshot.structureNodes.filter(item=>item.parentId===floorId&&item.structureType==='unit');
   const serviceOptions=[{value:'',label:structureId?((isGeneral?generalServices.length:allowedServices.length)?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...(isGeneral?generalServices.map(item=>({value:`general:${item.productionServiceId}`,label:`${item.productionServiceKind==='discount'?'Desconto · ':''}${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})):allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`})))];
