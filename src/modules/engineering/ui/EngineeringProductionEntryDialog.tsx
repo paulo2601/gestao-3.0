@@ -26,6 +26,8 @@ const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,onSaved}:Props){
   const [periodId,setPeriodId]=useState('');
   const [structureId,setStructureId]=useState('');
+  const [floorId,setFloorId]=useState('');
+  const [unitIds,setUnitIds]=useState<string[]>([]);
   const [serviceId,setServiceId]=useState('');
   const [productionDate,setProductionDate]=useState(today());
   const [executedQuantity,setExecutedQuantity]=useState('');
@@ -36,7 +38,8 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const [employeeSearch,setEmployeeSearch]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState<string|null>(null);
-  const total=numberValue(executedQuantity)*numberValue(unitValue);
+  const baseQuantity=usesApartmentUnits?unitIds.length:numberValue(executedQuantity);
+  const total=baseQuantity*numberValue(unitValue);
   const openPeriods=snapshot.periods.filter(item=>item.status==='open');
   const availableEmployees=useMemo(()=>snapshot.employees.filter(item=>!participants.some(p=>p.id===item.id)).map(item=>({value:item.id,label:item.name})),[snapshot.employees,participants]);
   const periodOptions=[{value:'',label:'Selecione…'},...openPeriods.map(item=>({value:item.id,label:item.competence.slice(0,7).split('-').reverse().join('/')}))];
@@ -47,6 +50,8 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const allowedServices=snapshot.services.filter(item=>allowedServiceIds.has(item.id)&&pricedContractServiceIds.has(item.contractServiceId));
   const isGeneral=structureId==='__GENERAL__';
   const selectedService=allowedServices.find(item=>item.id===serviceId);
+  const selectedServiceUnit=selectedService?.unit?.toUpperCase()??'';
+  const usesApartmentUnits=!isGeneral&&['APTO','APT','APARTAMENTO'].includes(selectedServiceUnit);
   const floors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');
   const units=snapshot.structureNodes.filter(item=>item.parentId===floorId&&item.structureType==='unit');
   const serviceOptions=[{value:'',label:structureId?((isGeneral?generalServices.length:allowedServices.length)?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...(isGeneral?generalServices.map(item=>({value:`general:${item.productionServiceId}`,label:`${item.productionServiceKind==='discount'?'Desconto · ':''}${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})):allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`})))];
