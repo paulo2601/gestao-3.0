@@ -9,7 +9,8 @@ import { loadEngineeringProduction, type EngineeringProductionSnapshot } from '.
 import { EngineeringOperationsPanel } from './EngineeringOperationsPanel';
 import { EngineeringProductionEntryDialog } from './EngineeringProductionEntryDialog';
 import { EngineeringProductionClosingDialog } from './EngineeringProductionClosingDialog';
-import { EngineeringProductionReportDialog } from './EngineeringProductionReportDialog';\nimport { EngineeringProductionPriceDialog } from './EngineeringProductionPriceDialog';
+import { EngineeringProductionReportDialog } from './EngineeringProductionReportDialog';
+import { EngineeringProductionPriceDialog } from './EngineeringProductionPriceDialog';
 
 type ProductionAction='productionPeriod'|'productionEntry'|'productionPrice'|'productionClosing'|'productionReport'|null;
 interface Props { scope:{tenantId:string;companyId:string}; workName:string; contractNumber:string; onChanged:()=>void; }
