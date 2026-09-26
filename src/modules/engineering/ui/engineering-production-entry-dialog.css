@@ -48,3 +48,11 @@
 .engineering-production-entry-form__employee-chip small{padding-left:20px;color:var(--muted);font-weight:700}
 .engineering-production-entry-form__participant-summary{display:flex;justify-content:space-between;gap:12px;padding:7px 9px;border-radius:8px;background:color-mix(in srgb,var(--primary) 6%,var(--surface));font-size:.75rem}
 @media(max-width:700px){.engineering-production-entry-form__employee-picker-head{grid-template-columns:1fr}.engineering-production-entry-form__employee-list .engineering-production-entry-form__employee-chip{min-width:100%;max-width:none}.engineering-production-entry-form__units label{width:54px}}
+
+/* Uniform collaborator cards */
+.engineering-production-entry-form__employee-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));align-items:stretch}
+.engineering-production-entry-form__employee-list .engineering-production-entry-form__employee-chip{box-sizing:border-box;width:100%;min-width:0;max-width:none;height:42px;min-height:42px;padding:0 9px;align-content:center}
+.engineering-production-entry-form__employee-chip label{width:100%;min-width:0}
+.engineering-production-entry-form__employee-chip label span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.engineering-production-entry-form__employee-chip small{display:none}
+@media(max-width:700px){.engineering-production-entry-form__employee-list{grid-template-columns:1fr 1fr}.engineering-production-entry-form__employee-list .engineering-production-entry-form__employee-chip{min-width:0;max-width:none}}
