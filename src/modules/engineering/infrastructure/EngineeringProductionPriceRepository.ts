@@ -23,10 +23,11 @@ export async function deactivateEngineeringProductionPrice(scope:ProductionPrice
 
 export async function resolveEngineeringProductionPrice(input:ProductionPriceScope&{workId:string;contractServiceId:string;structureId:string}):Promise<number|null>{
  const client=getSupabaseClient();
- const {data,error}=await client.rpc('resolve_engineering_production_price',{
+ const response:unknown=await client.rpc('resolve_engineering_production_price',{
   p_tenant_id:input.tenantId,p_company_id:input.companyId,p_work_id:input.workId,
   p_contract_service_id:input.contractServiceId,p_structure_id:input.structureId
  });
- if(error)throw error;
- return data===null?null:Number(data);
+ const typed=response as {data:unknown;error:{message?:string}|null};
+ if(typed.error)throw new Error(typed.error.message??'Não foi possível resolver o valor de produção.');
+ return typed.data===null?null:Number(typed.data);
 }
