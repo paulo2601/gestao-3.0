@@ -20,6 +20,7 @@ type ContractRow = {
 };
 type CompensationRow = { employment_contract_id: string; valid_from: string; valid_to: string | null; base_salary: number | string };
 type AllocationRow = { employment_contract_id: string; cost_center_id: string; valid_from: string; valid_to: string | null; allocation_percent: number | string; cost_centers: { id: string; name: string } };
+type FixedRow = { id:string; employment_contract_id:string; description:string; kind:string; destination:string; value_type:string; value:number|string; recurring:boolean; active:boolean; affects_inss:boolean; affects_irrf:boolean; affects_fgts:boolean };
 type EventRow = { id: string; employment_contract_id: string; competence_month: string; event_kind: string; amount: number | string; description: string | null; status: string; employment_contracts: { employees: { full_name: string } } };
 type ClosingRow = { id: string; employment_contract_id: string; competence_month: string; gross_snapshot: number | string; net_before_statutory_snapshot: number | string; status: string; employment_contracts: { employees: { full_name: string } } };
 type StatutoryRow = { payroll_closing_id: string; inss_amount: number | string; irrf_amount: number | string; fgts_amount: number | string };
@@ -46,10 +47,11 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
 
   async getSnapshot(scope: CompanyScope, competenceMonth: string): Promise<HrOperationalSnapshot> {
     const competence = month(competenceMonth);
-    const [contractsResult, compensationResult, allocationResult, eventResult, closingResult, statutoryResult, limitsResult, costCentersResult, categoriesResult] = await Promise.all([
+    const [contractsResult, compensationResult, allocationResult, fixedResult, eventResult, closingResult, statutoryResult, limitsResult, costCentersResult, categoriesResult] = await Promise.all([
       this.client.from('employment_contracts').select('id,employee_id,hired_on,terminated_on,job_title,status,employment_type,sector,supervisor,weekly_hours,bank_hours_enabled,employees!inner(id,full_name,cpf,pix,phone,email,notes)').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).order('hired_on', { ascending: false }).returns<ContractRow[]>(),
       this.client.from('compensation_terms').select('employment_contract_id,valid_from,valid_to,base_salary').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).lte('valid_from', competence).or(`valid_to.is.null,valid_to.gte.${competence}`).order('valid_from', { ascending: false }).returns<CompensationRow[]>(),
       this.client.from('employee_allocations').select('employment_contract_id,cost_center_id,valid_from,valid_to,allocation_percent,cost_centers!inner(id,name)').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).lte('valid_from', competence).or(`valid_to.is.null,valid_to.gte.${competence}`).order('valid_from', { ascending: false }).returns<AllocationRow[]>(),
+      this.client.from('hr_fixed_compensation_items').select('id,employment_contract_id,description,kind,destination,value_type,value,recurring,active,affects_inss,affects_irrf,affects_fgts').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).eq('active',true).returns<FixedRow[]>(),
       this.client.from('payroll_events').select('id,employment_contract_id,competence_month,event_kind,amount,description,status,employment_contracts!inner(employees!inner(full_name))').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).eq('competence_month', competence).order('created_at', { ascending: false }).returns<EventRow[]>(),
       this.client.from('payroll_closings').select('id,employment_contract_id,competence_month,gross_snapshot,net_before_statutory_snapshot,status,employment_contracts!inner(employees!inner(full_name))').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).eq('competence_month', competence).order('closed_at', { ascending: false }).returns<ClosingRow[]>(),
       this.client.from('payroll_statutory_calculations').select('payroll_closing_id,inss_amount,irrf_amount,fgts_amount').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).eq('competence_month', competence).returns<StatutoryRow[]>(),
@@ -57,12 +59,13 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
       this.client.from('cost_centers').select('id,name,status').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).order('name').returns<ReferenceRow[]>(),
       this.client.from('financial_categories').select('id,name,status').eq('tenant_id', scope.tenantId).eq('company_id', scope.companyId).order('name').returns<ReferenceRow[]>(),
     ]);
-    const errors = [contractsResult.error, compensationResult.error, allocationResult.error, eventResult.error, closingResult.error, statutoryResult.error, limitsResult.error, costCentersResult.error, categoriesResult.error].filter(Boolean);
+    const errors = [contractsResult.error, compensationResult.error, allocationResult.error, fixedResult.error, eventResult.error, closingResult.error, statutoryResult.error, limitsResult.error, costCentersResult.error, categoriesResult.error].filter(Boolean);
     if (errors[0]) throw errors[0];
 
     const contracts = contractsResult.data ?? [];
     const compensationsData = compensationResult.data ?? [];
     const allocationsData = allocationResult.data ?? [];
+    const fixedData=fixedResult.data??[];
     const eventsData = eventResult.data ?? [];
     const closingsData = closingResult.data ?? [];
     const statutoryData = statutoryResult.data ?? [];
@@ -101,6 +104,7 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
         allocationPercent: allocation?.allocationPercent ?? null,
       };
     });
+    const fixedCompensationItems=fixedData.map(row=>({id:row.id,employmentContractId:row.employment_contract_id,description:row.description,kind:row.kind as 'earning'|'deduction',destination:row.destination as 'advance'|'payment',valueType:row.value_type as 'fixed'|'percent',value:Number(row.value),recurring:row.recurring,active:row.active,affectsInss:row.affects_inss,affectsIrrf:row.affects_irrf,affectsFgts:row.affects_fgts}));
     const payrollEvents: PayrollEventRow[] = eventsData.map((row) => ({ id: row.id, employmentContractId: row.employment_contract_id, employeeName: row.employment_contracts.employees.full_name, competenceMonth: row.competence_month, eventKind: row.event_kind as PayrollEventRow['eventKind'], amount: Number(row.amount), description: row.description, status: row.status as PayrollEventRow['status'] }));
     const statutory = new Map(statutoryData.map((row) => [row.payroll_closing_id, row]));
     const payrollClosings: PayrollClosingRow[] = closingsData.map((row) => {
@@ -110,7 +114,7 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
     const budgetLimits: BudgetLimitRow[] = limitsData.map((row) => ({ id: row.id, competenceMonth: row.competence_month, costCenterId: row.cost_center_id, costCenterName: row.cost_centers?.name ?? null, categoryId: row.category_id, categoryName: row.financial_categories?.name ?? null, limitAmount: Number(row.limit_amount), warningPercent: Number(row.warning_percent), status: row.status as BudgetLimitRow['status'] }));
     const costCenters = costCentersData.map((row) => ({ id: row.id, name: row.name, status: row.status as 'active' | 'inactive' }));
     const categories = categoriesData.map((row) => ({ id: row.id, name: row.name, status: row.status as 'active' | 'inactive' }));
-    return { employees, payrollEvents, payrollClosings, budgetLimits, costCenters, categories };
+    return { employees, fixedCompensationItems, payrollEvents, payrollClosings, budgetLimits, costCenters, categories };
   }
 
   async createEmployeeBundle(input: CreateEmployeeBundleInput): Promise<void> {
@@ -156,6 +160,13 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
       p_bank_hours_enabled: input.bankHoursEnabled ?? false,
     });
     if (result.error) throw result.error;
+  }
+  async replaceFixedCompensationItems(scope: CompanyScope, employmentContractId: string, items: readonly {description:string;kind:'earning'|'deduction';destination:'advance'|'payment';valueType:'fixed'|'percent';value:number;recurring:boolean;active:boolean;affectsInss:boolean;affectsIrrf:boolean;affectsFgts:boolean}[]): Promise<void> {
+    const remove=await this.client.from('hr_fixed_compensation_items').delete().eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('employment_contract_id',employmentContractId);
+    if(remove.error) throw remove.error;
+    if(!items.length) return;
+    const insert=await this.client.from('hr_fixed_compensation_items').insert(items.map(item=>({tenant_id:scope.tenantId,company_id:scope.companyId,employment_contract_id:employmentContractId,description:required(item.description,'description'),kind:item.kind,destination:item.destination,value_type:item.valueType,value:amount(item.value,'value',true),recurring:item.recurring,active:item.active,affects_inss:item.affectsInss,affects_irrf:item.affectsIrrf,affects_fgts:item.affectsFgts})));
+    if(insert.error) throw insert.error;
   }
   async changeSalary(scope: CompanyScope, employmentContractId: string, effectiveFrom: string, baseSalary: number): Promise<void> {
     amount(baseSalary, 'baseSalary', true);
