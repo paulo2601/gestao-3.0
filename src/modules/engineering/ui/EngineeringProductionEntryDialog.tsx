@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Button } from '../../../shared/ui/Button';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
