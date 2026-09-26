@@ -29,6 +29,7 @@ export function MonthlyAccountActionDialog({ company, entry, balance, open, onCl
   const scope = useMemo(() => ({ tenantId: company.tenantId, companyId: company.id }), [company.id, company.tenantId]);
   const operations = useFinanceOperations(scope);
   const references = operations.state.references;
+  const clearFeedback = operations.clearFeedback;
   const [action, setAction] = useState<Action>('details');
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
