@@ -3,7 +3,7 @@ import { Button } from '../../../shared/ui/Button';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
-import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
+import { addManualMeasurementItem } from '../infrastructure/ManualMeasurementItemRepository';
 
 interface Props { open:boolean; scope:{tenantId:string;companyId:string}; measurementId:string; onSaved:()=>Promise<void>|void; onClose:()=>void; }
 const money=(value:string)=>Number(value.replace(/\./g,'').replace(',','.'))||0;
@@ -17,8 +17,7 @@ export function ManualMeasurementItemDialog({open,scope,measurementId,onSaved,on
     if(!description.trim()){setError('Informe a descrição do serviço.');return;} if(!unit.trim()){setError('Informe a unidade.');return;} if(qty<=0){setError('Informe uma quantidade maior que zero.');return;} if(price<0){setError('Informe um valor unitário válido.');return;}
     setSaving(true);setError(null);
     try{
-      const response=await getSupabaseClient().from('measurement_lines').insert({tenant_id:scope.tenantId,company_id:scope.companyId,measurement_id:measurementId,contract_service_id:null,contract_addendum_line_id:null,structure_id:null,measured_quantity:qty,unit_price_snapshot:price,manual_description:description.trim(),manual_unit:unit.trim().toUpperCase(),notes:notes.trim()?'[ITEM AVULSO] '+notes.trim():'[ITEM AVULSO]'});
-      if(response.error)throw response.error; await onSaved(); onClose();
+      await addManualMeasurementItem(scope,measurementId,{description,unit,quantity:qty,unitPrice:price,notes}); await onSaved(); onClose();
     }catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível adicionar o item avulso.');}finally{setSaving(false);}
   }
   return <Dialog open={open} onClose={onClose} title="Adicionar item avulso"><div className="form-grid">
