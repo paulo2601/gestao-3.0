@@ -27,7 +27,8 @@ export async function loadEngineeringProduction(scope:EngineeringProductionScope
   const baseError=[periods.error,structures.error,services.error,employees.error,allocations.error,measurementLines.error,productionPrices.error].find(Boolean);if(baseError)throw baseError;
   const periodRows=periods.data??[];
   const employeeRefs=(employees.data??[]).map(item=>{const relation=item.employees;const employee=Array.isArray(relation)?relation[0]:relation;return {id:item.id,name:employee?.full_name??'Colaborador'};}).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
-  const allStructureRefs=(structures.data??[]).map(item=>({id:item.id,name:item.name,parentId:item.parent_id,structureType:item.structure_type}));\n  const structureRefs=allStructureRefs.filter(item=>item.parentId===null);
+  const allStructureRefs=(structures.data??[]).map(item=>({id:item.id,name:item.name,parentId:item.parent_id,structureType:item.structure_type}));
+  const structureRefs=allStructureRefs.filter(item=>item.parentId===null);
   const serviceNameById=new Map((services.data??[]).map(item=>[item.id,item.name]));
   const serviceIds=new Set((services.data??[]).map(item=>item.id));
   const historicalMappings=(measurementLines.data??[]).filter((item):item is {structure_id:string;contract_service_id:string}=>Boolean(item.structure_id));
