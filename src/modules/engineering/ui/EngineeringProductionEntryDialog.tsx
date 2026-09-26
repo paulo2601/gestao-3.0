@@ -41,7 +41,11 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const periodOptions=[{value:'',label:'Selecione…'},...openPeriods.map(item=>({value:item.id,label:item.competence.slice(0,7).split('-').reverse().join('/')}))];
   const structureOptions=[{value:'',label:'Selecione…'},...snapshot.structures.map(item=>({value:item.id,label:item.name}))];
   const allowedServiceIds=new Set(snapshot.serviceIdsByStructure[structureId]??[]);
-  const serviceOptions=[{value:'',label:structureId?(allowedServiceIds.size?'Selecione…':'Nenhum serviço distribuído nesta estrutura'):'Selecione a estrutura primeiro'},...snapshot.services.filter(item=>allowedServiceIds.has(item.id)).map(item=>({value:item.id,label:item.name}))];
+  const allowedServices=snapshot.services.filter(item=>allowedServiceIds.has(item.id));
+  const selectedService=allowedServices.find(item=>item.id===serviceId);
+  const serviceOptions=[{value:'',label:structureId?(allowedServiceIds.size?'Selecione…':'Nenhum serviço distribuído nesta estrutura'):'Selecione a estrutura primeiro'},...allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`}))];
+  function changeStructure(id:string){setStructureId(id);setServiceId('');setUnitValue('');}
+  function changeService(id:string){setServiceId(id);const service=snapshot.services.find(item=>item.id===id);setUnitValue(service?String(service.unitPrice):'');}
 
   function addParticipant(id:string){
     const employee=snapshot.employees.find(item=>item.id===id);if(!employee)return;
@@ -76,11 +80,11 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
       {error&&<Feedback tone="danger" title="Não foi possível salvar" message={error}/>} 
       <div className="engineering-production-entry-form__grid">
         <Select label="Competência" value={periodId} onChange={event=>setPeriodId(event.target.value)} options={periodOptions} required/>
-        <Select label="Estrutura" value={structureId} onChange={event=>setStructureId(event.target.value)} options={structureOptions} required/>
-        <Select label="Serviço" value={serviceId} onChange={event=>setServiceId(event.target.value)} options={serviceOptions} required disabled={!structureId||allowedServiceIds.size===0}/>
+        <Select label="Estrutura" value={structureId} onChange={event=>changeStructure(event.target.value)} options={structureOptions} required/>
+        <Select label="Serviço" value={serviceId} onChange={event=>changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||allowedServiceIds.size===0}/>
         <Input label="Data" type="date" value={productionDate} onChange={event=>setProductionDate(event.target.value)} required/>
         <Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>
-        <Input label="Valor unitário" type="number" value={unitValue} onChange={event=>setUnitValue(event.target.value)} required/>
+        <Input label={`Valor unitário${selectedService?.unit?` (${selectedService.unit})`:''}`} type="number" value={unitValue} readOnly required/>
       </div>
       <div className="engineering-production-entry-form__total"><span>Total da produção</span><strong>{currency.format(total)}</strong></div>
       <section className="engineering-production-entry-form__participants">
