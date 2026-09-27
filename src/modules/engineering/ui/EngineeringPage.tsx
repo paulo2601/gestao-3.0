@@ -45,7 +45,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const location=useLocation();
   const [searchParams]=useSearchParams();
   const productionFocus=location.pathname==='/producao'||searchParams.get('area')==='producao';
-  if(productionFocus)return <EngineeringProductionPage companies={companies} initialCompanyId={initialCompanyId}/>;
+  if(productionFocus)return initialCompanyId?<EngineeringProductionPage companies={companies} initialCompanyId={initialCompanyId}/>:<EngineeringProductionPage companies={companies}/>;
   const [refreshToken,setRefreshToken]=useState(0);
   const [contractSearch,setContractSearch]=useState('');
   const [contractStatus,setContractStatus]=useState('all');
