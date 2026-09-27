@@ -20,12 +20,13 @@ export async function saveEngineeringProductionPrice(input:ProductionPriceInput)
  if(error)throw error;
 }
 
-export async function createManualProductionService(input:ProductionPriceScope&{workId:string;name:string;unit:string|null;kind:'manual'|'discount';structureId:string|null;unitValue:number}):Promise<void>{
+export async function createManualProductionService(input:ProductionPriceScope&{workId:string;name:string;unit:string|null;kind:'manual'|'discount';structureId:string|null;unitValue:number;plannedQuantity?:number;allocations?:{structureId:string;quantity:number}[]}):Promise<void>{
  const client=getSupabaseClient();
- const serviceResponse:unknown=await client.from('engineering_production_services').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,contract_service_id:null,name:input.name.trim(),unit:input.unit?.trim()||null,kind:input.kind,status:'active'}).select('id').single();
+ const serviceResponse:unknown=await client.from('engineering_production_services').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,contract_service_id:null,name:input.name.trim(),unit:input.unit?.trim()||null,kind:input.kind,planned_quantity:input.plannedQuantity??null,status:'active'}).select('id').single();
  const serviceTyped=serviceResponse as {data:{id:string}|null;error:{message?:string}|null};if(serviceTyped.error)throw new Error(serviceTyped.error.message??'Não foi possível criar o serviço manual.');if(!serviceTyped.data)throw new Error('Serviço manual não foi criado.');
  const {error}=await client.from('engineering_production_prices').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,production_service_id:serviceTyped.data.id,contract_service_id:null,structure_id:input.structureId,unit_value:input.unitValue,status:'active'});
  if(error)throw error;
+ if(input.allocations?.length){const {error:allocationError}=await client.from('engineering_production_allocations').insert(input.allocations.filter(a=>a.quantity>0).map(a=>({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,production_service_id:serviceTyped.data!.id,structure_id:a.structureId,quantity:a.quantity})));if(allocationError)throw allocationError;}
 }
 
 export async function deactivateEngineeringProductionPrice(scope:ProductionPriceScope,contractServiceId:string,structureId:string):Promise<void>{
