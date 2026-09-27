@@ -64,8 +64,8 @@ function stageReferences(model:MeasurementParityModel,origin:MeasurementParityOr
   return base;
 }
 
-export function GuidedMeasurementFlow({
-  const [manualItemOpen,setManualItemOpen]=useState(false);scope,contractId,initialMeasurementId='',initialOriginId='',draftHeader=null,onDraftPersisted,onChanged,onClose}:Props){
+export function GuidedMeasurementFlow({scope,contractId,initialMeasurementId='',initialOriginId='',draftHeader=null,onDraftPersisted,onChanged,onClose}:Props){
+  const [manualItemOpen,setManualItemOpen]=useState(false);
   const [model,setModel]=useState<MeasurementParityModel|null>(null);
   const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState<string|null>(null);
   const [measurementId,setMeasurementId]=useState(initialMeasurementId); const activeMeasurementId=initialMeasurementId||measurementId; const [originId,setOriginId]=useState(initialOriginId); const [serviceIndex,setServiceIndex]=useState(0);
