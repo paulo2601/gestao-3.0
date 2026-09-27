@@ -33,7 +33,7 @@ const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const quantity=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:3});
 const statusLabels:Record<string,string>={draft:'Rascunho',active:'Ativo',suspended:'Suspenso',completed:'Concluído',cancelled:'Cancelado',negotiation:'Negociação',approved:'Aprovado',closed:'Fechado',converted:'Convertido',open:'Aberto'};
 const sectionMeta:Record<Exclude<EngineeringContractSection,'resumo'>,{eyebrow:string;title:string;description:string}>={
-  contrato:{eyebrow:'DADOS E ESTRUTURA',title:'Contrato',description:'Dados, estruturas, torres, blocos, pavimentos e aditivos vinculados ao contrato.'},
+  contrato:{eyebrow:'DADOS E ESTRUTURA',title:'Contrato',description:'Dados, estruturas, aditivos e planilhas de valores vinculados ao contrato.'},
   planilhas:{eyebrow:'BASE CONTRATUAL',title:'Planilhas e serviços',description:'Planilhas separadas por torre, estrutura e aditivo, com acesso direto aos quantitativos.'},
   provisorios:{eyebrow:'NEGOCIAÇÃO',title:'Provisórios',description:'Propostas em negociação, itens, valores e conversão para contrato ou aditivo.'},
   medicao:{eyebrow:'EXECUÇÃO',title:'Medições',description:'Competências, serviços medidos e evolução da execução contratual.'},
@@ -47,7 +47,7 @@ function monthLabel(value:string){if(!value)return'—';const [y,m]=value.slice(
 function numberValue(value:string){const parsed=Number(value.replace(',','.'));return Number.isFinite(parsed)?parsed:0;}
 function towerConfig(metadata:Record<string,unknown>|null|undefined){const raw=metadata?.towerConfig;if(!raw||typeof raw!=='object')return null;const cfg=raw as Record<string,unknown>;const floorCount=Number(cfg.floorCount);const unitsPerFloor=Number(cfg.unitsPerFloor);const firstFloor=Number(cfg.firstFloor??1);const hasGroundFloor=Boolean(cfg.hasGroundFloor??false);const groundFloorUnits=Math.max(0,Number(cfg.groundFloorUnits)||0);const hasRoof=Boolean(cfg.hasRoof??false);const roofUnits=Math.max(0,Number(cfg.roofUnits)||0);const totalUnits=Math.max(0,Number(cfg.totalUnits)||0);return Number.isFinite(floorCount)&&floorCount>0&&Number.isFinite(unitsPerFloor)&&unitsPerFloor>0?{floorCount,unitsPerFloor,firstFloor,hasGroundFloor,groundFloorUnits,hasRoof,roofUnits,totalUnits}:null;}
 
-export function EngineeringContractWorkspace({section,scope,contract,onChanged}:Props){
+export function EngineeringContractWorkspace({section,scope,contract,onChanged,onNavigate}:Props){
   const operations=useEngineeringOperations(scope);
   const [formKind,setFormKind]=useState<FormKind|null>(null);
   const [guidedMeasurementOpen,setGuidedMeasurementOpen]=useState(false);
@@ -157,15 +157,21 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged}:
           <div><span className="engineering-contract-approved__stat-icon engineering-contract-approved__stat-icon--success">▥</span><span><small>Serviços cadastrados</small><strong>{contractServices.length}</strong></span></div>
         </div>
         <section className="engineering-contract-approved__section">
-          <div className="engineering-contract-approved__section-head"><div><strong>Estrutura cadastral da obra</strong><span>Cadastre e edite torres, blocos, pavimentos e unidades. Os serviços e quantitativos ficam exclusivamente em Planilhas.</span></div></div>
+          <div className="engineering-contract-approved__section-head"><div><strong>Estrutura cadastral da obra</strong><span>Cadastre e edite torres, blocos, pavimentos e unidades do contrato.</span></div></div>
           <div className="engineering-contract-approved__structure-list">
             {rows.length?rows.map(item=><button key={item.id} type="button" className="engineering-contract-approved__structure" onClick={()=>setStructureEditId(item.id)}><span className="engineering-contract-approved__building">▦</span><span className="engineering-contract-approved__structure-name"><strong>{item.name}</strong><small>Estrutura cadastral</small></span><span className="engineering-contract-approved__structure-meta"><small>Obra</small><b>{contract.workName}</b></span><span className="engineering-contract-approved__structure-meta"><small>Situação</small><b className="engineering-status engineering-status--active">Ativa</b></span><span className="engineering-contract-approved__open">Editar estrutura</span><span className="engineering-contract-approved__chevron">›</span></button>):emptyRow('Cadastre torres, blocos, pavimentos ou unidades.')}
           </div>
         </section>
         <section className="engineering-contract-approved__section engineering-contract-approved__section--addenda">
-          <div className="engineering-contract-approved__section-head"><div><strong>Cadastro de aditivos</strong><span>Gerencie os aditivos vinculados ao contrato. Os itens e a planilha de cada aditivo ficam na aba Planilhas.</span></div></div>
+          <div className="engineering-contract-approved__section-head"><div><strong>Cadastro de aditivos</strong><span>Gerencie os aditivos vinculados ao contrato e abra diretamente sua planilha de valores.</span></div></div>
           <div className="engineering-contract-approved__addenda-grid">
-            {addenda.length?addenda.map(item=><div key={item.id} className="engineering-contract-approved__addendum"><span className="engineering-contract-approved__addendum-icon">▤</span><span className="engineering-contract-approved__addendum-copy"><strong>Aditivo {item.number}</strong><small>{labelStatus(item.status)}</small></span></div>):<em className="ui-muted">Nenhum aditivo cadastrado.</em>}
+            {addenda.length?addenda.map(item=><button key={item.id} type="button" className="engineering-contract-approved__addendum" onClick={()=>setContractAddendumId(item.id)}><span className="engineering-contract-approved__addendum-icon">▤</span><span className="engineering-contract-approved__addendum-copy"><strong>Aditivo {item.number}</strong><small>{labelStatus(item.status)}</small></span><span className="engineering-contract-approved__addendum-open">Abrir planilha</span><span className="engineering-contract-approved__chevron">›</span></button>):<em className="ui-muted">Nenhum aditivo cadastrado.</em>}
+          </div>
+        </section>
+        <section className="engineering-contract-approved__section">
+          <div className="engineering-contract-approved__section-head"><div><strong>Planilhas de valores</strong><span>Acesse as planilhas de serviços, valores unitários e quantitativos de cada torre ou estrutura.</span></div></div>
+          <div className="engineering-contract-approved__structure-list">
+            {structures.length?structures.map(item=>{const count=allocations.filter(allocation=>allocation.structureId===item.id).length;return <button key={item.id} type="button" className="engineering-contract-approved__structure" onClick={()=>{selectSheetGroup({type:'structure',id:item.id});onNavigate('planilhas');}}><span className="engineering-contract-approved__building">▦</span><span className="engineering-contract-approved__structure-name"><strong>{item.name}</strong><small>Planilha de valores</small></span><span className="engineering-contract-approved__structure-meta"><small>Serviços distribuídos</small><b>{count}</b></span><span className="engineering-contract-approved__open">Abrir planilha</span><span className="engineering-contract-approved__chevron">›</span></button>}):emptyRow('Nenhuma torre ou estrutura cadastrada.')}
           </div>
         </section>
       </div>;
