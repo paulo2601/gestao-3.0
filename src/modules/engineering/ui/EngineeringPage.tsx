@@ -11,6 +11,7 @@ import { Select } from '../../../shared/ui/Select';
 import { EngineeringContractWorkspace, type EngineeringContractSection } from './EngineeringContractWorkspace';
 import { EngineeringContractSummaryDashboard } from './EngineeringContractSummaryDashboard';
 import { EngineeringProductionWorkspace } from './EngineeringProductionWorkspace';
+import { EngineeringProductionPage } from './EngineeringProductionPage';
 import { NewEngineeringContractDialog } from './NewEngineeringContractDialog';
 import { useEngineeringOverview } from './useEngineeringOverview';
 import './engineering.css';
@@ -44,6 +45,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const location=useLocation();
   const [searchParams]=useSearchParams();
   const productionFocus=location.pathname==='/producao'||searchParams.get('area')==='producao';
+  if(productionFocus)return <EngineeringProductionPage companies={companies} initialCompanyId={initialCompanyId}/>;
   const [refreshToken,setRefreshToken]=useState(0);
   const [contractSearch,setContractSearch]=useState('');
   const [contractStatus,setContractStatus]=useState('all');
