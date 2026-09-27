@@ -42,3 +42,5 @@
   .measurement-hub::before { content: "MEDIÇÃO EM RASCUNHO"; display: block; margin: 0 0 12px; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
   @page { size: A4 portrait; margin: 12mm; }
 }
+
+.measurement-launched-indicator{display:block}
