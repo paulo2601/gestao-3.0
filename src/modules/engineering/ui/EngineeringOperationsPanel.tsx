@@ -94,6 +94,7 @@ export function EngineeringOperationsPanel({activeTab,scope,onChanged,actionsMod
   };
 
   function open(next:Exclude<Kind,null>){
+    if(next==='structure'&&focusedContractId)return;
     operations.clearFeedback();
     const base={...defaults[next]};
     if(focusedContractId&&['contractStatus','contractService','allocation','addendum','measurement'].includes(next))base.contractId=focusedContractId;
@@ -139,7 +140,7 @@ export function EngineeringOperationsPanel({activeTab,scope,onChanged,actionsMod
   const defaultContractActions=<><Button size="sm" onClick={()=>open('work')}>Nova obra</Button><Button size="sm" variant="secondary" onClick={()=>open('structure')}>Estrutura</Button><Button size="sm" onClick={()=>open('contract')}>Novo contrato</Button><Button size="sm" variant="secondary" onClick={()=>open('service')}>Novo serviço</Button><Button size="sm" variant="secondary" onClick={()=>open('contractService')}>Serviço no contrato</Button><Button size="sm" variant="secondary" onClick={()=>open('allocation')}>Distribuir serviço</Button><Button size="sm" variant="tertiary" onClick={()=>open('contractStatus')}>Status</Button></>;
   const contractCreateAction=<Button onClick={()=>open('contract')}>＋ Novo contrato</Button>;
   const contractMaintenanceActions=<><Button size="sm" onClick={()=>open('contractStatus')}>Status</Button><Button size="sm" variant="secondary" onClick={()=>open('contractService')}>Serviços</Button><Button size="sm" variant="secondary" onClick={()=>open('allocation')}>Distribuição</Button><Button size="sm" variant="secondary" onClick={()=>open('addendum')}>Aditivo</Button><Button size="sm" variant="secondary" onClick={()=>open('measurement')}>Nova medição</Button></>;
-  const contractDataActions=<><Button size="sm" onClick={()=>open('contractStatus')}>Alterar status</Button><Button size="sm" variant="secondary" onClick={()=>open('structure')}>Nova estrutura</Button><Button size="sm" variant="secondary" onClick={()=>open('addendum')}>Novo aditivo</Button></>;
+  const contractDataActions=<><Button size="sm" onClick={()=>open('contractStatus')}>Alterar status</Button><Button size="sm" variant="secondary" onClick={()=>open('addendum')}>Novo aditivo</Button></>;
   const contractServiceActions=<><Button size="sm" onClick={()=>open('contractService')}>Adicionar serviço</Button><Button size="sm" variant="secondary" onClick={()=>open('allocation')}>Distribuir por estrutura</Button><Button size="sm" variant="secondary" onClick={()=>open('addendum')}>Novo aditivo</Button><Button size="sm" variant="secondary" onClick={()=>open('addendumLine')}>Item de aditivo</Button></>;
   const measurementCreateActions=<><Button size="sm" onClick={()=>open('measurement')}>Nova medição</Button><Button size="sm" variant="secondary" onClick={()=>open('measurementLine')}>Adicionar serviço medido</Button></>;
   const measurementCloseActions=<><Button size="sm" onClick={()=>open('measurementStatus')}>Fechar / aprovar / reabrir</Button><Button size="sm" variant="secondary" onClick={()=>open('receivable')}>Gerar conta a receber</Button><Button size="sm" variant="secondary" onClick={()=>open('receive')}>Registrar recebimento</Button></>;
