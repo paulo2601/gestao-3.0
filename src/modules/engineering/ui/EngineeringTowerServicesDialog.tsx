@@ -10,14 +10,17 @@ interface Props{open:boolean;scope:{tenantId:string;companyId:string};contractId
 
 const n=(v:string)=>{const x=Number(v.trim().replace(/\./g,'').replace(',','.'));return Number.isFinite(x)?x:0;};
 function parseCsv(text:string):Row[]{
- const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);if(lines.length<2)return[];
- const sep=(lines[0].match(/;/g)?.length??0)>=(lines[0].match(/,/g)?.length??0)?';':',';
- const clean=(v:string)=>v.trim().replace(/^"|"$/g,'').trim();
- const h=lines[0].split(sep).map(x=>clean(x).toLocaleLowerCase('pt-BR'));
+ const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);
+ const headerLine=lines[0];if(!headerLine||lines.length<2)return[];
+ const sep=(headerLine.match(/;/g)?.length??0)>=(headerLine.match(/,/g)?.length??0)?';':',';
+ const clean=(v:string|undefined)=>(v??'').trim().replace(/^"|"$/g,'').trim();
+ const h=headerLine.split(sep).map(x=>clean(x).toLocaleLowerCase('pt-BR'));
  const idx=(...names:string[])=>h.findIndex(x=>names.some(name=>x.includes(name)));
  const di=idx('serviço','servico','descrição','descricao'),ui=idx('unidade','unid'),qi=idx('quantidade','quantitativo','qtd'),vi=idx('valor unit','preço unit','preco unit');
  if(di<0||qi<0||vi<0)throw new Error('A planilha precisa ter as colunas Serviço/Descrição, Quantidade e Valor unitário.');
- return lines.slice(1).map(line=>line.split(sep).map(clean)).filter(c=>c[di]).map(c=>({description:c[di],unit:ui>=0?(c[ui]||'UN'):'UN',quantity:n(c[qi]),unitPrice:n(c[vi])})).filter(r=>r.quantity>0);
+ const rows:Row[]=[];
+ for(const line of lines.slice(1)){const c=line.split(sep).map(clean);const description=clean(c[di]);if(!description)continue;const quantity=n(clean(c[qi]));if(quantity<=0)continue;rows.push({description,unit:ui>=0?(clean(c[ui])||'UN'):'UN',quantity,unitPrice:n(clean(c[vi]))});}
+ return rows;
 }
 export function EngineeringTowerServicesDialog({open,scope,contractId,workId,structure,onClose,onChanged}:Props){
  const operations=useEngineeringOperations(scope);
