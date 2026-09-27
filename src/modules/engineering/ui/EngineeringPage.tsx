@@ -106,7 +106,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
         {!productionFocus&&<nav className="engineering-contract-workspace__nav engineering-parity-primary-nav" aria-label="Áreas do contrato">
           {primarySections.map(section=><Button key={section.id} size="sm" variant="secondary" className={contractSection===section.id?'is-active':''} onClick={()=>navigateContract(section.id)}><span className="engineering-contract-workspace__nav-icon" aria-hidden="true">{section.icon}</span>{section.label}</Button>)}
         </nav>}
-        {productionFocus?<EngineeringProductionWorkspace scope={maintenanceScope} workName={selectedContract.workName} contractNumber={selectedContract.contractNumber} onChanged={refresh}/>:contractSection==='resumo'?<EngineeringContractSummaryDashboard contract={selectedContract} onNavigate={navigateLegacyContract}/>:<EngineeringContractWorkspace section={contractSection} scope={maintenanceScope} contract={selectedContract} onChanged={refresh} onNavigate={navigateLegacyContract}/>} 
+        {productionFocus?<EngineeringProductionWorkspace scope={maintenanceScope} workName={selectedContract.workName} contractNumber={selectedContract.contractNumber} onChanged={refresh}/>:contractSection==='resumo'?<EngineeringContractSummaryDashboard contract={selectedContract} onNavigate={navigateLegacyContract}/>:<EngineeringContractWorkspace section={contractSection} scope={maintenanceScope} contract={selectedContract} onChanged={refresh}/>} 
       </div>}
     </Dialog>
   </section>;
