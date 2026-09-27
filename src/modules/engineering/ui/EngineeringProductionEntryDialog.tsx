@@ -4,7 +4,7 @@ import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
 import type { EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
-import { createSharedProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
+import { createManualProductionEntry, createSharedProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
 import { resolveEngineeringProductionPrice } from '../infrastructure/EngineeringProductionPriceRepository';
 import './engineering-production-entry-dialog.css';
 
@@ -41,20 +41,23 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const periodOptions=[{value:'',label:'Selecione…'},...openPeriods.map(item=>({value:item.id,label:item.competence.slice(0,7).split('-').reverse().join('/')}))];
   const generalServices=snapshot.productionPrices.filter(item=>item.structureId===null&&item.productionServiceId&&item.productionServiceKind!=='linked');
   const structureOptions=[{value:'',label:'Selecione…'},...(generalServices.length?[{value:'__GENERAL__',label:'SEM ESTRUTURA / SERVIÇOS GERAIS'}]:[]),...snapshot.structures.map(item=>({value:item.id,label:item.name}))];
+  const manualServices=snapshot.productionPrices.filter(item=>item.structureId===structureId&&item.productionServiceId&&item.productionServiceKind==='manual');
   const allowedServiceIds=new Set(snapshot.serviceIdsByStructure[structureId]??[]);
   const pricedContractServiceIds=new Set(snapshot.productionPrices.filter(item=>item.structureId===structureId).map(item=>item.contractServiceId));
   const allowedServices=snapshot.services.filter(item=>allowedServiceIds.has(item.id)&&pricedContractServiceIds.has(item.contractServiceId));
   const isGeneral=structureId==='__GENERAL__';
+  const selectedManual=manualServices.find(item=>('manual:'+item.productionServiceId)===serviceId);
   const selectedService=allowedServices.find(item=>item.id===serviceId);
-  const selectedServiceUnit=selectedService?.unit?.toUpperCase()??'';
+  const selectedServiceUnit=(selectedManual?.unit??selectedService?.unit)?.toUpperCase()??'';
   const usesApartmentUnits=!isGeneral&&['APTO','APT','APARTAMENTO'].includes(selectedServiceUnit);
   const baseQuantity=usesApartmentUnits?unitIds.length:numberValue(executedQuantity);
   const total=baseQuantity*numberValue(unitValue);
   const floors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');
   const units=snapshot.structureNodes.filter(item=>item.parentId===floorId&&item.structureType==='unit');
-  const serviceOptions=[{value:'',label:structureId?((isGeneral?generalServices.length:allowedServices.length)?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...(isGeneral?generalServices.map(item=>({value:`general:${item.productionServiceId}`,label:`${item.productionServiceKind==='discount'?'Desconto · ':''}${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})):allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`})))];
+  const towerServices=[...manualServices.map(item=>({value:`manual:${item.productionServiceId}`,label:`${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})),...allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`}))];
+  const serviceOptions=[{value:'',label:structureId?((isGeneral?generalServices.length:towerServices.length)?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...(isGeneral?generalServices.map(item=>({value:`general:${item.productionServiceId}`,label:`${item.productionServiceKind==='discount'?'Desconto · ':''}${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})):towerServices)];
   function changeStructure(id:string){setStructureId(id);setFloorId('');setUnitIds([]);setServiceId('');setUnitValue('');}
-  async function changeService(id:string){setServiceId(id);setUnitValue('');if(!id||!structureId)return;if(structureId==='__GENERAL__'){const price=generalServices.find(item=>`general:${item.productionServiceId}`===id);setUnitValue(price?String(price.unitValue):'');setError(price?null:'Serviço geral sem valor cadastrado.');return;}const service=snapshot.services.find(item=>item.id===id);if(!service)return;try{const price=await resolveEngineeringProductionPrice({...scope,workId:snapshot.workId,contractServiceId:service.contractServiceId,structureId});setUnitValue(price===null?'':String(price));if(price===null)setError('Este serviço ainda não possui valor de produção cadastrado para a estrutura selecionada.');else setError(null);}catch(c){setError(c instanceof Error?c.message:'Não foi possível carregar o valor de produção.');}}
+  async function changeService(id:string){setServiceId(id);setUnitValue('');if(!id||!structureId)return;if(structureId==='__GENERAL__'){const price=generalServices.find(item=>`general:${item.productionServiceId}`===id);setUnitValue(price?String(price.unitValue):'');setError(price?null:'Serviço geral sem valor cadastrado.');return;}if(id.startsWith('manual:')){const price=manualServices.find(item=>`manual:${item.productionServiceId}`===id);setUnitValue(price?String(price.unitValue):'');setError(price?null:'Serviço manual sem valor cadastrado.');return;}const service=snapshot.services.find(item=>item.id===id);if(!service)return;try{const price=await resolveEngineeringProductionPrice({...scope,workId:snapshot.workId,contractServiceId:service.contractServiceId,structureId});setUnitValue(price===null?'':String(price));if(price===null)setError('Este serviço ainda não possui valor de produção cadastrado para a estrutura selecionada.');else setError(null);}catch(c){setError(c instanceof Error?c.message:'Não foi possível carregar o valor de produção.');}}
 
   function addParticipant(id:string){
     const employee=snapshot.employees.find(item=>item.id===id);if(!employee)return;
@@ -80,7 +83,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     if(divisionMode==='percentage'&&Math.abs(payload.reduce((sum,item)=>sum+(item.percentage??0),0)-100)>0.01){setError('A soma dos percentuais deve ser 100%.');return;}
     if(divisionMode==='value'&&Math.abs(payload.reduce((sum,item)=>sum+(item.value??0),0)-total)>0.01){setError(`A soma dos valores deve ser ${currency.format(total)}.`);return;}
     setBusy(true);
-    try{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço contratual não encontrado.');await createSharedProductionEntry({tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:numberValue(executedQuantity),unitValue:numberValue(unitValue),notes:notes||null,divisionMode,participants:payload});reset();onSaved();onClose();}
+    try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:numberValue(executedQuantity),unitValue:numberValue(unitValue),notes:notes||null,divisionMode,participants:payload};if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}reset();onSaved();onClose();}
     catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar a produção.');}
     finally{setBusy(false);}
   }
@@ -91,7 +94,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
       <div className="engineering-production-entry-form__grid">
         <Select label="Competência" value={periodId} onChange={event=>setPeriodId(event.target.value)} options={periodOptions} required/>
         <Select label="Estrutura" value={structureId} onChange={event=>changeStructure(event.target.value)} options={structureOptions} required/>
-        <Select label="Serviço" value={serviceId} onChange={event=>void changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||(isGeneral?generalServices.length===0:allowedServices.length===0)}/>
+        <Select label="Serviço" value={serviceId} onChange={event=>void changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||(isGeneral?generalServices.length===0:towerServices.length===0)}/>
         <Input label="Data" type="date" value={productionDate} onChange={event=>setProductionDate(event.target.value)} required/>
         {usesApartmentUnits?<><Select label="Pavimento" value={floorId} onChange={event=>setFloorId(event.target.value)} options={[{value:'',label:'Selecione…'},...floors.map(item=>({value:item.id,label:item.name}))]} required/><div className="engineering-production-entry-form__units"><div className="engineering-production-entry-form__units-head"><strong>Apartamentos / Unidades</strong><span>{unitIds.length} selecionada(s)</span></div>{floorId&&units.length===0?<span className="ui-muted">Nenhuma unidade cadastrada neste pavimento.</span>:units.map(item=><label key={item.id}><input type="checkbox" checked={unitIds.includes(item.id)} onChange={event=>setUnitIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))}/><span>{item.name}</span></label>)}</div></>:<Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>}
         <Input label={`Valor unitário${selectedService?.unit?` (${selectedService.unit})`:''}`} type="number" value={unitValue} readOnly required/>
