@@ -8,6 +8,7 @@ import { EngineeringOperationsPanel } from './EngineeringOperationsPanel';
 import { GuidedMeasurementFlow } from './GuidedMeasurementFlow';
 import { EngineeringMeasurementClosingPanel } from './EngineeringMeasurementClosingPanel';
 import { EngineeringTaxPanel } from './EngineeringTaxPanel';
+import { EngineeringContractSummaryPanel } from './EngineeringContractSummaryPanel';
 import { EditEngineeringContractRetentionDialog } from './EditEngineeringContractRetentionDialog';
 import { EngineeringAddendumSheetDialog } from './EngineeringAddendumSheetDialog';
 import { EditEngineeringStructureDialog } from './EditEngineeringStructureDialog';
@@ -138,17 +139,7 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged,o
   if(!data)return <EmptyState title="Dados indisponíveis" message={operations.state.errorMessage??'Não foi possível carregar a base operacional.'}/>;
 
   let content;
-  if(section==='resumo') content=<div className="engineering-contract-workspace__page engineering-contract-dashboard">
-    <div className="engineering-contract-workspace__kpis engineering-contract-workspace__kpis--hero">
-      <Card title="Contrato atualizado"><strong>{currency.format(contract.updatedContractValue)}</strong><span>Valor vigente do contrato</span></Card>
-      <Card title="Total medido"><strong className="engineering-positive">{currency.format(contract.measuredNet)}</strong><span>{contract.measuredPercent.toFixed(1)}% executado</span></Card>
-      <Card title="Saldo a executar"><strong className="engineering-danger">{currency.format(contract.grossBalance)}</strong><span>{(100-progress).toFixed(1)}% restante</span></Card>
-    </div>
-    <Card className="engineering-contract-workspace__progress-card" title="Progresso físico e financeiro"><progress max={100} value={progress}/><div><strong>{progress.toFixed(1)}%</strong><span className="ui-muted"> do contrato medido</span></div></Card>
-    <div className="engineering-module-grid">
-      {([{id:'contrato',icon:'▣',title:'Contrato',text:`${structures.length} estrutura(s) · ${addenda.length} aditivo(s)`},{id:'planilhas',icon:'▤',title:'Planilhas e serviços',text:`${contractServices.length} serviço(s) cadastrado(s)`},{id:'provisorios',icon:'◫',title:'Provisórios',text:`${provisionals.length} negociação(ões)`},{id:'medicao',icon:'▥',title:'Medições',text:`${measurements.length} competência(s)`},{id:'fechamentos',icon:'✓',title:'Fechamentos',text:'Aprovação e contas a receber'},{id:'impostos',icon:'%',title:'Impostos',text:'INSS, ISS e retenção técnica'},{id:'saldos',icon:'Σ',title:'Saldos',text:currency.format(contract.grossBalance)}] as const).map(item=><button key={item.id} className="engineering-module-card" onClick={()=>onNavigate(item.id)}><span className="engineering-module-card__icon">{item.icon}</span><span><strong>{item.title}</strong><small>{item.text}</small></span><b>›</b></button>)}
-    </div>
-  </div>;
+  if(section==='resumo') content=<EngineeringContractSummaryPanel contract={contract}/>;
   else {
     const meta=sectionMeta[section];
     let body;
