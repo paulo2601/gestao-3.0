@@ -26,7 +26,6 @@ interface Props {
   scope:{tenantId:string;companyId:string};
   contract:EngineeringContractSummary;
   onChanged:()=>void;
-  onNavigate:(section:EngineeringContractSection)=>void;
 }
 
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -47,7 +46,7 @@ function monthLabel(value:string){if(!value)return'—';const [y,m]=value.slice(
 function numberValue(value:string){const parsed=Number(value.replace(',','.'));return Number.isFinite(parsed)?parsed:0;}
 function towerConfig(metadata:Record<string,unknown>|null|undefined){const raw=metadata?.towerConfig;if(!raw||typeof raw!=='object')return null;const cfg=raw as Record<string,unknown>;const floorCount=Number(cfg.floorCount);const unitsPerFloor=Number(cfg.unitsPerFloor);const firstFloor=Number(cfg.firstFloor??1);const hasGroundFloor=Boolean(cfg.hasGroundFloor??false);const groundFloorUnits=Math.max(0,Number(cfg.groundFloorUnits)||0);const hasRoof=Boolean(cfg.hasRoof??false);const roofUnits=Math.max(0,Number(cfg.roofUnits)||0);const totalUnits=Math.max(0,Number(cfg.totalUnits)||0);return Number.isFinite(floorCount)&&floorCount>0&&Number.isFinite(unitsPerFloor)&&unitsPerFloor>0?{floorCount,unitsPerFloor,firstFloor,hasGroundFloor,groundFloorUnits,hasRoof,roofUnits,totalUnits}:null;}
 
-export function EngineeringContractWorkspace({section,scope,contract,onChanged,onNavigate}:Props){
+export function EngineeringContractWorkspace({section,scope,contract,onChanged}:Props){
   const operations=useEngineeringOperations(scope);
   const [formKind,setFormKind]=useState<FormKind|null>(null);
   const [guidedMeasurementOpen,setGuidedMeasurementOpen]=useState(false);
