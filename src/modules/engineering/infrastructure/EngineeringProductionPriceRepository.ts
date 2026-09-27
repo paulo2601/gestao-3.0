@@ -31,6 +31,14 @@ export async function createManualProductionService(input:ProductionPriceScope&{
  if(input.allocations?.length){const {error:allocationError}=await client.from('engineering_production_allocations').insert(input.allocations.filter(a=>a.quantity>0).map(a=>({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,production_service_id:serviceTyped.data!.id,structure_id:a.structureId,quantity:a.quantity})));if(allocationError)throw allocationError;}
 }
 
+export async function updateManualProductionService(input:ProductionPriceScope&{productionServiceId:string;workId:string;name:string;unit:string|null;structureId:string;unitValue:number;plannedQuantity:number;allocations:{structureId:string;quantity:number}[]}):Promise<void>{
+ const client=getSupabaseClient();
+ const {error:serviceError}=await client.from('engineering_production_services').update({name:input.name.trim(),unit:input.unit?.trim()||null,planned_quantity:input.plannedQuantity}).eq('tenant_id',input.tenantId).eq('company_id',input.companyId).eq('id',input.productionServiceId);if(serviceError)throw serviceError;
+ const {error:priceError}=await client.from('engineering_production_prices').update({structure_id:input.structureId,unit_value:input.unitValue}).eq('tenant_id',input.tenantId).eq('company_id',input.companyId).eq('production_service_id',input.productionServiceId).eq('status','active');if(priceError)throw priceError;
+ const {error:deleteError}=await client.from('engineering_production_allocations').delete().eq('tenant_id',input.tenantId).eq('company_id',input.companyId).eq('production_service_id',input.productionServiceId);if(deleteError)throw deleteError;
+ const rows=input.allocations.filter(a=>a.quantity>0);if(rows.length){const {error}=await client.from('engineering_production_allocations').insert(rows.map(a=>({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,production_service_id:input.productionServiceId,structure_id:a.structureId,quantity:a.quantity})));if(error)throw error;}
+}
+
 export async function deactivateEngineeringProductionPrice(scope:ProductionPriceScope,contractServiceId:string,structureId:string):Promise<void>{
  const client=getSupabaseClient();const {error}=await client.from('engineering_production_prices').update({status:'inactive'}).eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('contract_service_id',contractServiceId).eq('structure_id',structureId);if(error)throw error;
 }
