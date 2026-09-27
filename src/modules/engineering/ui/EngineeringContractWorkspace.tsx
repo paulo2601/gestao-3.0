@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { EngineeringContractSummary } from '../domain/overview';
 import { Button } from '../../../shared/ui/Button';
-import { Card } from '../../../shared/ui/Card';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { EmptyState, LoadingState } from '../../../shared/ui/Feedback';
 import { EngineeringOperationsPanel } from './EngineeringOperationsPanel';
