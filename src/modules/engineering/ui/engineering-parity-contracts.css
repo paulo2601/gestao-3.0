@@ -115,3 +115,17 @@
   .engineering-parity-contract .engineering-sheet__stats strong{font-size:.74rem}
   .engineering-parity-contract .engineering-sheet__table{min-width:620px}
 }
+
+
+/* Contrato consolidado: torres e aditivos em uma única faixa de acesso. */
+.engineering-parity-contract .engineering-contract-origin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.engineering-parity-contract .engineering-contract-origin-card{display:flex;align-items:center;gap:12px;min-height:70px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);color:var(--text);text-align:left;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.engineering-parity-contract .engineering-contract-origin-card:hover{border-color:var(--primary);box-shadow:0 4px 14px color-mix(in srgb,var(--primary) 12%,transparent);transform:translateY(-1px)}
+.engineering-parity-contract .engineering-contract-origin-card__icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:11px;background:var(--info-bg);color:var(--primary);font-size:1.1rem}
+.engineering-parity-contract .engineering-contract-origin-card>span:last-child{display:grid;gap:3px;min-width:0}
+.engineering-parity-contract .engineering-contract-origin-card strong{font-size:.86rem}
+.engineering-parity-contract .engineering-contract-origin-card small{font-size:.68rem;color:var(--muted)}
+.engineering-parity-contract .engineering-contract-origin-card--new{border-style:dashed;color:var(--primary)}
+.engineering-parity-contract .engineering-contract-origin-card__plus{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;font-size:1.45rem;font-weight:700}
+@media(max-width:760px){.engineering-parity-contract .engineering-contract-origin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:430px){.engineering-parity-contract .engineering-contract-origin-grid{grid-template-columns:1fr 1fr;gap:7px}.engineering-parity-contract .engineering-contract-origin-card{min-height:60px;padding:8px 9px;gap:8px}.engineering-parity-contract .engineering-contract-origin-card__icon,.engineering-parity-contract .engineering-contract-origin-card__plus{flex-basis:36px;width:36px;height:36px}}
