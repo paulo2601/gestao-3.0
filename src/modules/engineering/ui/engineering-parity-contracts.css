@@ -129,3 +129,13 @@
 .engineering-parity-contract .engineering-contract-origin-card__plus{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;font-size:1.45rem;font-weight:700}
 @media(max-width:760px){.engineering-parity-contract .engineering-contract-origin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:430px){.engineering-parity-contract .engineering-contract-origin-grid{grid-template-columns:1fr 1fr;gap:7px}.engineering-parity-contract .engineering-contract-origin-card{min-height:60px;padding:8px 9px;gap:8px}.engineering-parity-contract .engineering-contract-origin-card__icon,.engineering-parity-contract .engineering-contract-origin-card__plus{flex-basis:36px;width:36px;height:36px}}
+
+
+/* Torre: o excluir pertence ao card e nunca ocupa uma célula própria da grade. */
+.engineering-parity-contract .engineering-contract-origin-card--tower{position:relative;padding:0;overflow:hidden;cursor:default}
+.engineering-parity-contract .engineering-contract-origin-card--tower:hover{transform:none}
+.engineering-parity-contract .engineering-contract-origin-card__main{display:flex;align-items:center;gap:12px;width:100%;min-width:0;min-height:68px;padding:12px 42px 12px 14px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.engineering-parity-contract .engineering-contract-origin-card__main>span:last-child{display:grid;gap:3px;min-width:0}
+.engineering-parity-contract .engineering-contract-origin-card__delete{position:absolute;top:7px;right:7px;z-index:2;display:grid;place-items:center;width:26px;height:26px;min-width:26px;min-height:26px;padding:0;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);font-size:17px;line-height:1;cursor:pointer}
+.engineering-parity-contract .engineering-contract-origin-card__delete:hover{border-color:var(--danger);background:var(--danger-bg);color:var(--danger)}
+@media(max-width:430px){.engineering-parity-contract .engineering-contract-origin-card__main{min-height:58px;padding:8px 34px 8px 9px;gap:8px}.engineering-parity-contract .engineering-contract-origin-card__delete{top:5px;right:5px;width:24px;height:24px;min-width:24px;min-height:24px}}
