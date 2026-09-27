@@ -37,6 +37,7 @@ const primarySections:ContractNavItem[]=[
   {id:'fechamentos',label:'Fechamentos',icon:'✓'},
   {id:'impostos',label:'Impostos',icon:'%'},
   {id:'saldos',label:'Saldos',icon:'≡'},
+  {id:'saldo-contrato',label:'Saldo do contrato',icon:'▧'},
 ];
 
 export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProps){
