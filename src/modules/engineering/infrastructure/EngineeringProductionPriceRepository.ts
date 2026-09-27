@@ -20,7 +20,7 @@ export async function saveEngineeringProductionPrice(input:ProductionPriceInput)
  if(error)throw error;
 }
 
-export async function createManualProductionService(input:ProductionPriceScope&{workId:string;name:string;unit:string|null;kind:'manual'|'discount';structureId:string|null;productionStructureName?:string;unitValue:number;plannedQuantity?:number;allocations?:{structureId:string;quantity:number}[]}):Promise<void>{
+export async function createManualProductionService(input:ProductionPriceScope&{workId:string;name:string;unit:string|null;kind:'manual'|'discount';structureId:string|null;productionStructureName?:string|undefined;unitValue:number;plannedQuantity?:number;allocations?:{structureId:string;quantity:number}[]}):Promise<void>{
  const client=getSupabaseClient();
  let targetStructureId=input.structureId;
  if(!targetStructureId&&input.productionStructureName?.trim()){const created:unknown=await client.from('work_structures').insert({tenant_id:input.tenantId,company_id:input.companyId,work_id:input.workId,parent_id:null,name:input.productionStructureName.trim(),structure_type:'production',status:'active',sort_order:9999,metadata:{production_only:true}}).select('id').single();const typed=created as {data:{id:string}|null;error:{message?:string}|null};if(typed.error)throw new Error(typed.error.message??'Não foi possível criar a estrutura de produção.');targetStructureId=typed.data?.id??null;}
