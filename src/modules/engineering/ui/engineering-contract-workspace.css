@@ -84,3 +84,16 @@
     color:inherit!important;
   }
 }
+
+/* contract-summary-approved-v1 */
+.engineering-contract-dashboard__approved{display:grid;gap:16px}
+.engineering-contract-dashboard__main{display:grid;grid-template-columns:1.08fr .92fr;gap:14px}
+.engineering-contract-dashboard__evolution,.engineering-contract-dashboard__distribution{min-height:285px}
+.engineering-contract-dashboard__evolution>p,.engineering-contract-dashboard__distribution>p{margin:0 0 22px}
+.engineering-contract-dashboard__evolution progress{width:100%;height:14px}
+.engineering-contract-dashboard__progress-label{display:flex;justify-content:space-between;align-items:center;margin-top:7px}.engineering-contract-dashboard__progress-label strong{font-size:1.45rem;color:var(--primary)}.engineering-contract-dashboard__progress-label span{font-weight:800;color:var(--muted)}
+.engineering-contract-dashboard__evolution-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:24px}.engineering-contract-dashboard__evolution-cards>div{display:grid;gap:4px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}.engineering-contract-dashboard__evolution-cards small{color:var(--muted);font-weight:750}.engineering-contract-dashboard__evolution-cards strong{font-size:1.25rem}.engineering-contract-dashboard__evolution-cards span{font-size:.72rem;color:var(--muted)}
+.engineering-contract-dashboard__distribution-body{display:grid;grid-template-columns:minmax(230px,1fr) minmax(180px,.8fr);align-items:center;gap:20px}
+.engineering-contract-dashboard__donut{width:250px;height:250px;max-width:100%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin:auto;position:relative}.engineering-contract-dashboard__donut:after{content:"";position:absolute;inset:43px;border-radius:50%;background:var(--surface)}.engineering-contract-dashboard__donut>div{position:relative;z-index:1;display:grid;place-items:center;text-align:center;gap:3px;width:155px}.engineering-contract-dashboard__donut strong{font-size:1.02rem;white-space:nowrap}.engineering-contract-dashboard__donut span{font-size:.7rem;color:var(--muted)}.engineering-contract-dashboard__donut b{font-size:.72rem}
+.engineering-contract-dashboard__legend{display:grid;gap:10px}.engineering-contract-dashboard__legend>div{display:grid;gap:5px;padding:12px;border:1px solid var(--border);border-radius:12px}.engineering-contract-dashboard__legend small{color:var(--muted);font-weight:800}.engineering-contract-dashboard__legend strong{font-size:.94rem;white-space:nowrap}
+@media(max-width:900px){.engineering-contract-dashboard__main{grid-template-columns:1fr}.engineering-contract-dashboard__distribution-body{grid-template-columns:1fr 1fr}}@media(max-width:560px){.engineering-contract-dashboard__evolution-cards{grid-template-columns:1fr}.engineering-contract-dashboard__distribution-body{grid-template-columns:1fr}.engineering-contract-dashboard__donut{width:220px;height:220px}}
