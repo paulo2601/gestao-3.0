@@ -12,12 +12,13 @@ import { EditEngineeringContractRetentionDialog } from './EditEngineeringContrac
 import { EngineeringAddendumSheetDialog } from './EngineeringAddendumSheetDialog';
 import { EditEngineeringStructureDialog } from './EditEngineeringStructureDialog';
 import { EngineeringTowerServicesDialog } from './EngineeringTowerServicesDialog';
+import { EngineeringContractBalanceReport } from './EngineeringContractBalanceReport';
 import { useEngineeringOperations } from './useEngineeringOperations';
 import { loadContractRetentions } from '../infrastructure/EngineeringContractModalRepository';
 import { loadMeasurementParity } from '../infrastructure/LegacyMeasurementParityRepository';
 import './engineering-contract-workspace.css';
 
-export type EngineeringContractSection='resumo'|'contrato'|'planilhas'|'provisorios'|'medicao'|'fechamentos'|'impostos'|'saldos';
+export type EngineeringContractSection='resumo'|'contrato'|'planilhas'|'provisorios'|'medicao'|'fechamentos'|'impostos'|'saldos'|'saldo-contrato';
 type FormKind='contractStatus'|'structure'|'contractService'|'allocation'|'provisional'|'provisionalLine'|'convert'|'addendum'|'addendumLine'|'measurement'|'measurementLine'|'retention'|'measurementStatus'|'receivable'|'receive';
 type SheetGroup={type:'structure'|'addendum';id:string}|null;
 type AllocationEdit={contractServiceId:string;structureId:string;serviceLabel:string;structureLabel:string;unit:string;quantity:string;maxQuantity:number;notes:string;availableFloors:string[];selectedFloors:string[];unitsPerFloor:number;floorUnits:Record<string,number>}|null;
@@ -40,6 +41,7 @@ const sectionMeta:Record<Exclude<EngineeringContractSection,'resumo'>,{eyebrow:s
   fechamentos:{eyebrow:'HISTÓRICO FINANCEIRO',title:'Fechamentos e contas a receber',description:'Fechamento, aprovação, geração de contas e registro de recebimentos.'},
   impostos:{eyebrow:'CONTROLE FISCAL',title:'INSS, ISS e retenção técnica',description:'Retenções e revisão fiscal vinculadas às medições do contrato.'},
   saldos:{eyebrow:'DISPONIBILIDADE CONTRATUAL',title:'Saldos',description:'Contratado, medido e saldo disponível, com visão operacional do contrato.'},
+  'saldo-contrato':{eyebrow:'RELATÓRIO CONTRATUAL',title:'Saldo do contrato',description:'Relatório detalhado por torre, aditivo ou contrato completo, com quantitativos medidos e saldos pendentes.'},
 };
 
 function labelStatus(status:string){return statusLabels[status]??status;}
@@ -217,6 +219,8 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged}:
     } else if(section==='impostos'){
       const rows=measurements.filter(item=>match(item.competence,item.status));
       body=<EngineeringTaxPanel rows={rows} totalCount={measurements.length} financial={measurementFinancial} toolbar={toolbar('Lançar retenção','retention',{label:'Revisar medição',kind:'measurementStatus'})} onReview={()=>open('retention')}/>;
+    } else if(section==='saldo-contrato'){
+      body=<EngineeringContractBalanceReport scope={scope} contractId={contract.contractId} contractNumber={contract.contractNumber} workName={contract.workName}/>;
     } else {
       body=<>{sheetHead(contractServices.length)}<div className="engineering-balance-hero"><div><span>Saldo contratual disponível</span><strong>{currency.format(contract.grossBalance)}</strong><small>{(100-progress).toFixed(1)}% do contrato ainda disponível</small></div><progress max={100} value={progress}/></div><div className="engineering-sheet__table-wrap"><table className="engineering-sheet__table"><thead><tr><th>Indicador</th><th>Valor</th><th>Participação</th><th>Situação</th></tr></thead><tbody><tr><td><strong>Contrato atualizado</strong></td><td>{currency.format(contract.updatedContractValue)}</td><td>100%</td><td><span className="engineering-status engineering-status--active">Vigente</span></td></tr><tr><td><strong>Total medido</strong></td><td>{currency.format(contract.measuredNet)}</td><td>{progress.toFixed(1)}%</td><td><span className="engineering-status engineering-status--approved">Executado</span></td></tr><tr><td><strong>Saldo restante</strong></td><td>{currency.format(contract.grossBalance)}</td><td>{(100-progress).toFixed(1)}%</td><td><span className="engineering-status">Disponível</span></td></tr></tbody></table></div></>;
     }
