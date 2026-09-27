@@ -45,7 +45,6 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const location=useLocation();
   const [searchParams]=useSearchParams();
   const productionFocus=location.pathname==='/producao'||searchParams.get('area')==='producao';
-  if(productionFocus)return initialCompanyId?<EngineeringProductionPage companies={companies} initialCompanyId={initialCompanyId}/>:<EngineeringProductionPage companies={companies}/>;
   const [refreshToken,setRefreshToken]=useState(0);
   const [contractSearch,setContractSearch]=useState('');
   const [contractStatus,setContractStatus]=useState('all');
@@ -76,6 +75,8 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const closeContract=()=>{setSelectedContract(null);setContractSection('resumo');};
   const navigateContract=(section:ContractPageSection)=>{if(productionFocus)return;setContractSection(section);};
   const navigateLegacyContract=(section:EngineeringContractSection)=>navigateContract(section);
+
+  if(productionFocus)return initialCompanyId?<EngineeringProductionPage companies={companies} initialCompanyId={initialCompanyId}/>:<EngineeringProductionPage companies={companies}/>;
 
   return <section className="engineering-overview engineering-overview--contratos engineering-parity-overview" aria-labelledby="engineering-title">
     <header className="engineering-parity-header">
