@@ -13,6 +13,7 @@ import { EditEngineeringStructureDialog } from './EditEngineeringStructureDialog
 import { useEngineeringOperations } from './useEngineeringOperations';
 import { loadContractRetentions } from '../infrastructure/EngineeringContractModalRepository';
 import { loadMeasurementParity } from '../infrastructure/LegacyMeasurementParityRepository';
+import './engineering-contract-workspace.css';
 
 export type EngineeringContractSection='resumo'|'contrato'|'planilhas'|'provisorios'|'medicao'|'fechamentos'|'impostos'|'saldos';
 type FormKind='contractStatus'|'structure'|'contractService'|'allocation'|'provisional'|'provisionalLine'|'convert'|'addendum'|'addendumLine'|'measurement'|'measurementLine'|'retention'|'measurementStatus'|'receivable'|'receive';
