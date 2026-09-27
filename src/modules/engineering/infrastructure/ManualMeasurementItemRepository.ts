@@ -28,3 +28,18 @@ export async function addManualMeasurementItem(
   });
   if(response.error)throw response.error;
 }
+
+export async function updateManualMeasurementItem(
+  scope:{tenantId:string;companyId:string},
+  lineId:string,
+  input:ManualMeasurementItemInput,
+){
+  const response=await getSupabaseClient().from('measurement_lines').update({
+    measured_quantity:input.quantity,
+    unit_price_snapshot:input.unitPrice,
+    manual_description:input.description.trim(),
+    manual_unit:input.unit.trim().toUpperCase(),
+    notes:input.notes?.trim()?'[ITEM AVULSO] '+input.notes.trim():'[ITEM AVULSO]',
+  }).eq('id',lineId).eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId);
+  if(response.error)throw response.error;
+}
