@@ -15,6 +15,7 @@ import {
 } from '../infrastructure/LegacyMeasurementParityRepository';
 import './guided-measurement-flow.css';
 import { printMeasurement } from './printMeasurementReport';
+import { ManualMeasurementItemDialog } from './ManualMeasurementItemDialog';
 import './approved-measurement-sheet.css';
 import { buildMeasurementReferences, filterMeasurementReferencesByFloors } from './measurementStructure';
 
@@ -63,7 +64,8 @@ function stageReferences(model:MeasurementParityModel,origin:MeasurementParityOr
   return base;
 }
 
-export function GuidedMeasurementFlow({scope,contractId,initialMeasurementId='',initialOriginId='',draftHeader=null,onDraftPersisted,onChanged,onClose}:Props){
+export function GuidedMeasurementFlow({
+  const [manualItemOpen,setManualItemOpen]=useState(false);scope,contractId,initialMeasurementId='',initialOriginId='',draftHeader=null,onDraftPersisted,onChanged,onClose}:Props){
   const [model,setModel]=useState<MeasurementParityModel|null>(null);
   const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState<string|null>(null);
   const [measurementId,setMeasurementId]=useState(initialMeasurementId); const activeMeasurementId=initialMeasurementId||measurementId; const [originId,setOriginId]=useState(initialOriginId); const [serviceIndex,setServiceIndex]=useState(0);
@@ -148,8 +150,10 @@ export function GuidedMeasurementFlow({scope,contractId,initialMeasurementId='',
       <section className="measurement-hub__financial"><div><span>Bruto da medição</span><strong>{currency.format(measurementGross)}</strong></div><div><span>INSS ({retentions.inss.toLocaleString('pt-BR',{maximumFractionDigits:2})}%)</span><strong>{currency.format(inssValue)}</strong></div><div><span>ISS ({retentions.iss.toLocaleString('pt-BR',{maximumFractionDigits:2})}%)</span><strong>{currency.format(issValue)}</strong></div><div><span>Retenção ({retentions.rt.toLocaleString('pt-BR',{maximumFractionDigits:2})}%)</span><strong>{currency.format(rtValue)}</strong></div><div className="is-net"><span>Líquido da medição</span><strong>{currency.format(measurementNet)}</strong></div></section>
       <section className="measurement-hub__origin-picker"><div><strong>Selecionar origem</strong><span>Escolha Torre 4, Torre 6 ou um aditivo.</span></div><Select label="Torre / Aditivo" value="" onChange={event=>void openOrigin(event.target.value)} options={[{value:'',label:'Selecione uma torre ou aditivo…'},...model.origins.map(item=>({value:item.id,label:originLabel(item)}))]}/></section>
       <section className="measurement-hub__origins"><header><div><strong>Origens já adicionadas nesta medição</strong><span>Os valores abaixo compõem o bruto geral da medição.</span></div></header>{originRows.length===0?<div className="measurement-hub__empty">Nenhuma torre ou aditivo lançado ainda.</div>:<div className="measurement-hub__origin-list">{originRows.map(row=><button key={row.origin.id} type="button" onClick={()=>void openOrigin(row.origin.id,true)}><span><strong>{originLabel(row.origin)}</strong><small>{row.serviceCount} serviço(s) lançado(s)</small></span><b>{currency.format(row.gross)}</b><em>Editar ›</em></button>)}</div>}</section>
-      <footer className="approved-measurement-sheet__bottom-actions measurement-hub__footer"><Button variant="secondary" onClick={closeFlow}>Cancelar medição</Button><div><Button className="measurement-print-action" variant="secondary" disabled={!activeMeasurementId||measurementGross<=0} onClick={handlePrintMeasurement}>⎙ Imprimir medição</Button><Button variant="secondary" disabled={headerSaving||!measurementId} onClick={()=>void saveHeader()}>{headerSaving?'Salvando…':'▣ Salvar rascunho'}</Button><Button disabled={headerSaving||!measurementId||measurementGross<=0} onClick={()=>void finalizeMeasurement()}>✓ Finalizar medição</Button></div></footer>
+      <footer className="approved-measurement-sheet__bottom-actions measurement-hub__footer"><Button variant="secondary" onClick={closeFlow}>Cancelar medição</Button><div><Button variant="secondary" disabled={!activeMeasurementId} onClick={()=>setManualItemOpen(true)}>＋ Serviço não cadastrado</Button><Button className="measurement-print-action" variant="secondary" disabled={!activeMeasurementId||measurementGross<=0} onClick={handlePrintMeasurement}>⎙ Imprimir medição</Button><Button variant="secondary" disabled={headerSaving||!measurementId} onClick={()=>void saveHeader()}>{headerSaving?'Salvando…':'▣ Salvar rascunho'}</Button><Button disabled={headerSaving||!measurementId||measurementGross<=0} onClick={()=>void finalizeMeasurement()}>✓ Finalizar medição</Button></div></footer>
     </div>
+
+    <ManualMeasurementItemDialog open={manualItemOpen} scope={scope} measurementId={activeMeasurementId} onSaved={async()=>{await reload();onChanged();}} onClose={()=>setManualItemOpen(false)}/>
 
     {pickerOpen&&origin&&<div className="guided-measurement-picker" role="dialog" aria-modal="true" aria-label={`Medição - ${originLabel(origin)}`}><div className="guided-measurement-picker__panel approved-measurement-origin-modal">
       <header className="approved-measurement-origin-modal__header"><div><small>{editLaunchedOnly?'EDITAR LANÇAMENTOS':'MEDIÇÃO'} · {originLabel(origin)}</small><h3>{editLaunchedOnly?'Editar lançamentos':'Medição'} - {originLabel(origin)}</h3><p>{editLaunchedOnly?'Exibindo somente os serviços já lançados nesta medição.':'Pesquise os serviços, selecione apartamentos/unidades e confirme esta origem.'}</p></div><Button variant="secondary" size="sm" onClick={closePicker}>✕</Button></header>
