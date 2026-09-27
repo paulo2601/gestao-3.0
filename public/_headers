@@ -1,14 +1,10 @@
-/*
-  HTML e versão nunca devem permanecer em cache: o app instalado precisa descobrir
-  imediatamente o bundle publicado pelo último deploy.
-*/
+/
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+
 /index.html
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
 
 /version.json
-  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
-
-/
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
 
 /assets/*
