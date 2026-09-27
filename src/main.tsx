@@ -18,24 +18,31 @@ createRoot(root).render(
   </StrictMode>,
 );
 
-function currentBundlePath(): string | null {
-  const script = Array.from(document.scripts).find((item) => item.type === 'module' && item.src.includes('/assets/'));
-  return script ? new URL(script.src).pathname : null;
-}
+const VERSION_KEY = 'gestao-build-version';
 
 async function ensureLatestBuild(): Promise<void> {
   if (!import.meta.env.PROD || document.visibilityState !== 'visible') return;
   try {
-    const response = await fetch(`/?build-check=${Date.now()}`, { cache: 'no-store', headers: { 'cache-control': 'no-cache' } });
+    const response = await fetch(`/version.json?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'cache-control': 'no-cache, no-store, must-revalidate' },
+    });
     if (!response.ok) return;
-    const html = await response.text();
-    const match = html.match(/<script[^>]+type=["']module["'][^>]+src=["']([^"']+)["']/i)
-      ?? html.match(/<script[^>]+src=["']([^"']+)["'][^>]+type=["']module["']/i);
-    const latest = match?.[1] ? new URL(match[1], window.location.origin).pathname : null;
-    const current = currentBundlePath();
-    if (latest && current && latest !== current) window.location.reload();
+    const payload = await response.json() as { version?: string };
+    if (!payload.version) return;
+    const current = localStorage.getItem(VERSION_KEY);
+    if (!current) {
+      localStorage.setItem(VERSION_KEY, payload.version);
+      return;
+    }
+    if (current !== payload.version) {
+      localStorage.setItem(VERSION_KEY, payload.version);
+      const registration = await navigator.serviceWorker?.getRegistration();
+      await registration?.update();
+      window.location.reload();
+    }
   } catch {
-    // Sem rede: mantém a versão já instalada e deixa o service worker servir o cache.
+    // Sem rede, mantém a versão instalada e tenta novamente quando o app voltar a ficar ativo.
   }
 }
 
