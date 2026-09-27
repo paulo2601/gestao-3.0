@@ -18,6 +18,8 @@ createRoot(root).render(
   </StrictMode>,
 );
 
+declare const __BUILD_VERSION__: string;
+
 const VERSION_KEY = 'gestao-build-version';
 
 async function ensureLatestBuild(): Promise<void> {
@@ -30,19 +32,16 @@ async function ensureLatestBuild(): Promise<void> {
     if (!response.ok) return;
     const payload = await response.json() as { version?: string };
     if (!payload.version) return;
-    const current = localStorage.getItem(VERSION_KEY);
-    if (!current) {
-      localStorage.setItem(VERSION_KEY, payload.version);
-      return;
-    }
-    if (current !== payload.version) {
-      localStorage.setItem(VERSION_KEY, payload.version);
-      const registration = await navigator.serviceWorker?.getRegistration();
-      await registration?.update();
-      window.location.reload();
+    localStorage.setItem(VERSION_KEY, payload.version);
+    if (payload.version !== __BUILD_VERSION__) {
+      const registrations = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistrations() : [];
+      await Promise.all(registrations.map(registration => registration.update().catch(() => undefined)));
+      const url = new URL(window.location.href);
+      url.searchParams.set('__build', payload.version.slice(0, 12));
+      window.location.replace(url.toString());
     }
   } catch {
-    // Sem rede, mantém a versão instalada e tenta novamente quando o app voltar a ficar ativo.
+    // Sem rede, mantém a versão aberta e tenta novamente quando o app voltar a ficar ativo.
   }
 }
 
