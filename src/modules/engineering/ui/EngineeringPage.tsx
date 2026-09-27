@@ -33,7 +33,6 @@ function statusLabel(status:string){const labels:Record<string,string>={active:'
 const primarySections:ContractNavItem[]=[
   {id:'resumo',label:'Resumo',icon:'⌂'},
   {id:'contrato',label:'Contrato',icon:'▤'},
-  {id:'planilhas',label:'Planilhas',icon:'▦'},
   {id:'medicao',label:'Medição',icon:'▥'},
   {id:'fechamentos',label:'Fechamentos',icon:'✓'},
   {id:'impostos',label:'Impostos',icon:'%'},
