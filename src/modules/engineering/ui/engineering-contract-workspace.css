@@ -33,3 +33,54 @@
 .engineering-parity-primary-nav .ui-button.is-active,.engineering-parity-primary-nav button.is-active{background:var(--surface)!important;color:var(--primary)!important;border-color:var(--primary)!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 12%,transparent),var(--shadow-sm)!important}
 .engineering-parity-primary-nav .engineering-contract-workspace__nav-icon{display:block;color:inherit;font-size:1rem}
 @media(max-width:760px){.engineering-parity-primary-nav{display:flex;overflow-x:auto;gap:5px;padding-bottom:5px}.engineering-parity-primary-nav .ui-button,.engineering-parity-primary-nav button{flex:0 0 108px;min-width:108px!important;min-height:52px!important}}
+
+/* contract-primary-nav-approved-v2: desktop igual ao mockup aprovado */
+@media(min-width:761px){
+  .engineering-contract-workspace .engineering-parity-primary-nav{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    gap:6px!important;
+    margin:8px 0 14px!important;
+    padding:0!important;
+    border:0!important;
+    overflow:visible!important;
+    background:transparent!important;
+  }
+  .engineering-contract-workspace .engineering-parity-primary-nav>.ui-button,
+  .engineering-contract-workspace .engineering-parity-primary-nav>button{
+    width:100%!important;
+    min-width:0!important;
+    min-height:48px!important;
+    height:48px!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    padding:0 10px!important;
+    border:1px solid var(--primary)!important;
+    border-radius:7px!important;
+    background:var(--primary)!important;
+    color:#fff!important;
+    box-shadow:0 2px 6px color-mix(in srgb,var(--primary) 18%,transparent)!important;
+    font-size:.82rem!important;
+    font-weight:800!important;
+    white-space:nowrap!important;
+  }
+  .engineering-contract-workspace .engineering-parity-primary-nav>.ui-button.is-active,
+  .engineering-contract-workspace .engineering-parity-primary-nav>button.is-active{
+    background:var(--surface)!important;
+    color:var(--primary)!important;
+    border:1px solid var(--primary)!important;
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 10%,transparent),var(--shadow-sm)!important;
+  }
+  .engineering-contract-workspace .engineering-parity-primary-nav .engineering-contract-workspace__nav-icon{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    font-size:1rem!important;
+    line-height:1!important;
+    color:inherit!important;
+  }
+}
