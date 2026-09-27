@@ -22,7 +22,7 @@ const numberValue=(value:string)=>{const parsed=Number(value.replace(',','.'));r
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 
 export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,onSaved}:Props){
-  const [periodId,setPeriodId]=useState('');
+  const currentMonth=new Date().toISOString().slice(0,7);const currentPeriod=snapshot.periods.find(item=>item.status==='open'&&item.competence.slice(0,7)===currentMonth);const [periodId,setPeriodId]=useState(currentPeriod?.id??'');
   const [structureId,setStructureId]=useState('');
   const [floorId,setFloorId]=useState('');
   const [unitIds,setUnitIds]=useState<string[]>([]);
@@ -51,7 +51,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const selectedServiceUnit=(selectedManual?.unit??selectedService?.unit)?.toUpperCase()??'';
   const usesApartmentUnits=!isGeneral&&['APTO','APT','APARTAMENTO'].includes(selectedServiceUnit);
   const baseQuantity=usesApartmentUnits?unitIds.length:numberValue(executedQuantity);
-  const total=baseQuantity*numberValue(unitValue);
+  const manualValueMode=Boolean(selectedManual)&&!usesApartmentUnits;const alreadyProduced=selectedManual?snapshot.entries.filter(e=>e.productionServiceId===selectedManual.productionServiceId).reduce((sum,e)=>sum+(e.productionValue??0),0):0;const serviceTotal=selectedManual?(selectedManual.plannedQuantity??1)*selectedManual.unitValue:0;const serviceBalance=Math.max(0,serviceTotal-alreadyProduced);const total=manualValueMode?numberValue(executedQuantity):baseQuantity*numberValue(unitValue);
   const floors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');
   const units=snapshot.structureNodes.filter(item=>item.parentId===floorId&&item.structureType==='unit');
   const towerServices=[...manualServices.map(item=>({value:`manual:${item.productionServiceId}`,label:`${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})),...allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`}))];
@@ -70,20 +70,20 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   function toggleParticipant(id:string){if(participants.some(item=>item.id===id)){removeParticipant(id);return;}addParticipant(id);}
   function updateParticipant(id:string,key:'percentage'|'value',value:string){setParticipants(current=>current.map(item=>item.id===id?{...item,[key]:value}:item));}
   function changeDivision(mode:DivisionMode){setDivisionMode(mode);if(mode==='percentage'&&participants.length){const share=(100/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,percentage:share})));}if(mode==='value'&&participants.length&&total>0){const share=(total/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,value:share})));}}
-  function reset(){setPeriodId('');setStructureId('');setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');setError(null);}
+  function reset(){setPeriodId(currentPeriod?.id??'');setStructureId('');setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');setError(null);}
   function close(){if(busy)return;reset();onClose();}
 
   async function submit(){
     setError(null);
     if(!periodId||!structureId||!serviceId){setError('Selecione competência, estrutura e serviço.');return;}
-    if(usesApartmentUnits&&unitIds.length===0){setError('Selecione ao menos um apartamento/unidade.');return;}if(!usesApartmentUnits&&numberValue(executedQuantity)<=0){setError('Informe uma quantidade maior que zero.');return;}
+    if(usesApartmentUnits&&unitIds.length===0){setError('Selecione ao menos um apartamento/unidade.');return;}if(!usesApartmentUnits&&numberValue(executedQuantity)<=0){setError(manualValueMode?'Informe o valor que deseja pagar.':'Informe uma quantidade maior que zero.');return;}if(manualValueMode&&numberValue(executedQuantity)>serviceBalance+0.009){setError(`O valor informado ultrapassa o saldo de ${currency.format(serviceBalance)}.`);return;}
     if(numberValue(unitValue)<0||unitValue.trim()===''){setError('Cadastre o valor de produção deste serviço antes de lançar.');return;}
     if(participants.length===0){setError('Selecione ao menos um colaborador.');return;}
     const payload:SharedProductionParticipantInput[]=participants.map(item=>({employmentContractId:item.id,...(divisionMode==='percentage'?{percentage:numberValue(item.percentage)}:{}),...(divisionMode==='value'?{value:numberValue(item.value)}:{})}));
     if(divisionMode==='percentage'&&Math.abs(payload.reduce((sum,item)=>sum+(item.percentage??0),0)-100)>0.01){setError('A soma dos percentuais deve ser 100%.');return;}
     if(divisionMode==='value'&&Math.abs(payload.reduce((sum,item)=>sum+(item.value??0),0)-total)>0.01){setError(`A soma dos valores deve ser ${currency.format(total)}.`);return;}
     setBusy(true);
-    try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:numberValue(executedQuantity),unitValue:numberValue(unitValue),notes:notes||null,divisionMode,participants:payload};if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}reset();onSaved();onClose();}
+    try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:manualValueMode?1:numberValue(executedQuantity),unitValue:manualValueMode?numberValue(executedQuantity):numberValue(unitValue),notes:notes||null,divisionMode,participants:payload};if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}reset();onSaved();onClose();}
     catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar a produção.');}
     finally{setBusy(false);}
   }
@@ -96,10 +96,10 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
         <Select label="Estrutura" value={structureId} onChange={event=>changeStructure(event.target.value)} options={structureOptions} required/>
         <Select label="Serviço" value={serviceId} onChange={event=>void changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||(isGeneral?generalServices.length===0:towerServices.length===0)}/>
         <Input label="Data" type="date" value={productionDate} onChange={event=>setProductionDate(event.target.value)} required/>
-        {usesApartmentUnits?<><Select label="Pavimento" value={floorId} onChange={event=>setFloorId(event.target.value)} options={[{value:'',label:'Selecione…'},...floors.map(item=>({value:item.id,label:item.name}))]} required/><div className="engineering-production-entry-form__units"><div className="engineering-production-entry-form__units-head"><strong>Apartamentos / Unidades</strong><span>{unitIds.length} selecionada(s)</span></div>{floorId&&units.length===0?<span className="ui-muted">Nenhuma unidade cadastrada neste pavimento.</span>:units.map(item=><label key={item.id}><input type="checkbox" checked={unitIds.includes(item.id)} onChange={event=>setUnitIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))}/><span>{item.name}</span></label>)}</div></>:<Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>}
-        <Input label={`Valor unitário${selectedService?.unit?` (${selectedService.unit})`:''}`} type="number" value={unitValue} readOnly required/>
+        {manualValueMode?<Input label="Valor a pagar nesta produção" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>:usesApartmentUnits?<><Select label="Pavimento" value={floorId} onChange={event=>setFloorId(event.target.value)} options={[{value:'',label:'Selecione…'},...floors.map(item=>({value:item.id,label:item.name}))]} required/><div className="engineering-production-entry-form__units"><div className="engineering-production-entry-form__units-head"><strong>Apartamentos / Unidades</strong><span>{unitIds.length} selecionada(s)</span></div>{floorId&&units.length===0?<span className="ui-muted">Nenhuma unidade cadastrada neste pavimento.</span>:units.map(item=><label key={item.id}><input type="checkbox" checked={unitIds.includes(item.id)} onChange={event=>setUnitIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))}/><span>{item.name}</span></label>)}</div></>:<Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>}
+        {!manualValueMode&&<Input label={`Valor unitário${selectedService?.unit?` (${selectedService.unit})`:''}`} type="number" value={unitValue} readOnly required/>}
       </div>
-      <div className="engineering-production-entry-form__total"><span>Total da produção</span><strong>{currency.format(total)}</strong></div>
+      {manualValueMode&&<div className="engineering-production-entry-form__total"><span>Valor cadastrado: {currency.format(serviceTotal)} · Já produzido: {currency.format(alreadyProduced)} · Saldo após lançamento: {currency.format(Math.max(0,serviceBalance-total))}</span><strong>{currency.format(total)}</strong></div>}{!manualValueMode&&<div className="engineering-production-entry-form__total"><span>Total da produção</span><strong>{currency.format(total)}</strong></div>}
       <section className="engineering-production-entry-form__participants">
         <div className="engineering-production-entry-form__participant-head"><div><h3>Colaboradores</h3><p className="ui-muted">O mesmo serviço pode ser dividido entre várias pessoas.</p></div><Select label="Divisão" value={divisionMode} onChange={event=>changeDivision(event.target.value as DivisionMode)} options={[{value:'equal',label:'Igual'},{value:'percentage',label:'Percentual'},{value:'value',label:'Valor'}]}/></div>
         <div className="engineering-production-entry-form__employee-picker">
