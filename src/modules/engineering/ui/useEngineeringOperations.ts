@@ -42,6 +42,7 @@ export function useEngineeringOperations(scope: EngineeringScope) {
     addMeasurementLine:(input:Parameters<typeof repository.addMeasurementLine>[1])=>execute(()=>repository.addMeasurementLine(scope,input),'Item incluído na medição.'),
     addRetention:(input:Parameters<typeof repository.addRetention>[1])=>execute(()=>repository.addRetention(scope,input),'Retenção incluída.'),
     setMeasurementStatus:(id:string,action:Parameters<typeof repository.setMeasurementStatus>[1],reason?:string|null)=>execute(()=>repository.setMeasurementStatus(id,action,reason),'Status da medição atualizado.'),
+    setMeasurementStatuses:(ids:string[],action:Parameters<typeof repository.setMeasurementStatus>[1],reason?:string|null)=>execute(()=>Promise.all(ids.map(id=>repository.setMeasurementStatus(id,action,reason)).then(()=>undefined),`${ids.length} medições atualizadas.`),
     generateMeasurementReceivable:(id:string,dueDate:string)=>execute(()=>repository.generateMeasurementReceivable(id,dueDate),'Conta a receber gerada.'),
     receiveMeasurement:(id:string,accountId:string,receivedOn:string,amount:number)=>execute(()=>repository.receiveMeasurement(id,accountId,receivedOn,amount),'Recebimento registrado.'),
     createProductionPeriod:(input:Parameters<typeof repository.createProductionPeriod>[1])=>execute(()=>repository.createProductionPeriod(scope,input),'Período de produção criado.'),
