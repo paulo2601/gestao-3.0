@@ -5,14 +5,14 @@ import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { useEngineeringOperations } from './useEngineeringOperations';
 
-interface Props { open:boolean; scope:{tenantId:string;companyId:string}; structure:{id:string;name:string;code:string|null;metadata:Record<string,unknown>|null}; onClose:()=>void; onSaved:()=>void; }
+interface Props { open:boolean; scope:{tenantId:string;companyId:string}; structure?:{id:string;name:string;code:string|null;metadata:Record<string,unknown>|null}; workId?:string; onClose:()=>void; onSaved:()=>void; }
 type TowerConfig={floorCount:number;firstFloor:number;unitsPerFloor:number;hasGroundFloor:boolean;groundFloorUnits:number;hasRoof:boolean;roofUnits:number};
 function readConfig(metadata:Record<string,unknown>|null):TowerConfig{const raw=metadata?.towerConfig;const cfg=raw&&typeof raw==='object'?raw as Record<string,unknown>:{};const n=(key:string,fallback:number)=>{const value=Number(cfg[key]);return Number.isFinite(value)?value:fallback;};return{floorCount:Math.max(0,n('floorCount',0)),firstFloor:Math.max(0,n('firstFloor',1)),unitsPerFloor:Math.max(0,n('unitsPerFloor',0)),hasGroundFloor:Boolean(cfg.hasGroundFloor??false),groundFloorUnits:Math.max(0,n('groundFloorUnits',0)),hasRoof:Boolean(cfg.hasRoof??false),roofUnits:Math.max(0,n('roofUnits',0))};}
 
-export function EditEngineeringStructureDialog({open,scope,structure,onClose,onSaved}:Props){
+export function EditEngineeringStructureDialog({open,scope,structure,workId,onClose,onSaved}:Props){
   const operations=useEngineeringOperations(scope);
-  const initial=useMemo(()=>readConfig(structure.metadata),[structure.metadata]);
-  const[name,setName]=useState(structure.name);
+  const initial=useMemo(()=>readConfig(structure?.metadata??null),[structure?.metadata]);
+  const[name,setName]=useState(structure?.name??'');
   const[floorCount,setFloorCount]=useState(String(initial.floorCount));
   const[unitsPerFloor,setUnitsPerFloor]=useState(String(initial.unitsPerFloor));
   const[hasGroundFloor,setHasGroundFloor]=useState(initial.hasGroundFloor);
@@ -20,11 +20,11 @@ export function EditEngineeringStructureDialog({open,scope,structure,onClose,onS
   const[hasRoof,setHasRoof]=useState(initial.hasRoof);
   const[busy,setBusy]=useState(false);
   const[error,setError]=useState<string|null>(null);
-  useEffect(()=>{if(!open)return;const next=readConfig(structure.metadata);setName(structure.name);setFloorCount(String(next.floorCount));setUnitsPerFloor(String(next.unitsPerFloor));setHasGroundFloor(next.hasGroundFloor);setGroundFloorUnits(String(next.groundFloorUnits||next.unitsPerFloor));setHasRoof(next.hasRoof);setError(null);},[open,structure]);
+  useEffect(()=>{if(!open)return;const next=readConfig(structure?.metadata??null);setName(structure?.name??'');setFloorCount(String(next.floorCount));setUnitsPerFloor(String(next.unitsPerFloor));setHasGroundFloor(next.hasGroundFloor);setGroundFloorUnits(String(next.groundFloorUnits||next.unitsPerFloor));setHasRoof(next.hasRoof);setError(null);},[open,structure]);
   const floors=Math.max(0,Number(floorCount)||0), units=Math.max(0,Number(unitsPerFloor)||0), ground=hasGroundFloor?Math.max(0,Number(groundFloorUnits)||units):0;
   const total=floors*units+ground;
-  async function save(){if(!name.trim()){setError('Informe o nome da torre.');return;}if(floors<=0||units<=0){setError('Informe a quantidade de pavimentos e apartamentos por pavimento.');return;}setBusy(true);setError(null);try{await operations.updateStructure({structureId:structure.id,name:name.trim(),code:structure.code,metadata:{...(structure.metadata??{}),towerConfig:{floorCount:floors,firstFloor:1,unitsPerFloor:units,hasGroundFloor,groundFloorUnits:ground,hasRoof,roofUnits:0,totalUnits:total}}});onSaved();onClose();}catch(e){setError(e instanceof Error?e.message:'Não foi possível salvar a estrutura da torre.');}finally{setBusy(false);}}
-  return <Dialog open={open} variant="quick-entry" title="Editar Torre" description="Configure a estrutura da torre. O sistema usará estes dados nos pavimentos e unidades." onClose={onClose} onBack={onClose} loading={busy} footer={<><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button loading={busy} onClick={()=>void save()}>Salvar estrutura</Button></>}>
+  async function save(){if(!name.trim()){setError('Informe o nome da torre.');return;}if(floors<=0||units<=0){setError('Informe a quantidade de pavimentos e apartamentos por pavimento.');return;}setBusy(true);setError(null);try{const metadata={...(structure?.metadata??{}),towerConfig:{floorCount:floors,firstFloor:1,unitsPerFloor:units,hasGroundFloor,groundFloorUnits:ground,hasRoof,roofUnits:0,totalUnits:total}};if(structure){await operations.updateStructure({structureId:structure.id,name:name.trim(),code:structure.code,metadata});}else{if(!workId)throw new Error('Obra do contrato não identificada.');await operations.createStructure({workId,parentId:null,type:'tower',code:null,name:name.trim()});await operations.reload();const created=operations.state.data?.structures.find(item=>item.workId===workId&&item.parentId===null&&item.type==='tower'&&item.name===name.trim());if(created)await operations.updateStructure({structureId:created.id,name:name.trim(),code:created.code,metadata});}onSaved();onClose();}catch(e){setError(e instanceof Error?e.message:'Não foi possível salvar a estrutura da torre.');}finally{setBusy(false);}}
+  return <Dialog open={open} variant="quick-entry" title={structure?"Editar Torre":"Nova Torre"} description="Configure a estrutura da torre. O sistema usará estes dados nos pavimentos e unidades." onClose={onClose} onBack={onClose} loading={busy} footer={<><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button loading={busy} onClick={()=>void save()}>Salvar estrutura</Button></>}>
     <div className="engineering-tower-quick-form">
       {error&&<Feedback tone="danger" title="Não foi possível salvar" message={error}/>}
       <Input label="Nome da torre" value={name} onChange={e=>setName(e.target.value)} required/>
