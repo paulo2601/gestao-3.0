@@ -76,6 +76,7 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged,o
   const activeContract=data?.contracts.find(item=>item.id===contract.contractId);
   const workId=activeContract?.workId??'';
   const structures=(data?.structures??[]).filter(item=>item.workId===workId);
+  const rootStructures=structures.filter(item=>item.parentId===null&&['tower','block','sector','quad','house','area','basement','other'].includes(item.type));
   const contractServices=(data?.contractServices??[]).filter(item=>item.contractId===contract.contractId);
   const contractServiceIds=new Set(contractServices.map(item=>item.id));
   const allocations=(data?.allocations??[]).filter(item=>contractServiceIds.has(item.contractServiceId));
@@ -152,14 +153,14 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged,o
         <section className="engineering-contract-approved__section engineering-contract-origin-section">
           <div className="engineering-contract-approved__section-head"><div><strong>Estruturas do contrato</strong><span>Selecione uma torre ou aditivo para abrir sua planilha e editar os dados correspondentes.</span></div></div>
           <div className="engineering-contract-origin-grid">
-            {structures.filter(item=>match(item.name)).map(item=>{const count=allocations.filter(allocation=>allocation.structureId===item.id).length;return <button key={item.id} type="button" className="engineering-contract-origin-card" onClick={()=>{selectSheetGroup({type:'structure',id:item.id});onNavigate('planilhas');}}><span className="engineering-contract-origin-card__icon">▦</span><span><strong>{item.name}</strong><small>{count} serviço(s)</small></span></button>})}
+            {rootStructures.filter(item=>match(item.name)).map(item=>{const count=allocations.filter(allocation=>allocation.structureId===item.id).length;return <button key={item.id} type="button" className="engineering-contract-origin-card" onClick={()=>{selectSheetGroup({type:'structure',id:item.id});onNavigate('planilhas');}}><span className="engineering-contract-origin-card__icon">▦</span><span><strong>{item.name}</strong><small>{count} serviço(s)</small></span></button>})}
             {addenda.filter(item=>match(`Aditivo ${item.number}`,labelStatus(item.status))).map(item=><button key={item.id} type="button" className="engineering-contract-origin-card" onClick={()=>setContractAddendumId(item.id)}><span className="engineering-contract-origin-card__icon">▤</span><span><strong>Aditivo {item.number}</strong><small>{labelStatus(item.status)}</small></span></button>)}
             <button type="button" className="engineering-contract-origin-card engineering-contract-origin-card--new" onClick={()=>open('addendum')}><span className="engineering-contract-origin-card__plus">＋</span><span><strong>Novo aditivo</strong><small>Adicionar ao contrato</small></span></button>
           </div>
         </section>
         <div className="engineering-contract-approved__stats">
           <div><span className="engineering-contract-approved__stat-icon">▣</span><span><small>Contrato atualizado</small><strong>{currency.format(contract.updatedContractValue)}</strong></span></div>
-          <div><span className="engineering-contract-approved__stat-icon">▦</span><span><small>Estruturas</small><strong>{structures.length}</strong></span></div>
+          <div><span className="engineering-contract-approved__stat-icon">▦</span><span><small>Estruturas</small><strong>{rootStructures.length}</strong></span></div>
           <div><span className="engineering-contract-approved__stat-icon">◇</span><span><small>Aditivos</small><strong>{addenda.length}</strong></span></div>
           <div><span className="engineering-contract-approved__stat-icon engineering-contract-approved__stat-icon--success">▥</span><span><small>Serviços cadastrados</small><strong>{contractServices.length}</strong></span></div>
         </div>
