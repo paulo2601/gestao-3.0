@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../../../shared/ui/Button';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { Feedback } from '../../../shared/ui/Feedback';
@@ -11,6 +11,7 @@ const brl=(value:string)=>{const digits=value.replace(/\D/g,'');return (Number(d
 
 export function ManualMeasurementItemDialog({open,scope,measurementId,item,onSaved,onClose}:Props){
   const [description,setDescription]=useState(item?.description??''); const [unit,setUnit]=useState(item?.unit??'UN'); const [quantity,setQuantity]=useState(item?String(item.quantity):'1'); const [unitPrice,setUnitPrice]=useState(item?item.unitPrice.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):''); const [notes,setNotes]=useState(item?.notes?.replace(/^\[ITEM AVULSO\]\s*/,'')??''); const [saving,setSaving]=useState(false); const [error,setError]=useState<string|null>(null);
+  useEffect(()=>{if(!open)return;setDescription(item?.description??'');setUnit(item?.unit??'UN');setQuantity(item?String(item.quantity):'1');setUnitPrice(item?item.unitPrice.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'');setNotes(item?.notes?.replace(/^\[ITEM AVULSO\]\s*/,'')??'');setError(null);},[open,item]);
   const total=(Number(quantity.replace(',','.'))||0)*money(unitPrice);
   async function save(){
     const qty=Number(quantity.replace(',','.'))||0; const price=money(unitPrice);
