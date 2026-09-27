@@ -143,37 +143,26 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged,o
     const meta=sectionMeta[section];
     let body;
     if(section==='contrato'){
-      const rows=structures.filter(item=>match(item.name));
       body=<div className="engineering-contract-approved engineering-contract-admin">
         <div className="engineering-contract-approved__tools">
-          <div className="engineering-sheet__search"><span aria-hidden="true">⌕</span><input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar estrutura…" aria-label="Buscar estrutura"/></div>
+          <div className="engineering-sheet__search"><span aria-hidden="true">⌕</span><input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar torre ou aditivo…" aria-label="Buscar torre ou aditivo"/></div>
           <Button variant="secondary" size="sm" onClick={()=>open('addendum')}>＋ Novo aditivo</Button>
           <Button size="sm" onClick={()=>open('structure')}>＋ Nova estrutura</Button>
         </div>
+        <section className="engineering-contract-approved__section engineering-contract-origin-section">
+          <div className="engineering-contract-approved__section-head"><div><strong>Estruturas do contrato</strong><span>Selecione uma torre ou aditivo para abrir sua planilha e editar os dados correspondentes.</span></div></div>
+          <div className="engineering-contract-origin-grid">
+            {structures.filter(item=>match(item.name)).map(item=>{const count=allocations.filter(allocation=>allocation.structureId===item.id).length;return <button key={item.id} type="button" className="engineering-contract-origin-card" onClick={()=>{selectSheetGroup({type:'structure',id:item.id});onNavigate('planilhas');}}><span className="engineering-contract-origin-card__icon">▦</span><span><strong>{item.name}</strong><small>{count} serviço(s)</small></span></button>})}
+            {addenda.filter(item=>match(`Aditivo ${item.number}`,labelStatus(item.status))).map(item=><button key={item.id} type="button" className="engineering-contract-origin-card" onClick={()=>setContractAddendumId(item.id)}><span className="engineering-contract-origin-card__icon">▤</span><span><strong>Aditivo {item.number}</strong><small>{labelStatus(item.status)}</small></span></button>)}
+            <button type="button" className="engineering-contract-origin-card engineering-contract-origin-card--new" onClick={()=>open('addendum')}><span className="engineering-contract-origin-card__plus">＋</span><span><strong>Novo aditivo</strong><small>Adicionar ao contrato</small></span></button>
+          </div>
+        </section>
         <div className="engineering-contract-approved__stats">
           <div><span className="engineering-contract-approved__stat-icon">▣</span><span><small>Contrato atualizado</small><strong>{currency.format(contract.updatedContractValue)}</strong></span></div>
           <div><span className="engineering-contract-approved__stat-icon">▦</span><span><small>Estruturas</small><strong>{structures.length}</strong></span></div>
           <div><span className="engineering-contract-approved__stat-icon">◇</span><span><small>Aditivos</small><strong>{addenda.length}</strong></span></div>
           <div><span className="engineering-contract-approved__stat-icon engineering-contract-approved__stat-icon--success">▥</span><span><small>Serviços cadastrados</small><strong>{contractServices.length}</strong></span></div>
         </div>
-        <section className="engineering-contract-approved__section">
-          <div className="engineering-contract-approved__section-head"><div><strong>Estrutura cadastral da obra</strong><span>Cadastre e edite torres, blocos, pavimentos e unidades do contrato.</span></div></div>
-          <div className="engineering-contract-approved__structure-list">
-            {rows.length?rows.map(item=><button key={item.id} type="button" className="engineering-contract-approved__structure" onClick={()=>setStructureEditId(item.id)}><span className="engineering-contract-approved__building">▦</span><span className="engineering-contract-approved__structure-name"><strong>{item.name}</strong><small>Estrutura cadastral</small></span><span className="engineering-contract-approved__structure-meta"><small>Obra</small><b>{contract.workName}</b></span><span className="engineering-contract-approved__structure-meta"><small>Situação</small><b className="engineering-status engineering-status--active">Ativa</b></span><span className="engineering-contract-approved__open">Editar estrutura</span><span className="engineering-contract-approved__chevron">›</span></button>):emptyRow('Cadastre torres, blocos, pavimentos ou unidades.')}
-          </div>
-        </section>
-        <section className="engineering-contract-approved__section engineering-contract-approved__section--addenda">
-          <div className="engineering-contract-approved__section-head"><div><strong>Cadastro de aditivos</strong><span>Gerencie os aditivos vinculados ao contrato e abra diretamente sua planilha de valores.</span></div></div>
-          <div className="engineering-contract-approved__addenda-grid">
-            {addenda.length?addenda.map(item=><button key={item.id} type="button" className="engineering-contract-approved__addendum" onClick={()=>setContractAddendumId(item.id)}><span className="engineering-contract-approved__addendum-icon">▤</span><span className="engineering-contract-approved__addendum-copy"><strong>Aditivo {item.number}</strong><small>{labelStatus(item.status)}</small></span><span className="engineering-contract-approved__addendum-open">Abrir planilha</span><span className="engineering-contract-approved__chevron">›</span></button>):<em className="ui-muted">Nenhum aditivo cadastrado.</em>}
-          </div>
-        </section>
-        <section className="engineering-contract-approved__section">
-          <div className="engineering-contract-approved__section-head"><div><strong>Planilhas de valores</strong><span>Acesse as planilhas de serviços, valores unitários e quantitativos de cada torre ou estrutura.</span></div></div>
-          <div className="engineering-contract-approved__structure-list">
-            {structures.length?structures.map(item=>{const count=allocations.filter(allocation=>allocation.structureId===item.id).length;return <button key={item.id} type="button" className="engineering-contract-approved__structure" onClick={()=>{selectSheetGroup({type:'structure',id:item.id});onNavigate('planilhas');}}><span className="engineering-contract-approved__building">▦</span><span className="engineering-contract-approved__structure-name"><strong>{item.name}</strong><small>Planilha de valores</small></span><span className="engineering-contract-approved__structure-meta"><small>Serviços distribuídos</small><b>{count}</b></span><span className="engineering-contract-approved__open">Abrir planilha</span><span className="engineering-contract-approved__chevron">›</span></button>}):emptyRow('Nenhuma torre ou estrutura cadastrada.')}
-          </div>
-        </section>
       </div>;
     } else if(section==='planilhas'){
       const selectedStructure=sheetGroup?.type==='structure'?structures.find(item=>item.id===sheetGroup.id):undefined;
