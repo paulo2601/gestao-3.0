@@ -73,3 +73,16 @@
 .measurement-hub__financial--compact>div.is-net{min-height:64px;height:64px}
 @media(max-width:900px){.measurement-hub__header-grid--compact,.measurement-hub__financial--compact{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.measurement-hub__header-grid--compact,.measurement-hub__financial--compact{grid-template-columns:1fr}}
+
+/* Definitive compact measurement grid: override legacy responsive rules */
+.measurement-hub__header-grid.measurement-hub__header-grid--compact{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important;align-items:end}
+.measurement-hub__header-grid.measurement-hub__header-grid--compact>*{min-width:0!important;width:100%!important}
+.measurement-hub__header-grid.measurement-hub__header-grid--compact input,
+.measurement-hub__header-grid.measurement-hub__header-grid--compact select{width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important}
+.measurement-hub__financial.measurement-hub__financial--compact{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important;align-items:stretch}
+.measurement-hub__financial.measurement-hub__financial--compact>div,
+.measurement-hub__financial.measurement-hub__financial--compact>.is-net{grid-column:auto!important;min-width:0!important;width:auto!important;height:64px!important;min-height:64px!important;margin:0!important;padding:10px 12px!important;box-sizing:border-box}
+@media(max-width:620px){
+ .measurement-hub__header-grid.measurement-hub__header-grid--compact,
+ .measurement-hub__financial.measurement-hub__financial--compact{grid-template-columns:1fr!important}
+}
