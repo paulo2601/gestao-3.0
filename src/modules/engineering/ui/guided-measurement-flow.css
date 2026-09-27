@@ -44,3 +44,10 @@
 }
 
 .measurement-launched-indicator{display:block}
+
+.measurement-origin-filters{display:grid;grid-template-columns:minmax(280px,2fr) minmax(150px,1fr) minmax(150px,1fr) auto;gap:12px;align-items:end}
+.measurement-origin-filters__search,.measurement-origin-filters__field{min-width:0}
+.measurement-origin-filters__actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;min-height:40px}
+.measurement-origin-filters__actions .ui-button{white-space:nowrap}
+@media(max-width:900px){.measurement-origin-filters{grid-template-columns:1fr 1fr}.measurement-origin-filters__search{grid-column:1/-1}.measurement-origin-filters__actions{justify-content:flex-start}}
+@media(max-width:600px){.measurement-origin-filters{grid-template-columns:1fr}.measurement-origin-filters__search{grid-column:auto}.measurement-origin-filters__actions{flex-wrap:wrap}}
