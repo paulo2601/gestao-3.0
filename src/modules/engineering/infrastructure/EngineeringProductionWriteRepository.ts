@@ -40,3 +40,6 @@ export async function createSharedProductionEntry(input:SharedProductionEntryInp
   if(result.error)throw result.error;
   return String(result.data);
 }
+export async function createManualProductionEntry(input:Omit<SharedProductionEntryInput,'contractServiceId'|'serviceId'>&{productionServiceId:string}):Promise<string>{
+ const client=getSupabaseClient();const result=await client.rpc('create_engineering_production_manual_entry',{p_tenant_id:input.tenantId,p_company_id:input.companyId,p_period_id:input.periodId,p_structure_id:input.structureId,p_production_service_id:input.productionServiceId,p_production_date:input.productionDate,p_executed_quantity:input.executedQuantity,p_unit_value:input.unitValue,p_notes:input.notes??null,p_division_mode:input.divisionMode,p_participants:input.participants});if(result.error)throw result.error;return String(result.data);
+}
