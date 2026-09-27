@@ -14,9 +14,9 @@ export function useEngineeringOperations(scope: EngineeringScope) {
     catch(error){ setState(current=>({...current,busy:false,errorMessage:messageFrom(error)})); throw error; }
   },[repository,scope]);
   useEffect(()=>{ void reload().catch(()=>undefined); },[reload]);
-  const execute = useCallback(async(action:()=>Promise<void>,successMessage:string)=>{
+  const execute = useCallback(async<T,>(action:()=>Promise<T>,successMessage:string):Promise<T>=>{
     setState(current=>({...current,busy:true,errorMessage:null,successMessage:null}));
-    try { await action(); const data=await repository.getSnapshot(scope); setState({busy:false,data,errorMessage:null,successMessage}); }
+    try { const result=await action(); const data=await repository.getSnapshot(scope); setState({busy:false,data,errorMessage:null,successMessage}); return result; }
     catch(error){ setState(current=>({...current,busy:false,errorMessage:messageFrom(error),successMessage:null})); throw error; }
   },[repository,scope]);
   return {
