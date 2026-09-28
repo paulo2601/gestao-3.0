@@ -22,13 +22,9 @@ export class SupabaseAuthGateway implements AuthGateway {
       return null;
     }
 
-    const { data, error } = await client.auth.getUser();
-
-    if (error) {
-      throw error;
-    }
-
-    return data.user ? toAuthUser(data.user) : null;
+    // A sessão já é validada/renovada pelo cliente Supabase. Evita uma
+    // segunda ida à rede no caminho crítico de abertura do aplicativo.
+    return sessionData.session.user ? toAuthUser(sessionData.session.user) : null;
   }
 
   async signInWithPassword(email: string, password: string): Promise<AuthUser> {
