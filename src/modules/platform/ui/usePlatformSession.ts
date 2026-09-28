@@ -33,8 +33,15 @@ function readStoredContexts(userId: string): readonly AccessContext[] {
   try {
     const raw = window.localStorage.getItem(accessStorageKey(userId));
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as { contexts?: readonly AccessContext[] };
-    return Array.isArray(parsed.contexts) ? parsed.contexts : [];
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || !('contexts' in parsed)) return [];
+    const candidate: unknown = (parsed as { contexts?: unknown }).contexts;
+    if (!Array.isArray(candidate)) return [];
+    return candidate.filter((context): context is AccessContext => {
+      if (typeof context !== 'object' || context === null) return false;
+      const value = context as Partial<AccessContext>;
+      return typeof value.tenant === 'object' && value.tenant !== null && Array.isArray(value.companies);
+    });
   } catch { return []; }
 }
 function storeContexts(userId: string, nextContexts: readonly AccessContext[]): void {
