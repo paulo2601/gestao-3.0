@@ -162,7 +162,17 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
       const scope = { tenantId: selected.tenantId, companyId: selected.companyId };
       if (selectedActivity.activityType === 'purchase') await repositories.cards.updatePurchase({ ...scope, transactionId: selectedActivity.sourceId, expenseCompanyId:activityForm.expenseCompanyId, cardId:activityForm.cardId, purchaseDate: activityForm.date, description: activityForm.description, counterpartyName:activityForm.counterparty || null, categoryId:activityForm.categoryId, costCenterId:activityForm.costCenterId || null, totalAmount: money(activityForm.amount), installmentCount:Number(activityForm.installmentCount), notes:activityForm.notes || null });
       else await repositories.cards.updateStatementPayment({ ...scope, paymentId: selectedActivity.sourceId, paidOn: activityForm.date, amount: money(activityForm.amount), notes: activityForm.description || null });
-      setDialog('details'); setSelectedActivity(null); await loadDetails(selected, selectedStatementMonth); await load();
+      const savedDate = activityForm.date;
+      const savedCardId = selectedActivity.activityType === 'purchase' ? activityForm.cardId : selected.cardId;
+      const targetCard = cards.find((card) => card.cardId === savedCardId) ?? selected;
+      const targetMonth = savedDate ? monthKey(new Date(\`${savedDate}T12:00:00\`)) : selectedStatementMonth;
+      setSelected(targetCard);
+      setSelectedStatementMonth(targetMonth);
+      setDialog('details');
+      setSelectedActivity(null);
+      await loadDetails(targetCard, targetMonth);
+      await load();
+      window.dispatchEvent(new Event('finance-data-changed'));
     } catch { setError('Não foi possível editar esta movimentação.'); }
     finally { setSaving(false); }
   }
