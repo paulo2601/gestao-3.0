@@ -72,7 +72,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   function toggleParticipant(id:string){if(participants.some(item=>item.id===id)){removeParticipant(id);return;}addParticipant(id);}
   function updateParticipant(id:string,key:'percentage'|'value',value:string){setParticipants(current=>current.map(item=>item.id===id?{...item,[key]:value}:item));}
   function changeDivision(mode:DivisionMode){setDivisionMode(mode);if(mode==='percentage'&&participants.length){const share=(100/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,percentage:share})));}if(mode==='value'&&participants.length&&total>0){const share=(total/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,value:share})));}}
-  function resetEntry(keepContext=false){if(!keepContext){setPeriodId(currentPeriod?.id??'');setStructureId('');}setUnitIds([]);setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');setError(null);}
+  function resetEntry(keepContext=false){if(!keepContext){setPeriodId(currentPeriod?.id??'');setStructureId('');}setUnitIds([]);setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');if(!keepContext){setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');}setError(null);}
   function reset(){resetEntry(false);}
   function close(){if(busy)return;reset();onClose();}
 
@@ -87,7 +87,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     if(divisionMode==='value'&&Math.abs(payload.reduce((sum,item)=>sum+(item.value??0),0)-total)>0.01){setError(`A soma dos valores deve ser ${currency.format(total)}.`);return;}
     setBusy(true);
     try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:manualValueMode?1:numberValue(executedQuantity),unitValue:manualValueMode?numberValue(executedQuantity):numberValue(unitValue),notes:notes||null,divisionMode,participants:payload};if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}onSaved();if(addAnother)resetEntry(true);else{reset();onClose();}}
-    catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar a produção.');}
+    catch(cause){const details=typeof cause==='object'&&cause!==null&&'message' in cause?String((cause as {message?:unknown}).message??''):'';setError(details||'Não foi possível salvar a produção. Tente novamente.');}
     finally{setBusy(false);}
   }
 
