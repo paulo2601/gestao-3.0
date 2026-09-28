@@ -49,7 +49,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
       void registration.update();
-      window.setInterval(() => { void registration.update(); }, 60_000);
+      window.setInterval(() => { void registration.update(); }, 15 * 60_000);
     });
     void ensureLatestBuild();
   });
@@ -70,5 +70,5 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     if (document.visibilityState === 'visible') void ensureLatestBuild();
   });
 
-  window.setInterval(() => { void ensureLatestBuild(); }, 60_000);
+  window.setInterval(() => { void ensureLatestBuild(); }, 5 * 60_000);
 }
