@@ -53,8 +53,15 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const usesApartmentUnits=!isGeneral&&['APTO','APT','APARTAMENTO'].includes(selectedServiceUnit);
   const baseQuantity=usesApartmentUnits?unitIds.length:numberValue(executedQuantity);
   const manualValueMode=Boolean(selectedManual)&&!usesApartmentUnits;const alreadyProduced=selectedManual?snapshot.entries.filter(e=>e.productionServiceId===selectedManual.productionServiceId).reduce((sum,e)=>sum+(e.productionValue??0),0):0;const serviceTotal=selectedManual?(selectedManual.plannedQuantity??1)*selectedManual.unitValue:0;const serviceBalance=Math.max(0,serviceTotal-alreadyProduced);const total=manualValueMode?numberValue(executedQuantity):baseQuantity*numberValue(unitValue);
-  const floors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');
-  const allFloorUnits=floors.map(floor=>({floor,units:snapshot.structureNodes.filter(item=>item.parentId===floor.id&&item.structureType==='unit')}));
+  const physicalFloors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');
+  const selectedStructure=snapshot.structures.find(item=>item.id===structureId);
+  const towerConfig=(selectedStructure?.metadata?.towerConfig??null) as {floorCount?:number;unitsPerFloor?:number;hasGroundFloor?:boolean;groundFloorUnits?:number;firstFloor?:number}|null;
+  const virtualFloors=physicalFloors.length===0&&towerConfig?[
+    ...(towerConfig.hasGroundFloor?[{id:`virtual:${structureId}:TR`,name:'Térreo',parentId:structureId,structureType:'floor'}]:[]),
+    ...Array.from({length:towerConfig.floorCount??0},(_,index)=>{const floor=(towerConfig.firstFloor??1)+index;return{id:`virtual:${structureId}:${floor}`,name:`${floor}º Pavimento`,parentId:structureId,structureType:'floor'};}),
+  ]:[];
+  const floors=physicalFloors.length?physicalFloors:virtualFloors;
+  const allFloorUnits=floors.map((floor,index)=>{const physical=snapshot.structureNodes.filter(item=>item.parentId===floor.id&&item.structureType==='unit');if(physical.length)return{floor,units:physical};const isGround=floor.id.endsWith(':TR');const count=isGround?(towerConfig?.groundFloorUnits??towerConfig?.unitsPerFloor??0):(towerConfig?.unitsPerFloor??0);const floorNumber=isGround?1:(towerConfig?.firstFloor??1)+(index-(towerConfig?.hasGroundFloor?1:0));return{floor,units:Array.from({length:count},(_,unitIndex)=>({id:`virtual-unit:${structureId}:${floor.id}:${unitIndex+1}`,name:String(floorNumber*100+unitIndex+1),parentId:floor.id,structureType:'unit'}))};});
   const allUnitIds=allFloorUnits.flatMap(group=>group.units.map(item=>item.id));
   const toggleFloor=(ids:string[],checked:boolean)=>setUnitIds(current=>checked?Array.from(new Set([...current,...ids])):current.filter(id=>!ids.includes(id)));
   const towerServices=[...manualServices.map(item=>({value:`manual:${item.productionServiceId}`,label:`${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})),...allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`}))];
