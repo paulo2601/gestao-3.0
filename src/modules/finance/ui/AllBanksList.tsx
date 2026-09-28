@@ -13,6 +13,7 @@ import { SortableHandle } from '../../../shared/ui/SortableHandle';
 import '../../home/ui/bank-brand.css';
 import './all-banks-list.css';
 import './statement-view.css';
+import { sharePrintableElement } from '../../../shared/utils/reportShare';
 
 type BankTone = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'generic';
 type ListedAccount = FinancialAccountBalance & { companyName: string };
@@ -118,7 +119,7 @@ export function AllBanksList({ companies }: { companies: readonly CompanySummary
         <div className="statement-view__period-label">Período · {periodText}</div>
         <div className="statement-view__totals statement-view__totals--bank"><Card title="Entradas"><strong>{currency.format(periodInflow)}</strong></Card><Card title="Saídas"><strong>{currency.format(periodOutflow)}</strong></Card><Card title="Saldo atual"><strong>{currency.format(selected.currentBalance)}</strong></Card></div>
         {movements.length === 0 ? <EmptyState title="Nenhuma movimentação" message="Não há movimentações neste período." /> : <div className="statement-view__list">{movements.map((item) => <div key={item.id} className="statement-view__row"><div className={`statement-view__icon statement-view__icon--${item.direction}`}>{item.direction === 'inflow' ? '↑' : '↓'}</div><div className="statement-view__copy"><strong>{item.description || 'Movimentação'}</strong><span>{item.movementOn.split('-').reverse().join('/')} · {item.direction === 'inflow' ? 'Entrada' : 'Saída'}</span></div><strong className={item.direction === 'inflow' ? 'statement-view__positive' : 'statement-view__negative'}>{item.direction === 'inflow' ? '+' : '-'} {currency.format(item.amount)}</strong><div className="statement-view__actions"><Button variant="tertiary" size="sm" aria-label="Editar movimentação" onClick={() => openMovementEdit(item)}>✎</Button><Button variant="tertiary" size="sm" className="is-danger" aria-label="Excluir movimentação" onClick={() => openMovementDelete(item)}>⌫</Button></div></div>)}</div>}
-        <div className="statement-view__footer-actions"><Button variant="secondary" onClick={() => openEdit(selected)}>Editar banco</Button><Button variant="danger" onClick={() => openDelete(selected)}>Excluir banco</Button><Button variant="secondary" onClick={exportCsv}>Baixar extrato (Excel)</Button><Button onClick={() => window.print()}>Imprimir</Button></div>
+        <div className="statement-view__footer-actions"><Button variant="secondary" onClick={() => openEdit(selected)}>Editar banco</Button><Button variant="danger" onClick={() => openDelete(selected)}>Excluir banco</Button><Button variant="secondary" onClick={exportCsv}>Baixar extrato (Excel)</Button><Button onClick={() => window.print()}>Imprimir</Button><Button variant="secondary" onClick={()=>{const el=document.querySelector<HTMLElement>('.statement-print-surface--bank');if(el)void sharePrintableElement(el,`Extrato ${selected.name} ${periodText}`,'portrait').catch(e=>setError(e instanceof Error?e.message:'Não foi possível compartilhar o PDF.'));}}>Compartilhar PDF</Button></div>
       </>}</div>}
     </Dialog>
 
