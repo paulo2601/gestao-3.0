@@ -57,8 +57,9 @@ export function printMeasurement(input:PrintMeasurementInput){
     document.body.appendChild(root);
     const createPdfFile=async(fileName:string)=>{
       const [{default:html2canvas},{jsPDF}]=await Promise.all([import('html2canvas'),import('jspdf')]);
-      const mediaStart=style.textContent.indexOf('@media print{');
-      const exportCss=mediaStart>=0?style.textContent.slice(mediaStart+'@media print{'.length,-1):'';
+      const printCss=style.textContent??'';
+      const mediaStart=printCss.indexOf('@media print{');
+      const exportCss=mediaStart>=0?printCss.slice(mediaStart+'@media print{'.length,-1):'';
       const canvas=await html2canvas(root,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,onclone:doc=>{
         const cloned=doc.getElementById('measurement-print-root');
         if(cloned){cloned.style.position='static';cloned.style.left='0';cloned.style.top='0';cloned.style.width='794px';cloned.style.height='auto';cloned.style.visibility='visible';}
