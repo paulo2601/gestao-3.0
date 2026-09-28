@@ -26,7 +26,23 @@ export interface PlatformSession {
   selectCompany: (companyId: string) => void;
 }
 
+const ACCESS_CACHE_VERSION = 'v1';
 function companyStorageKey(userId: string): string { return `gestao.activeCompanyId:${userId}`; }
+function accessStorageKey(userId: string): string { return `gestao.accessContexts:${ACCESS_CACHE_VERSION}:${userId}`; }
+function readStoredContexts(userId: string): readonly AccessContext[] {
+  try {
+    const raw = window.localStorage.getItem(accessStorageKey(userId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { contexts?: readonly AccessContext[] };
+    return Array.isArray(parsed.contexts) ? parsed.contexts : [];
+  } catch { return []; }
+}
+function storeContexts(userId: string, nextContexts: readonly AccessContext[]): void {
+  try { window.localStorage.setItem(accessStorageKey(userId), JSON.stringify({ contexts: nextContexts, savedAt: Date.now() })); } catch { /* cache é apenas aceleração */ }
+}
+function clearStoredContexts(userId: string): void {
+  try { window.localStorage.removeItem(accessStorageKey(userId)); } catch { /* armazenamento indisponível */ }
+}
 function readStoredCompany(userId: string): string | null {
   try { return window.localStorage.getItem(companyStorageKey(userId)); } catch { return null; }
 }
@@ -47,12 +63,23 @@ export function usePlatformSession(): PlatformSession {
   const hydrateAccess = useCallback(async () => {
     const currentUser = await authGateway.getCurrentUser();
     if (!currentUser) { setUser(null); setContexts([]); setActiveCompanyId(null); setStatus('anonymous'); return; }
+    const cachedContexts = readStoredContexts(currentUser.id);
+    const cachedCompanies = flattenAuthorizedCompanies(cachedContexts);
+    if (cachedCompanies.length > 0) {
+      const storedCompanyId = readStoredCompany(currentUser.id);
+      const cachedCompanyId = resolveActiveCompanyId(cachedCompanies, storedCompanyId);
+      setUser(currentUser); setContexts(cachedContexts); setActiveCompanyId(cachedCompanyId);
+      setErrorMessage(null); setNoticeMessage(null); setStatus('ready');
+    }
+
     const nextContexts = await accessRepository.listContextsForCurrentUser();
     const nextCompanies = flattenAuthorizedCompanies(nextContexts);
     if (nextCompanies.length === 0) {
+      clearStoredContexts(currentUser.id);
       await authGateway.signOut(); setUser(null); setContexts([]); setActiveCompanyId(null);
       setErrorMessage('Usuário autenticado, mas sem empresa autorizada.'); setStatus('anonymous'); return;
     }
+    storeContexts(currentUser.id, nextContexts);
     const storedCompanyId = readStoredCompany(currentUser.id);
     const resolvedCompanyId = resolveActiveCompanyId(nextCompanies, storedCompanyId);
     setUser(currentUser); setContexts(nextContexts); setActiveCompanyId(resolvedCompanyId);
@@ -78,8 +105,9 @@ export function usePlatformSession(): PlatformSession {
   }, [authGateway, hydrateAccess]);
 
   const signOut = useCallback(async () => {
+    if (user) clearStoredContexts(user.id);
     await authGateway.signOut(); setUser(null); setContexts([]); setActiveCompanyId(null); setErrorMessage(null); setNoticeMessage(null); setStatus('anonymous');
-  }, [authGateway]);
+  }, [authGateway, user]);
 
   const companies = flattenAuthorizedCompanies(contexts);
   const selectCompany = useCallback((companyId: string) => {
