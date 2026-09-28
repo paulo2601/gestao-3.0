@@ -54,7 +54,6 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const baseQuantity=usesApartmentUnits?unitIds.length:numberValue(executedQuantity);
   const manualValueMode=Boolean(selectedManual)&&!usesApartmentUnits;const alreadyProduced=selectedManual?snapshot.entries.filter(e=>e.productionServiceId===selectedManual.productionServiceId).reduce((sum,e)=>sum+(e.productionValue??0),0):0;const serviceTotal=selectedManual?(selectedManual.plannedQuantity??1)*selectedManual.unitValue:0;const serviceBalance=Math.max(0,serviceTotal-alreadyProduced);const total=manualValueMode?numberValue(executedQuantity):baseQuantity*numberValue(unitValue);
   const floors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');
-  const units=snapshot.structureNodes.filter(item=>item.parentId===floorId&&item.structureType==='unit');
   const allFloorUnits=floors.map(floor=>({floor,units:snapshot.structureNodes.filter(item=>item.parentId===floor.id&&item.structureType==='unit')}));
   const allUnitIds=allFloorUnits.flatMap(group=>group.units.map(item=>item.id));
   const toggleFloor=(ids:string[],checked:boolean)=>setUnitIds(current=>checked?Array.from(new Set([...current,...ids])):current.filter(id=>!ids.includes(id)));
@@ -74,10 +73,11 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   function toggleParticipant(id:string){if(participants.some(item=>item.id===id)){removeParticipant(id);return;}addParticipant(id);}
   function updateParticipant(id:string,key:'percentage'|'value',value:string){setParticipants(current=>current.map(item=>item.id===id?{...item,[key]:value}:item));}
   function changeDivision(mode:DivisionMode){setDivisionMode(mode);if(mode==='percentage'&&participants.length){const share=(100/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,percentage:share})));}if(mode==='value'&&participants.length&&total>0){const share=(total/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,value:share})));}}
-  function reset(){setPeriodId(currentPeriod?.id??'');setStructureId('');setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');setError(null);}
+  function resetEntry(keepContext=false){if(!keepContext){setPeriodId(currentPeriod?.id??'');setStructureId('');}setFloorId('');setUnitIds([]);setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');setError(null);}
+  function reset(){resetEntry(false);}
   function close(){if(busy)return;reset();onClose();}
 
-  async function submit(){
+  async function submit(addAnother=false){
     setError(null);
     if(!periodId||!structureId||!serviceId){setError('Selecione competência, estrutura e serviço.');return;}
     if(usesApartmentUnits&&unitIds.length===0){setError('Selecione ao menos um apartamento/unidade.');return;}if(!usesApartmentUnits&&numberValue(executedQuantity)<=0){setError(manualValueMode?'Informe o valor que deseja pagar.':'Informe uma quantidade maior que zero.');return;}if(manualValueMode&&numberValue(executedQuantity)>serviceBalance+0.009){setError(`O valor informado ultrapassa o saldo de ${currency.format(serviceBalance)}.`);return;}
@@ -87,12 +87,12 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     if(divisionMode==='percentage'&&Math.abs(payload.reduce((sum,item)=>sum+(item.percentage??0),0)-100)>0.01){setError('A soma dos percentuais deve ser 100%.');return;}
     if(divisionMode==='value'&&Math.abs(payload.reduce((sum,item)=>sum+(item.value??0),0)-total)>0.01){setError(`A soma dos valores deve ser ${currency.format(total)}.`);return;}
     setBusy(true);
-    try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:manualValueMode?1:numberValue(executedQuantity),unitValue:manualValueMode?numberValue(executedQuantity):numberValue(unitValue),notes:notes||null,divisionMode,participants:payload};if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}reset();onSaved();onClose();}
+    try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:manualValueMode?1:numberValue(executedQuantity),unitValue:manualValueMode?numberValue(executedQuantity):numberValue(unitValue),notes:notes||null,divisionMode,participants:payload};if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}onSaved();if(addAnother)resetEntry(true);else{reset();onClose();}}
     catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar a produção.');}
     finally{setBusy(false);}
   }
 
-  return <Dialog open={open} title="Lançar produção" description="Selecione o serviço executado e divida entre um ou mais colaboradores." onClose={close} onBack={close} onConfirm={()=>void submit()} confirmLabel="Salvar produção" loading={busy}>
+  return <Dialog open={open} title="Lançar produção" description="Selecione o serviço executado e divida entre um ou mais colaboradores." onClose={close} onBack={close} onConfirm={()=>void submit(false)} confirmLabel="Salvar e finalizar" loading={busy}>
     <div className="engineering-production-entry-form">
       {error&&<Feedback tone="danger" title="Não foi possível salvar" message={error}/>} 
       <div className="engineering-production-entry-form__grid">
@@ -113,6 +113,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
         </div>
       </section>
       <Input label="Observações" value={notes} onChange={event=>setNotes(event.target.value)}/>
+      <div className="engineering-production-entry-form__save-actions"><button type="button" disabled={busy} onClick={()=>void submit(true)}>Salvar e adicionar outro serviço</button></div>
       <Dialog open={unitPickerOpen} title="Selecionar apartamentos" description="Marque todos, um pavimento inteiro ou apartamentos individualmente." onClose={()=>setUnitPickerOpen(false)} onBack={()=>setUnitPickerOpen(false)} onConfirm={()=>setUnitPickerOpen(false)} confirmLabel="Confirmar seleção">
         <div className="engineering-production-unit-picker"><div className="engineering-production-unit-picker__all"><label><input type="checkbox" checked={allUnitIds.length>0&&allUnitIds.every(id=>unitIds.includes(id))} onChange={event=>toggleFloor(allUnitIds,event.target.checked)}/><strong>Selecionar todos</strong></label><span>{unitIds.length} selecionado(s)</span></div>{allFloorUnits.map(({floor,units:floorUnits})=><section key={floor.id}><div className="engineering-production-unit-picker__floor"><label><input type="checkbox" checked={floorUnits.length>0&&floorUnits.every(item=>unitIds.includes(item.id))} onChange={event=>toggleFloor(floorUnits.map(item=>item.id),event.target.checked)}/><strong>{floor.name}</strong></label><span>{floorUnits.filter(item=>unitIds.includes(item.id)).length}/{floorUnits.length}</span></div><div className="engineering-production-unit-picker__units">{floorUnits.map(item=><label key={item.id}><input type="checkbox" checked={unitIds.includes(item.id)} onChange={event=>setUnitIds(current=>event.target.checked?Array.from(new Set([...current,item.id])):current.filter(id=>id!==item.id))}/><span>{item.name}</span></label>)}</div></section>)}</div>
       </Dialog>
