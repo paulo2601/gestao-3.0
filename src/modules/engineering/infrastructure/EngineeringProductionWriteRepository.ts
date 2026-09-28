@@ -28,7 +28,6 @@ export async function createSharedProductionEntry(input:SharedProductionEntryInp
     p_company_id:input.companyId,
     p_period_id:input.periodId,
     p_structure_id:input.structureId,
-    p_contract_service_id:input.contractServiceId,
     p_service_id:input.serviceId,
     p_production_date:input.productionDate,
     p_executed_quantity:input.executedQuantity,
