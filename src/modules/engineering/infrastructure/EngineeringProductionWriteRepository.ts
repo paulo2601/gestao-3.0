@@ -35,6 +35,7 @@ export async function createSharedProductionEntry(input:SharedProductionEntryInp
     p_notes:input.notes??null,
     p_division_mode:input.divisionMode,
     p_participants:input.participants,
+    p_selected_units:input.selectedUnits??[],
   });
   if(result.error)throw result.error;
   return String(result.data);
