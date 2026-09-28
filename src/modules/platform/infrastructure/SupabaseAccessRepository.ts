@@ -38,20 +38,21 @@ function toCompanySummary(row: CompanyRow): CompanySummary {
 export class SupabaseAccessRepository implements AccessRepository {
   async listContextsForCurrentUser(): Promise<readonly AccessContext[]> {
     const client = getSupabaseClient();
-    const { data: authData, error: authError } = await client.auth.getUser();
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
 
-    if (authError) {
-      throw authError;
+    if (sessionError) {
+      throw sessionError;
     }
 
-    if (!authData.user) {
+    const user = sessionData.session?.user;
+    if (!user) {
       return [];
     }
 
     const { data: membershipRows, error: membershipsError } = await client
       .from('tenant_memberships')
       .select('tenant_id, role')
-      .eq('user_id', authData.user.id)
+      .eq('user_id', user.id)
       .eq('status', 'active')
       .returns<TenantMembershipRow[]>();
 
