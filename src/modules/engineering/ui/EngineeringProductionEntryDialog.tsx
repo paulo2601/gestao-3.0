@@ -26,6 +26,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const [structureId,setStructureId]=useState('');
   const [floorId,setFloorId]=useState('');
   const [unitIds,setUnitIds]=useState<string[]>([]);
+  const [unitPickerOpen,setUnitPickerOpen]=useState(false);
   const [serviceId,setServiceId]=useState('');
   const [productionDate,setProductionDate]=useState(today());
   const [executedQuantity,setExecutedQuantity]=useState('');
@@ -54,6 +55,9 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const manualValueMode=Boolean(selectedManual)&&!usesApartmentUnits;const alreadyProduced=selectedManual?snapshot.entries.filter(e=>e.productionServiceId===selectedManual.productionServiceId).reduce((sum,e)=>sum+(e.productionValue??0),0):0;const serviceTotal=selectedManual?(selectedManual.plannedQuantity??1)*selectedManual.unitValue:0;const serviceBalance=Math.max(0,serviceTotal-alreadyProduced);const total=manualValueMode?numberValue(executedQuantity):baseQuantity*numberValue(unitValue);
   const floors=snapshot.structureNodes.filter(item=>item.parentId===structureId&&item.structureType==='floor');
   const units=snapshot.structureNodes.filter(item=>item.parentId===floorId&&item.structureType==='unit');
+  const allFloorUnits=floors.map(floor=>({floor,units:snapshot.structureNodes.filter(item=>item.parentId===floor.id&&item.structureType==='unit')}));
+  const allUnitIds=allFloorUnits.flatMap(group=>group.units.map(item=>item.id));
+  const toggleFloor=(ids:string[],checked:boolean)=>setUnitIds(current=>checked?Array.from(new Set([...current,...ids])):current.filter(id=>!ids.includes(id)));
   const towerServices=[...manualServices.map(item=>({value:`manual:${item.productionServiceId}`,label:`${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})),...allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`}))];
   const serviceOptions=[{value:'',label:structureId?((isGeneral?generalServices.length:towerServices.length)?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...(isGeneral?generalServices.map(item=>({value:`general:${item.productionServiceId}`,label:`${item.productionServiceKind==='discount'?'Desconto · ':''}${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})):towerServices)];
   function changeStructure(id:string){setStructureId(id);setFloorId('');setUnitIds([]);setServiceId('');setUnitValue('');}
@@ -96,7 +100,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
         <Select label="Estrutura" value={structureId} onChange={event=>changeStructure(event.target.value)} options={structureOptions} required/>
         <Select label="Serviço" value={serviceId} onChange={event=>void changeService(event.target.value)} options={serviceOptions} required disabled={!structureId||(isGeneral?generalServices.length===0:towerServices.length===0)}/>
         <Input label="Data" type="date" value={productionDate} onChange={event=>setProductionDate(event.target.value)} required/>
-        {manualValueMode?<Input label="Valor a pagar nesta produção" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>:usesApartmentUnits?<><Select label="Pavimento" value={floorId} onChange={event=>setFloorId(event.target.value)} options={[{value:'',label:'Selecione…'},...floors.map(item=>({value:item.id,label:item.name}))]} required/><div className="engineering-production-entry-form__units"><div className="engineering-production-entry-form__units-head"><strong>Apartamentos / Unidades</strong><span>{unitIds.length} selecionada(s)</span></div>{floorId&&units.length===0?<span className="ui-muted">Nenhuma unidade cadastrada neste pavimento.</span>:units.map(item=><label key={item.id}><input type="checkbox" checked={unitIds.includes(item.id)} onChange={event=>setUnitIds(current=>event.target.checked?[...current,item.id]:current.filter(id=>id!==item.id))}/><span>{item.name}</span></label>)}</div></>:<Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>}
+        {manualValueMode?<Input label="Valor a pagar nesta produção" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>:usesApartmentUnits?<div className="engineering-production-entry-form__unit-trigger"><span>Apartamentos / Unidades</span><button type="button" onClick={()=>setUnitPickerOpen(true)}>{unitIds.length?`${unitIds.length} apartamento(s) selecionado(s)`:'Selecionar apartamentos'}</button></div>:<Input label="Quantidade" type="number" value={executedQuantity} onChange={event=>setExecutedQuantity(event.target.value)} required/>}
         {!manualValueMode&&<Input label={`Valor unitário${selectedService?.unit?` (${selectedService.unit})`:''}`} type="number" value={unitValue} readOnly required/>}
       </div>
       {manualValueMode&&<div className="engineering-production-entry-form__total"><span>Valor cadastrado: {currency.format(serviceTotal)} · Já produzido: {currency.format(alreadyProduced)} · Saldo após lançamento: {currency.format(Math.max(0,serviceBalance-total))}</span><strong>{currency.format(total)}</strong></div>}{!manualValueMode&&<div className="engineering-production-entry-form__total"><span>Total da produção</span><strong>{currency.format(total)}</strong></div>}
@@ -109,6 +113,9 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
         </div>
       </section>
       <Input label="Observações" value={notes} onChange={event=>setNotes(event.target.value)}/>
+      <Dialog open={unitPickerOpen} title="Selecionar apartamentos" description="Marque todos, um pavimento inteiro ou apartamentos individualmente." onClose={()=>setUnitPickerOpen(false)} onBack={()=>setUnitPickerOpen(false)} onConfirm={()=>setUnitPickerOpen(false)} confirmLabel="Confirmar seleção">
+        <div className="engineering-production-unit-picker"><div className="engineering-production-unit-picker__all"><label><input type="checkbox" checked={allUnitIds.length>0&&allUnitIds.every(id=>unitIds.includes(id))} onChange={event=>toggleFloor(allUnitIds,event.target.checked)}/><strong>Selecionar todos</strong></label><span>{unitIds.length} selecionado(s)</span></div>{allFloorUnits.map(({floor,units:floorUnits})=><section key={floor.id}><div className="engineering-production-unit-picker__floor"><label><input type="checkbox" checked={floorUnits.length>0&&floorUnits.every(item=>unitIds.includes(item.id))} onChange={event=>toggleFloor(floorUnits.map(item=>item.id),event.target.checked)}/><strong>{floor.name}</strong></label><span>{floorUnits.filter(item=>unitIds.includes(item.id)).length}/{floorUnits.length}</span></div><div className="engineering-production-unit-picker__units">{floorUnits.map(item=><label key={item.id}><input type="checkbox" checked={unitIds.includes(item.id)} onChange={event=>setUnitIds(current=>event.target.checked?Array.from(new Set([...current,item.id])):current.filter(id=>id!==item.id))}/><span>{item.name}</span></label>)}</div></section>)}</div>
+      </Dialog>
     </div>
   </Dialog>;
 }
