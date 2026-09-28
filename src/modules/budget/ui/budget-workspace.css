@@ -43,3 +43,12 @@
 .budget-entry-category-actions{display:flex;gap:8px;align-items:center;padding-bottom:1px}
 .budget-entry-category-actions .ui-button{min-height:50px;white-space:nowrap}
 @media(max-width:680px){.budget-entry-category-row{grid-template-columns:1fr}.budget-entry-category-actions{display:grid;grid-template-columns:1fr 1fr}.budget-entry-category-actions .ui-button{width:100%}}
+
+/* Compact fixed budget indicators: keep calculations visible while editing. */
+.budget-workspace>.ui-card:first-of-type{position:sticky;top:72px;z-index:8;background:var(--color-surface,#fff)}
+.budget-workspace>.ui-card:first-of-type .budget-workspace__metric{min-height:86px;padding:10px 12px;gap:6px;border-radius:14px}
+.budget-workspace>.ui-card:first-of-type .budget-workspace__metric>strong{font-size:1.15rem}
+.budget-workspace>.ui-card:first-of-type .budget-workspace__metric-head>span{font-size:.8rem}
+.budget-workspace>.ui-card:first-of-type .budget-workspace__metric-head>small{font-size:.6rem}
+.budget-workspace>.ui-card:first-of-type .budget-workspace__metric-foot{padding-top:5px;font-size:.67rem}
+@media(max-width:680px){.budget-workspace>.ui-card:first-of-type{top:58px}.budget-workspace>.ui-card:first-of-type .budget-workspace__metric{min-height:78px;padding:9px 10px}.budget-workspace>.ui-card:first-of-type .budget-workspace__metric>strong{font-size:1rem}}
