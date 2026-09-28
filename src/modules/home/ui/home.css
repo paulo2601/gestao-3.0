@@ -27,3 +27,13 @@
 .home-balance-card .balance-chart-head{grid-row:1}.home-balance-card .balance-legend{grid-row:2}.home-balance-card .balance-chart{grid-row:3 / span 2;min-height:190px}
 .home-balance-card .balance-range{grid-row:5}.home-balance-card .balance-card__footer{grid-column:1;grid-row:3;align-self:start;margin-top:12px}
 }
+
+/* Mobile only: compact overview hero; desktop intentionally unchanged */
+@media(max-width:760px){
+.home-hero{min-height:auto!important;padding:10px 14px!important;gap:10px!important;align-items:center!important}
+.home-hero>div{gap:1px!important}
+.home-hero__eyebrow{font-size:.58rem!important;letter-spacing:.12em!important}
+.home-hero__greeting strong{font-size:1.05rem!important;line-height:1.15!important}
+.home-hero__greeting>span:last-child{font-size:.72rem!important;line-height:1.2!important;white-space:nowrap}
+.home-hero__refresh{min-height:34px!important;padding:6px 9px!important;font-size:.78rem!important;white-space:nowrap}
+}
