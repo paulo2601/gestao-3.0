@@ -42,7 +42,7 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
   const personalName=`${company?.trade_name??''} ${company?.legal_name??''}`.toLocaleUpperCase('pt-BR');
   const personal=personalName.includes('PESSOAL')||personalName.includes('PAULO ROBERTO');
   setIsPersonal(personal);
-  if(personal){setSettingsId(null);setContracts([]);setProjection(null);setLoading(false);return;}
+  if(personal)setContracts([]);
   if(settingsResult.error||contractsResult.error){setFeedback({tone:'danger',message:settingsResult.error?.message??contractsResult.error?.message??'Não foi possível carregar a formação de preço.'});setLoading(false);return;}
   const settings=(settingsResult.data??null) as SettingsRow|null;
   setSettingsId(settings?.id??null);setMarkupPercent(settings?String(numberValue(settings.target_net_margin_percent)):'');setContractId(settings?.contract_id??'');
@@ -67,16 +67,14 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
  const contractOptions=useMemo(()=>[{value:'',label:'Sem contrato / sem retenções'},...contracts.map(item=>({value:item.id,label:item.client_name?`${item.contract_number} · ${item.client_name}`:item.contract_number}))],[contracts]);
 
  async function save(){
-  if(!tenantId||!companyId||isPersonal)return;if(!hasTargetNetMargin){setFeedback({tone:'danger',message:'Informe a margem líquida desejada antes de salvar.'});return;}setSaving(true);setFeedback(null);
+  if(!tenantId||!companyId)return;if(!hasTargetNetMargin){setFeedback({tone:'danger',message:'Informe a margem líquida desejada antes de salvar.'});return;}setSaving(true);setFeedback(null);
   const payload={tenant_id:tenantId,company_id:companyId,cost_center_id:costCenterId||null,budget_year:budgetYear,contract_id:contractId||null,target_net_margin_percent:targetNetMargin,updated_at:new Date().toISOString()};
   const result=settingsId?await supabase.from('budget_planning_settings').update(payload).eq('id',settingsId).eq('tenant_id',tenantId).eq('company_id',companyId):await supabase.from('budget_planning_settings').insert(payload).select('id').single();
   if(result.error)setFeedback({tone:'danger',message:result.error.message});else{setFeedback({tone:'success',message:'Margem líquida desejada e retenções vinculadas ao orçamento foram salvas.'});await load();}
   setSaving(false);
  }
 
- if(isPersonal)return null;
-
- return <Card title="Formação de preço" description="O preço é calculado para que, depois de pagar todas as despesas previstas, reste a margem líquida desejada. Retenções contratuais são compensadas no faturamento bruto.">
+ return <Card title="Formação de preço" description={isPersonal?'Defina a margem desejada deste orçamento. O percentual fica salvo e pode ser alterado quando necessário.':'O preço é calculado para que, depois de pagar todas as despesas previstas, reste a margem líquida desejada. Retenções contratuais são compensadas no faturamento bruto.'}>
   <div className="budget-pricing__stack">
    {feedback&&<Feedback tone={feedback.tone} title={feedback.tone==='success'?'Concluído':'Não foi possível salvar'} message={feedback.message}/>} 
    <div className="budget-pricing__metrics">
@@ -87,7 +85,7 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
    </div>
    <div className="budget-pricing__controls">
     <Input label="Margem líquida desejada (%)" type="number" min="0" max="99.99" step="0.01" value={markupPercent} onChange={event=>setMarkupPercent(event.target.value)}/>
-    <Select label="Contrato / regras de retenção" value={contractId} onChange={event=>setContractId(event.target.value)} options={contractOptions}/>
+    {!isPersonal&&<Select label="Contrato / regras de retenção" value={contractId} onChange={event=>setContractId(event.target.value)} options={contractOptions}/>}
     <Button onClick={()=>{void save();}} disabled={saving||loading||!hasTargetNetMargin}>{saving?'Salvando…':'Salvar formação de preço'}</Button>
    </div>
    <p className="ui-muted budget-pricing__hint">Exemplo: custo de R$ 100.000,00 com margem líquida desejada de 20% exige receita líquida de R$ 125.000,00. Depois de pagar os R$ 100.000,00 de despesas, sobram R$ 25.000,00, que representam 20% da receita. Retenções contratuais, quando existentes, aumentam apenas o faturamento bruto necessário para preservar essa margem líquida.</p>
