@@ -261,7 +261,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
   useEffect(() => {
     if (!open || companies.length === 0) return;
     let cancelled = false;
-    void (async () => {
+    const loadTemplates = () => void (async () => {
       const repositories = getFinanceRepositories();
       const supabase = getSupabaseClient();
       const tenantId = companies[0]?.tenantId;
@@ -341,7 +341,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
         setTemplates([...cardTemplates, ...financialTemplates].sort((a, b) => b.occurredOn.localeCompare(a.occurredOn)));
       }
     })().catch(() => { if (!cancelled) setTemplates([]); });
-    return () => { cancelled = true; };
+    const timer = window.setTimeout(loadTemplates, 900);
+    return () => { cancelled = true; window.clearTimeout(timer); };
   }, [companies, open]);
 
   const activeCostCenters = (references?.costCenters ?? []).filter((item) => item.status === 'active');
