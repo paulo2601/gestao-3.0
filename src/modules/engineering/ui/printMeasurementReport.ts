@@ -60,15 +60,15 @@ export function printMeasurement(input:PrintMeasurementInput){
       const printCss=style.textContent??'';
       const mediaStart=printCss.indexOf('@media print{');
       const exportCss=mediaStart>=0?printCss.slice(mediaStart+'@media print{'.length,-1):'';
-      const canvas=await html2canvas(root,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,onclone:doc=>{
+      const canvas=await html2canvas(root,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:794,onclone:doc=>{
         const cloned=doc.getElementById('measurement-print-root');
-        if(cloned){cloned.style.position='static';cloned.style.left='0';cloned.style.top='0';cloned.style.width='794px';cloned.style.height='auto';cloned.style.visibility='visible';}
+        if(cloned){cloned.style.position='static';cloned.style.left='0';cloned.style.top='0';cloned.style.width='794px';cloned.style.height='auto';cloned.style.visibility='visible';cloned.style.fontFamily='Arial,Helvetica,sans-serif';cloned.style.fontSize='9.5px';}
         const exportStyle=doc.createElement('style');exportStyle.textContent=exportCss;doc.head.appendChild(exportStyle);
       }});
       const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-      const pageWidth=210,pageHeight=297,imgWidth=pageWidth,imgHeight=canvas.height*imgWidth/canvas.width;
+      const marginX=8,marginTop=17,marginBottom=8,pageWidth=210,pageHeight=297,imgWidth=pageWidth-(marginX*2),usableHeight=pageHeight-marginTop-marginBottom,imgHeight=canvas.height*imgWidth/canvas.width;
       let y=0,page=0;
-      while(y<imgHeight){if(page>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.94),'JPEG',0,-y,imgWidth,imgHeight,undefined,'FAST');y+=pageHeight;page++;}
+      while(y<imgHeight){if(page>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.94),'JPEG',marginX,marginTop-y,imgWidth,imgHeight,undefined,'FAST');y+=usableHeight;page++;}
       const blob=pdf.output('blob');return new File([blob],safeFileName(fileName)+'.pdf',{type:'application/pdf'});
     };
     const sharePdf=async()=>{
