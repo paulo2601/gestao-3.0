@@ -222,7 +222,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
 
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
   const scope = useMemo(() => ({ tenantId: company?.tenantId ?? '', companyId: company?.id ?? '' }), [company?.id, company?.tenantId]);
-  const operations = useFinanceOperations(scope);
+  const operations = useFinanceOperations(scope, 'quick');
   const references = operations.state.references;
   const isCrIncome = Boolean(company && companyName(company) === 'CR' && form.entryType === 'income');
 
@@ -277,14 +277,14 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
           .select('id,company_id,payment_method,planned_account_id,planned_account_company_id,created_at')
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false })
-          .limit(1000)
+          .limit(250)
           .returns<FinancialTemplateMetaRow[]>(),
         supabase
           .from('card_transactions')
           .select('company_id,expense_company_id,card_id,purchase_date,description,counterparty_name,category_id,cost_center_id,installment_count,created_at')
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false })
-          .limit(1000)
+          .limit(250)
           .returns<CardTemplateRow[]>(),
       ]);
 
