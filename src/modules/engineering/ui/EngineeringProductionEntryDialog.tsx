@@ -24,7 +24,6 @@ const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,onSaved}:Props){
   const currentMonth=new Date().toISOString().slice(0,7);const currentPeriod=snapshot.periods.find(item=>item.status==='open'&&item.competence.slice(0,7)===currentMonth);const [periodId,setPeriodId]=useState(currentPeriod?.id??'');
   const [structureId,setStructureId]=useState('');
-  const [floorId,setFloorId]=useState('');
   const [unitIds,setUnitIds]=useState<string[]>([]);
   const [unitPickerOpen,setUnitPickerOpen]=useState(false);
   const [serviceId,setServiceId]=useState('');
@@ -59,7 +58,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const toggleFloor=(ids:string[],checked:boolean)=>setUnitIds(current=>checked?Array.from(new Set([...current,...ids])):current.filter(id=>!ids.includes(id)));
   const towerServices=[...manualServices.map(item=>({value:`manual:${item.productionServiceId}`,label:`${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})),...allowedServices.map(item=>({value:item.id,label:`${item.name}${item.unit?` · ${item.unit}`:''}`}))];
   const serviceOptions=[{value:'',label:structureId?((isGeneral?generalServices.length:towerServices.length)?'Selecione…':'Nenhum serviço com valor de produção cadastrado nesta estrutura'):'Selecione a estrutura primeiro'},...(isGeneral?generalServices.map(item=>({value:`general:${item.productionServiceId}`,label:`${item.productionServiceKind==='discount'?'Desconto · ':''}${item.productionServiceName??'Serviço manual'}${item.unit?` · ${item.unit}`:''}`})):towerServices)];
-  function changeStructure(id:string){setStructureId(id);setFloorId('');setUnitIds([]);setServiceId('');setUnitValue('');}
+  function changeStructure(id:string){setStructureId(id);setUnitIds([]);setServiceId('');setUnitValue('');}
   async function changeService(id:string){setServiceId(id);setUnitValue('');if(!id||!structureId)return;if(structureId==='__GENERAL__'){const price=generalServices.find(item=>`general:${item.productionServiceId}`===id);setUnitValue(price?String(price.unitValue):'');setError(price?null:'Serviço geral sem valor cadastrado.');return;}if(id.startsWith('manual:')){const price=manualServices.find(item=>`manual:${item.productionServiceId}`===id);setUnitValue(price?String(price.unitValue):'');setError(price?null:'Serviço manual sem valor cadastrado.');return;}const service=snapshot.services.find(item=>item.id===id);if(!service)return;try{const price=await resolveEngineeringProductionPrice({...scope,workId:snapshot.workId,contractServiceId:service.contractServiceId,structureId});setUnitValue(price===null?'':String(price));if(price===null)setError('Este serviço ainda não possui valor de produção cadastrado para a estrutura selecionada.');else setError(null);}catch(c){setError(c instanceof Error?c.message:'Não foi possível carregar o valor de produção.');}}
 
   function addParticipant(id:string){
@@ -73,7 +72,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   function toggleParticipant(id:string){if(participants.some(item=>item.id===id)){removeParticipant(id);return;}addParticipant(id);}
   function updateParticipant(id:string,key:'percentage'|'value',value:string){setParticipants(current=>current.map(item=>item.id===id?{...item,[key]:value}:item));}
   function changeDivision(mode:DivisionMode){setDivisionMode(mode);if(mode==='percentage'&&participants.length){const share=(100/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,percentage:share})));}if(mode==='value'&&participants.length&&total>0){const share=(total/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,value:share})));}}
-  function resetEntry(keepContext=false){if(!keepContext){setPeriodId(currentPeriod?.id??'');setStructureId('');}setFloorId('');setUnitIds([]);setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');setError(null);}
+  function resetEntry(keepContext=false){if(!keepContext){setPeriodId(currentPeriod?.id??'');setStructureId('');}setUnitIds([]);setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');setError(null);}
   function reset(){resetEntry(false);}
   function close(){if(busy)return;reset();onClose();}
 
