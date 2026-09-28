@@ -35,6 +35,7 @@ const emptyActivityForm: ActivityForm = { date:'', description:'', amount:'', ex
 function companyName(company: CompanySummary): string { return company.tradeName ?? company.legalName; }
 function monthKey(date = new Date()): string { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`; }
 function monthLabel(value: string): string { return value.slice(0, 7).split('-').reverse().join('/'); }
+function shiftMonth(value: string, offset: number): string { const [year, month] = value.slice(0, 7).split('-').map(Number); const date = new Date(year, month - 1 + offset, 1); return monthKey(date); }
 function dateLabel(value: string): string { return value.split('-').reverse().join('/'); }
 function money(value: string): number { return Number(value.replace(',', '.')); }
 function csvCell(value: string | number): string { return `"${String(value).replaceAll('"', '""')}"`; }
