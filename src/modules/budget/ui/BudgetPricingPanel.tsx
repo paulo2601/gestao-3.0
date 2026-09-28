@@ -22,7 +22,7 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
  const [saving,setSaving]=useState(false);
  const [feedback,setFeedback]=useState<{tone:'danger'|'success';message:string}|null>(null);
  const [settingsId,setSettingsId]=useState<string|null>(null);
- const [markupPercent,setMarkupPercent]=useState('20');
+ const [markupPercent,setMarkupPercent]=useState('');
  const [contractId,setContractId]=useState('');
  const [contracts,setContracts]=useState<ContractRow[]>([]);
  const [projection,setProjection]=useState<ProjectionRow|null>(null);
@@ -45,7 +45,7 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
   if(personal){setSettingsId(null);setContracts([]);setProjection(null);setLoading(false);return;}
   if(settingsResult.error||contractsResult.error){setFeedback({tone:'danger',message:settingsResult.error?.message??contractsResult.error?.message??'Não foi possível carregar a formação de preço.'});setLoading(false);return;}
   const settings=(settingsResult.data??null) as SettingsRow|null;
-  setSettingsId(settings?.id??null);setMarkupPercent(settings?String(numberValue(settings.target_net_margin_percent)):'20');setContractId(settings?.contract_id??'');
+  setSettingsId(settings?.id??null);setMarkupPercent(settings?String(numberValue(settings.target_net_margin_percent)):'');setContractId(settings?.contract_id??'');
   setContracts((contractsResult.data??[]) as ContractRow[]);
   if(settings){
    let projectionQuery=supabase.from('budget_required_revenue_projection').select('annual_expense,required_net_revenue,retention_rate_percent,fixed_retention_amount,required_gross_revenue,realized_gross_revenue,realized_retained_amount,realized_net_revenue').eq('tenant_id',tenantId).eq('company_id',companyId).eq('budget_year',budgetYear);
@@ -56,7 +56,7 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
  },[tenantId,companyId,costCenterId,budgetYear]);
  useEffect(()=>{void load();},[load]);
 
- const targetNetMargin=Math.max(0,Math.min(99.99,numberValue(markupPercent)));
+ const hasTargetNetMargin=markupPercent.trim()!==''; const targetNetMargin=hasTargetNetMargin?Math.max(0,Math.min(99.99,numberValue(markupPercent))):0;
  const calculatedNet=annualOperationalCost>0?annualOperationalCost/(1-targetNetMargin/100):0;
  const retentionRate=projection?numberValue(projection.retention_rate_percent):0;
  const fixedRetention=projection?numberValue(projection.fixed_retention_amount):0;
@@ -67,7 +67,7 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
  const contractOptions=useMemo(()=>[{value:'',label:'Sem contrato / sem retenções'},...contracts.map(item=>({value:item.id,label:item.client_name?`${item.contract_number} · ${item.client_name}`:item.contract_number}))],[contracts]);
 
  async function save(){
-  if(!tenantId||!companyId||isPersonal)return;setSaving(true);setFeedback(null);
+  if(!tenantId||!companyId||isPersonal)return;if(!hasTargetNetMargin){setFeedback({tone:'danger',message:'Informe a margem líquida desejada antes de salvar.'});return;}setSaving(true);setFeedback(null);
   const payload={tenant_id:tenantId,company_id:companyId,cost_center_id:costCenterId||null,budget_year:budgetYear,contract_id:contractId||null,target_net_margin_percent:targetNetMargin,updated_at:new Date().toISOString()};
   const result=settingsId?await supabase.from('budget_planning_settings').update(payload).eq('id',settingsId).eq('tenant_id',tenantId).eq('company_id',companyId):await supabase.from('budget_planning_settings').insert(payload).select('id').single();
   if(result.error)setFeedback({tone:'danger',message:result.error.message});else{setFeedback({tone:'success',message:'Margem líquida desejada e retenções vinculadas ao orçamento foram salvas.'});await load();}
@@ -88,7 +88,7 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
    <div className="budget-pricing__controls">
     <Input label="Margem líquida desejada (%)" type="number" min="0" max="99.99" step="0.01" value={markupPercent} onChange={event=>setMarkupPercent(event.target.value)}/>
     <Select label="Contrato / regras de retenção" value={contractId} onChange={event=>setContractId(event.target.value)} options={contractOptions}/>
-    <Button onClick={()=>{void save();}} disabled={saving||loading}>{saving?'Salvando…':'Salvar formação de preço'}</Button>
+    <Button onClick={()=>{void save();}} disabled={saving||loading||!hasTargetNetMargin}>{saving?'Salvando…':'Salvar formação de preço'}</Button>
    </div>
    <p className="ui-muted budget-pricing__hint">Exemplo: custo de R$ 100.000,00 com margem líquida desejada de 20% exige receita líquida de R$ 125.000,00. Depois de pagar os R$ 100.000,00 de despesas, sobram R$ 25.000,00, que representam 20% da receita. Retenções contratuais, quando existentes, aumentam apenas o faturamento bruto necessário para preservar essa margem líquida.</p>
   </div>
