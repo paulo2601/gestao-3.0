@@ -19,3 +19,10 @@ export function installReportShareButton(reportWindow:Window,suggestedName:strin
   button.onclick=()=>{void sharePrintableElement(doc.body,suggestedName,orientation).catch(error=>reportWindow.alert(error instanceof Error?error.message:'Não foi possível compartilhar o PDF.'));};
   doc.body.insertBefore(button,doc.body.firstChild);
 }
+
+export async function sharePrintRoot(root:HTMLElement,printStyle:HTMLStyleElement,suggestedName:string,orientation:'portrait'|'landscape'='portrait',renderWidth=794){
+  const requested=window.prompt('Nome do arquivo PDF',safeReportFileName(suggestedName));if(requested===null)return;
+  const [{default:html2canvas},{jsPDF}]=await Promise.all([import('html2canvas'),import('jspdf')]);const css=printStyle.textContent??'',start=css.indexOf('@media print{'),exportCss=start>=0?css.slice(start+'@media print{'.length,-1):css;
+  const canvas=await html2canvas(root,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:renderWidth,onclone:doc=>{const cloned=doc.getElementById(root.id);if(cloned){cloned.style.position='static';cloned.style.left='0';cloned.style.top='0';cloned.style.width=renderWidth+'px';cloned.style.height='auto';cloned.style.visibility='visible';}const s=doc.createElement('style');s.textContent=exportCss;doc.head.appendChild(s);}});
+  const portrait=orientation==='portrait',pageWidth=portrait?210:297,pageHeight=portrait?297:210,margin=8,imgWidth=pageWidth-margin*2,imgHeight=canvas.height*imgWidth/canvas.width,usable=pageHeight-margin*2;const pdf=new jsPDF({orientation,unit:'mm',format:'a4',compress:true});let y=0,page=0;while(y<imgHeight){if(page>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',margin,margin-y,imgWidth,imgHeight,undefined,'FAST');y+=usable;page++;}const name=safeReportFileName(requested),file=new File([pdf.output('blob')],name+'.pdf',{type:'application/pdf'}),data={files:[file],title:name};if(!navigator.share||!navigator.canShare?.(data))throw new Error('Este navegador não permite compartilhar PDF diretamente.');await navigator.share(data);
+}
