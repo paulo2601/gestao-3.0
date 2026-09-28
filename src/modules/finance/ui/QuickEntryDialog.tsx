@@ -60,6 +60,11 @@ interface QuickEntryDialogProps {
   companies: readonly CompanySummary[];
   initialCompanyId?: string;
   allCompaniesMode?: boolean;
+  initialPaymentMethod?: PaymentMethod;
+  initialAccountRef?: string;
+  initialCardRef?: string;
+  embedded?: boolean;
+  onSaved?: () => void;
   onClose: () => void;
 }
 
@@ -174,7 +179,7 @@ function recurrenceEnd(start: string, count: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCompaniesMode = false, onClose }: QuickEntryDialogProps) {
+export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCompaniesMode = false, initialPaymentMethod, initialAccountRef = '', initialCardRef = '', embedded = false, onSaved, onClose }: QuickEntryDialogProps) {
   const navigate = useNavigate();
   const [companyId, setCompanyId] = useState(initialCompanyId || companies[0]?.id || '');
   const [moreOptions, setMoreOptions] = useState(false);
@@ -214,11 +219,11 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
     setLocalError(null);
     setLocalSuccess(null);
     setForm({
-      entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: 'pix', launchType: 'single',
-      installmentCount: '2', recurrenceCount: '12', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
+      entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: initialPaymentMethod ?? 'pix', launchType: 'single',
+      installmentCount: '2', recurrenceCount: '12', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
       counterparty: '', notes: '', includeInBudget: false,
     });
-  }, [companies, initialCompanyId, open]);
+  }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, open]);
 
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
   const scope = useMemo(() => ({ tenantId: company?.tenantId ?? '', companyId: company?.id ?? '' }), [company?.id, company?.tenantId]);
@@ -435,7 +440,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
 
   function exitQuickEntry() {
     onClose();
-    void navigate('/');
+    if (!embedded) void navigate('/');
   }
 
   async function createInlineRegistry(kind: InlineRegistry) {
@@ -551,6 +556,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
       ]);
 
       await operations.loadReferences();
+      onSaved?.();
       resetAfterSave(keepData);
       setLocalSuccess(keepData ? 'Lançamento concluído. Todos os dados foram mantidos.' : 'Lançamento concluído. Pronto para o próximo lançamento.');
     } catch (error) {
