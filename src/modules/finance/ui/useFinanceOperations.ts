@@ -56,13 +56,24 @@ function normalizedEntryType(value: string): 'income' | 'expense' {
   return value === 'income' ? 'income' : 'expense';
 }
 
-export function useFinanceOperations(scope: CompanyScope) {
+export function useFinanceOperations(scope: CompanyScope, mode: 'full' | 'quick' = 'full') {
   const repositories = useMemo(() => getFinanceRepositories(), []);
   const [state, setState] = useState<FinanceOperationState>({ busy: false, errorMessage: null, successMessage: null, references: null });
 
   const loadReferences = useCallback(async (): Promise<FinanceReferenceData> => {
     setState((current) => ({ ...current, busy: true, errorMessage: null }));
     try {
+      if (mode === 'quick') {
+        const [categories, costCenters, accounts, cards] = await Promise.all([
+          repositories.registries.listCategories(scope),
+          repositories.registries.listCostCenters(scope),
+          repositories.registries.listTenantAccounts(scope.tenantId),
+          repositories.cards.listCards(scope),
+        ]);
+        const references = { categories, costCenters, accounts, cards, cardInstallments: [], statements: [], installmentBalances: [], transfers: [], recurrences: [] };
+        setState((current) => ({ ...current, busy: false, references }));
+        return references;
+      }
       const [categories, costCenters, accounts, cards, cardInstallments, statements, installmentBalances, transfers, recurrences] = await Promise.all([
         repositories.registries.listCategories(scope),
         repositories.registries.listCostCenters(scope),
@@ -81,7 +92,7 @@ export function useFinanceOperations(scope: CompanyScope) {
       setState((current) => ({ ...current, busy: false, errorMessage: messageFrom(error) }));
       throw error;
     }
-  }, [repositories, scope]);
+  }, [mode, repositories, scope]);
 
   useEffect(() => { void loadReferences().catch(() => undefined); }, [loadReferences]);
 
