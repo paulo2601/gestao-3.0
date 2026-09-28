@@ -8,6 +8,7 @@ import { Dialog } from '../../../shared/ui/Dialog';
 import { EmptyState, LoadingState } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
+import { sharePrintableElement } from '../../../shared/utils/reportShare';
 import { EngineeringContractWorkspace, type EngineeringContractSection } from './EngineeringContractWorkspace';
 import { EngineeringContractSummaryDashboard } from './EngineeringContractSummaryDashboard';
 import { EngineeringProductionWorkspace } from './EngineeringProductionWorkspace';
@@ -98,7 +99,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
       <div className="engineering-parity-tools">
         <Input label="Buscar" value={contractSearch} onChange={event=>setContractSearch(event.target.value)} placeholder="Obra, cliente ou contrato"/>
         <Select label="Status" value={contractStatus} onChange={event=>setContractStatus(event.target.value)} options={[{value:'all',label:'Todos'},...contractStatuses.map(status=>({value:status,label:statusLabel(status)}))]}/>
-        <Button variant="secondary" onClick={()=>window.print()}>Imprimir saldo</Button>
+        <Button variant="secondary" onClick={()=>window.print()}>Imprimir saldo</Button><Button variant="secondary" onClick={()=>{const el=document.querySelector<HTMLElement>('.engineering-contracts-reference');if(el)void sharePrintableElement(el,'Saldo geral de contratos','portrait');}}>Compartilhar PDF</Button>
       </div>
       <div className="engineering-contract-list">{filteredContracts.length===0?empty:filteredContracts.map(item=>{const company=companies.find(c=>c.id===item.companyId);return <Card className="engineering-contract-card" key={item.contractId}><Button variant="tertiary" className="engineering-contract-card__open" onClick={()=>openContract(item)}><div className="engineering-contract-card__head"><div className="engineering-contract-card__icon" aria-hidden="true">▥</div><div className="engineering-contract-card__identity"><strong>{item.workName}</strong><span>{item.clientName??item.contractNumber} · {item.contractNumber}{company?` · ${companyLabel(company)}`:''}</span></div><div className="engineering-contract-card__percent">{item.measuredPercent.toFixed(1)}%</div><div className="engineering-contract-card__chevron" aria-hidden="true">›</div></div><progress className="engineering-contract-card__progress" max={100} value={Math.max(0,Math.min(100,item.measuredPercent))} aria-label={`${item.measuredPercent.toFixed(1)}% medido`}/><div className="engineering-contract-card__values"><span>Contratado <strong>{currency.format(item.updatedContractValue)}</strong></span><span>Medido <strong>{currency.format(item.measuredNet)}</strong></span><span>Saldo <strong>{currency.format(item.grossBalance)}</strong></span></div></Button></Card>;})}</div>
     </section>
