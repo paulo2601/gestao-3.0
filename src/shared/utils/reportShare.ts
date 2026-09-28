@@ -3,7 +3,7 @@ export function safeReportFileName(value:string){return value.replace(/[\\/:*?"<
 export async function sharePrintableElement(element:HTMLElement,suggestedName:string,orientation:'portrait'|'landscape'='portrait'){
   const requested=window.prompt('Nome do arquivo PDF',safeReportFileName(suggestedName));if(requested===null)return;
   const [{default:html2canvas},{jsPDF}]=await Promise.all([import('html2canvas'),import('jspdf')]);
-  const canvas=await html2canvas(element,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
+  const hidden=[...element.querySelectorAll<HTMLElement>('.print,.share-pdf')].map(node=>[node,node.style.display] as const);hidden.forEach(([node])=>{node.style.display='none';});const canvas=await html2canvas(element,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});hidden.forEach(([node,display])=>{node.style.display=display;});
   const portrait=orientation==='portrait',pageWidth=portrait?210:297,pageHeight=portrait?297:210,margin=8,imgWidth=pageWidth-margin*2,imgHeight=canvas.height*imgWidth/canvas.width;
   const pdf=new jsPDF({orientation,unit:'mm',format:'a4',compress:true});let y=0,page=0;const usable=pageHeight-margin*2;
   while(y<imgHeight){if(page>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.94),'JPEG',margin,margin-y,imgWidth,imgHeight,undefined,'FAST');y+=usable;page++;}
