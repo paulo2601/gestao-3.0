@@ -16,7 +16,7 @@ export function installReportShareButton(reportWindow:Window,suggestedName:strin
   const doc=reportWindow.document;doc.querySelectorAll('body > button').forEach(node=>node.classList.add('print'));const button=doc.createElement('button');button.type='button';button.className='share-pdf';button.textContent='Compartilhar PDF';
   button.style.cssText='padding:9px 14px;margin:0 0 8px 8px;border:1px solid #2563eb;border-radius:7px;background:#fff;color:#2563eb;font:600 14px Arial;cursor:pointer';
   const style=doc.createElement('style');style.textContent='@media print{.share-pdf{display:none!important}}';doc.head.appendChild(style);
-  button.onclick=()=>{const ownerWindow=reportWindow.opener&&!reportWindow.opener.closed?reportWindow.opener:reportWindow;void sharePrintableElement(doc.body,suggestedName,orientation,ownerWindow).catch(error=>reportWindow.alert(error instanceof Error?error.message:'Não foi possível compartilhar o PDF.'));};
+  button.onclick=()=>{const openerWindow=reportWindow.opener as Window|null;const ownerWindow=openerWindow&&!openerWindow.closed?openerWindow:reportWindow;void sharePrintableElement(doc.body,suggestedName,orientation,ownerWindow).catch(error=>reportWindow.alert(error instanceof Error?error.message:'Não foi possível compartilhar o PDF.'));};
   doc.body.insertBefore(button,doc.body.firstChild);
 }
 
