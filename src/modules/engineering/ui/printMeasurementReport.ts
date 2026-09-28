@@ -12,7 +12,7 @@ function compactReferences(values:string[]){
   groups.forEach((numbers,prefix)=>{
     const sorted=[...new Set(numbers)].sort((a,b)=>a-b);let start=sorted[0],previous=sorted[0];
     const flush=()=>{if(start===undefined||previous===undefined)return;output.push(start===previous?`${prefix}${start}`:`${prefix}${start}–${prefix}${previous}`);};
-    for(let index=1;index<sorted.length;index++){const current=sorted[index];if(current===previous+1){previous=current;continue;}flush();start=current;previous=current;}flush();
+    for(let index=1;index<sorted.length;index++){const current=sorted[index];if(current===undefined)continue;if(previous!==undefined&&current===previous+1){previous=current;continue;}flush();start=current;previous=current;}flush();
   });
   return output.join(', ');
 }
