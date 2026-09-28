@@ -87,7 +87,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     if(divisionMode==='value'&&Math.abs(payload.reduce((sum,item)=>sum+(item.value??0),0)-total)>0.01){setError(`A soma dos valores deve ser ${currency.format(total)}.`);return;}
     setBusy(true);
     try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:manualValueMode?1:numberValue(executedQuantity),unitValue:manualValueMode?numberValue(executedQuantity):numberValue(unitValue),notes:notes||null,divisionMode,participants:payload};if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}onSaved();if(addAnother)resetEntry(true);else{reset();onClose();}}
-    catch(cause){const details=typeof cause==='object'&&cause!==null&&'message' in cause?String((cause as {message?:unknown}).message??''):'';setError(details||'Não foi possível salvar a produção. Tente novamente.');}
+    catch(cause){const rawMessage=typeof cause==='object'&&cause!==null&&'message' in cause?(cause as {message?:unknown}).message:undefined;const details=typeof rawMessage==='string'?rawMessage:'';setError(details||'Não foi possível salvar a produção. Tente novamente.');}
     finally{setBusy(false);}
   }
 
