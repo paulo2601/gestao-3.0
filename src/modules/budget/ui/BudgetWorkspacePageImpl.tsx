@@ -43,18 +43,19 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const load=useCallback(async(silent=false)=>{
   if(!scopeTenantId||!scopeCompanyId){if(!silent)setLoading(false);return;}
   if(!silent)setLoading(true);const month=`${competence}-01`;const yearFrom=`${budgetYear}-01-01`;const yearTo=`${budgetYear}-12-01`;
-  const [cat,cc,plan,lim,yearLim,ctl,annual,treatment]=await Promise.all([
+  const [cat,cc,plan,lim,yearLim,ctl,yearCtl,annual,treatment]=await Promise.all([
    supabase.from('financial_categories').select('id,name,kind,status').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).order('name'),
    supabase.from('cost_centers').select('id,name,status').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('status','active').order('name'),
    supabase.from('budget_plans').select('id,category_id,cost_center_id,planned_amount,flow_type,notes,competence_month').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month).eq('source_kind','manual'),
    supabase.from('budget_limits').select('id,category_id,cost_center_id,limit_amount,warning_percent,notes,status,competence_month').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month).eq('status','active'),
    supabase.from('budget_limits').select('id,category_id,cost_center_id,limit_amount,warning_percent,notes,status,competence_month').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).gte('competence_month',yearFrom).lte('competence_month',yearTo).eq('status','active'),
    supabase.from('budget_monthly_control').select('category_id,cost_center_id,competence_month,planned_income,planned_expense,actual_income,actual_expense').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month),
+   supabase.from('budget_monthly_control').select('category_id,cost_center_id,competence_month,planned_income,planned_expense,actual_income,actual_expense').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).gte('competence_month',yearFrom).lte('competence_month',yearTo),
    supabase.from('budget_annual_plans').select('id,category_id,cost_center_id,budget_year,flow_type,annual_amount,start_month,notes').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear),
    supabase.from('budget_item_treatments').select('id,category_id,cost_center_id,budget_year,treatment').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear),
   ]);
-  const error=cat.error??cc.error??plan.error??lim.error??yearLim.error??ctl.error??annual.error??treatment.error;
-  if(error){setFeedback({tone:'danger',message:error.message});setCategories([]);setCostCenters([]);setPlans([]);setLimits([]);setYearLimits([]);setControl([]);setAnnualPlans([]);setTreatments([]);}else{setCategories((cat.data??[]) as CategoryRow[]);setCostCenters((cc.data??[]) as CostCenterRow[]);setPlans((plan.data??[]) as PlanRow[]);setLimits((lim.data??[]) as LimitRow[]);setYearLimits((yearLim.data??[]) as LimitRow[]);setControl((ctl.data??[]) as ControlRow[]);setAnnualPlans((annual.data??[]) as AnnualPlanRow[]);setTreatments((treatment.data??[]) as TreatmentRow[]);}if(!silent)setLoading(false);
+  const error=cat.error??cc.error??plan.error??lim.error??yearLim.error??ctl.error??yearCtl.error??annual.error??treatment.error;
+  if(error){setFeedback({tone:'danger',message:error.message});setCategories([]);setCostCenters([]);setPlans([]);setLimits([]);setYearLimits([]);setControl([]);setAnnualPlans([]);setTreatments([]);}else{setCategories((cat.data??[]) as CategoryRow[]);setCostCenters((cc.data??[]) as CostCenterRow[]);setPlans((plan.data??[]) as PlanRow[]);setLimits((lim.data??[]) as LimitRow[]);setYearLimits((yearLim.data??[]) as LimitRow[]);setControl((yearCtl.data??ctl.data??[]) as ControlRow[]);setAnnualPlans((annual.data??[]) as AnnualPlanRow[]);setTreatments((treatment.data??[]) as TreatmentRow[]);}if(!silent)setLoading(false);
  },[scopeTenantId,scopeCompanyId,competence,budgetYear]);
  useEffect(()=>{void load();},[load]);
  useEffect(()=>{if(!scopeTenantId||!scopeCompanyId){setCommitments(new Map());return;}void bc.loadBudgetCommitments(supabase,scopeTenantId,scopeCompanyId,`${competence}-01`).then(setCommitments).catch(()=>setCommitments(new Map()));},[scopeTenantId,scopeCompanyId,competence]);
