@@ -72,10 +72,9 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const scopeCompanyId=company?.id??'';
  const budgetYear=Number(competence.slice(0,4));
  const selectedMonth=Number(competence.slice(5,7));
- const today=new Date();
- const startMonth=budgetYear>today.getFullYear()?1:selectedMonth;
+ const startMonth=budgetYear>new Date().getFullYear()?1:selectedMonth;
  const monthsInPlan=13-startMonth;
- const monthOptions=Array.from({length:12},(_,index)=>({value:String(index+1),label:new Intl.DateTimeFormat('pt-BR',{month:'long'}).format(new Date(2026,index,1)).replace(/^./,letter=>letter.toUpperCase())}));
+ const monthOptions='Janeiro Fevereiro Março Abril Maio Junho Julho Agosto Setembro Outubro Novembro Dezembro'.split(' ').map((label,index)=>({value:String(index+1),label}));
  useEffect(()=>{if(requestedCompanyId&&companies.some(item=>item.id===requestedCompanyId))setCompanyId(requestedCompanyId);else if(initialCompanyId&&companies.some(item=>item.id===initialCompanyId))setCompanyId(initialCompanyId);},[companies,initialCompanyId,requestedCompanyId]);
  const load=useCallback(async(silent=false)=>{
   if(!scopeTenantId||!scopeCompanyId){if(!silent)setLoading(false);return;}
