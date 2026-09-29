@@ -53,7 +53,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const [limits,setLimits]=useState<LimitRow[]>([]);
  const [yearLimits,setYearLimits]=useState<LimitRow[]>([]);
  const [control,setControl]=useState<ControlRow[]>([]);
- const [yearControl,setYearControl]=useState<ControlRow[]>([]);
  const [annualPlans,setAnnualPlans]=useState<AnnualPlanRow[]>([]);
  const [treatments,setTreatments]=useState<TreatmentRow[]>([]);
  const [loading,setLoading]=useState(true);
@@ -78,14 +77,13 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const load=useCallback(async(silent=false)=>{
   if(!scopeTenantId||!scopeCompanyId){if(!silent)setLoading(false);return;}
   if(!silent)setLoading(true);const month=`${competence}-01`;const yearFrom=`${budgetYear}-01-01`;const yearTo=`${budgetYear}-12-01`;
-  const [cat,cc,plan,lim,yearLim,ctl,yearCtl,annual,treatment]=await Promise.all([
+  const [cat,cc,plan,lim,yearLim,ctl,annual,treatment]=await Promise.all([
    supabase.from('financial_categories').select('id,name,kind,status').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).order('name'),
    supabase.from('cost_centers').select('id,name,status').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('status','active').order('name'),
    supabase.from('budget_plans').select('id,category_id,cost_center_id,planned_amount,flow_type,notes,competence_month').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month).eq('source_kind','manual'),
    supabase.from('budget_limits').select('id,category_id,cost_center_id,limit_amount,warning_percent,notes,status,competence_month').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month).eq('status','active'),
    supabase.from('budget_limits').select('id,category_id,cost_center_id,limit_amount,warning_percent,notes,status,competence_month').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).gte('competence_month',yearFrom).lte('competence_month',yearTo).eq('status','active'),
    supabase.from('budget_monthly_control').select('category_id,cost_center_id,competence_month,planned_income,planned_expense,actual_income,actual_expense').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month),
-   supabase.from('budget_monthly_control').select('category_id,cost_center_id,competence_month,planned_income,planned_expense,actual_income,actual_expense').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).gte('competence_month',yearFrom).lte('competence_month',yearTo),
    supabase.from('budget_annual_plans').select('id,category_id,cost_center_id,budget_year,flow_type,annual_amount,start_month,notes').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear),
    supabase.from('budget_item_treatments').select('id,category_id,cost_center_id,budget_year,treatment').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear),
   ]);
@@ -100,9 +98,7 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const categoryMap=new Map(categories.map(item=>[item.id,item]));
  const costCenterMap=new Map(costCenters.map(item=>[item.id,item.name]));
  const treatmentFor=(categoryId:string|null,costCenterId:string|null):Treatment=>{if(!categoryId)return'operational_cost';return treatments.find(item=>item.category_id===categoryId&&(item.cost_center_id??'')===(costCenterId??''))?.treatment??'operational_cost';};
- const scopedAnnualPlans=selectedCostCenterId?annualPlans.filter(row=>row.cost_center_id===selectedCostCenterId):annualPlans;
  const scopedYearLimits=selectedCostCenterId?yearLimits.filter(row=>row.cost_center_id===selectedCostCenterId):yearLimits;
- const annualIncomeDefined=scopedAnnualPlans.filter(row=>row.flow_type==='income').reduce((total,row)=>total+numberValue(row.annual_amount),0);
  const annualPlannedExpense=scopedYearLimits.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((total,row)=>total+numberValue(row.limit_amount),0);
  const compatibleCategories=(flowType:FlowType)=>categories.filter(category=>category.status==='active'&&(category.kind===flowType||category.kind==='both'));
 
