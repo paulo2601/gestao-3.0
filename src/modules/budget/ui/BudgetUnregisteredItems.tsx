@@ -11,15 +11,15 @@ export function BudgetUnregisteredItems({items,categories,costCenters,onClassify
  const [editing,setEditing]=useState<string|null>(null);
  const [categoryId,setCategoryId]=useState('');
  const [costCenterId,setCostCenterId]=useState('');
- const [saving,setSaving]=useState(false);
+ const [saving,setSaving]=useState<string|null>(null);
  const classify=(item:UnregisteredBudgetEntry)=>{
-  setSaving(true);
-  onClassify(item,categoryId,costCenterId).then(()=>{setEditing(null);setCategoryId('');setCostCenterId('');}).catch(()=>undefined).finally(()=>setSaving(false));
+  setSaving(item.key);
+  onClassify(item,categoryId,costCenterId).then(()=>{setEditing(null);setCategoryId('');setCostCenterId('');}).catch(()=>undefined).finally(()=>setSaving(null));
  };
  if(!items.length)return <div className="budget-unregistered-empty"><strong>Nenhum item pendente de classificação.</strong><span>Todo lançamento está vinculado a um item do orçamento financeiro.</span></div>;
  return <div className="budget-workspace__items">{items.map(item=><div className="budget-workspace__item" key={item.key}>
   <div className="budget-workspace__item-main"><strong>{item.description||'Item não cadastrado'}</strong><span>{item.counterpartyName?item.counterpartyName+' · ':''}Vencimento {date(item.dueDate)}</span><span>Competência {item.competenceMonth.slice(0,7).split('-').reverse().join('/')} · {sourceLabel(item.sourceKind)}</span></div>
   <div className="budget-annual-fields"><span className="budget-annual-actual">Valor comprometido <b>{currency.format(item.amount)}</b></span></div>
-  <div className="budget-workspace__item-actions">{editing===item.key?<><select value={categoryId} onChange={e=>setCategoryId(e.target.value)}><option value="">Categoria</option>{categories.map(option=><option key={option.id} value={option.id}>{option.name}</option>)}</select><select value={costCenterId} onChange={e=>setCostCenterId(e.target.value)}><option value="">Sem centro de custo</option>{costCenters.map(option=><option key={option.id} value={option.id}>{option.name}</option>)}</select><Button size="sm" disabled={!categoryId||saving} onClick={()=>classify(item)}>{saving?'Salvando…':'Confirmar'}</Button></>:<Button size="sm" onClick={()=>{setEditing(item.key);setCategoryId(item.categoryId??'');setCostCenterId(item.costCenterId??'');}}>Classificar</Button>}</div>
+  <div className="budget-workspace__item-actions">{editing===item.key?<><select value={categoryId} onChange={e=>setCategoryId(e.target.value)}><option value="">Categoria</option>{categories.map(option=><option key={option.id} value={option.id}>{option.name}</option>)}</select><select value={costCenterId} onChange={e=>setCostCenterId(e.target.value)}><option value="">Sem centro de custo</option>{costCenters.map(option=><option key={option.id} value={option.id}>{option.name}</option>)}</select><Button size="sm" disabled={!categoryId||saving===item.key} onClick={()=>classify(item)}>{saving===item.key?'Salvando…':'Confirmar'}</Button></>:<Button size="sm" onClick={()=>{setEditing(item.key);setCategoryId(item.categoryId??'');setCostCenterId(item.costCenterId??'');}}>Classificar</Button>}</div>
  </div>)}</div>;
 }
