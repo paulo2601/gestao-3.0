@@ -95,7 +95,7 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
   ]);
   const error=cat.error??cc.error??plan.error??lim.error??yearLim.error??ctl.error??annual.error??treatment.error;
   if(error){setFeedback({tone:'danger',message:error.message});setCategories([]);setCostCenters([]);setPlans([]);setLimits([]);setYearLimits([]);setControl([]);setAnnualPlans([]);setTreatments([]);}else{setCategories((cat.data??[]) as CategoryRow[]);setCostCenters((cc.data??[]) as CostCenterRow[]);setPlans((plan.data??[]) as PlanRow[]);setLimits((lim.data??[]) as LimitRow[]);setYearLimits((yearLim.data??[]) as LimitRow[]);setControl((ctl.data??[]) as ControlRow[]);setAnnualPlans((annual.data??[]) as AnnualPlanRow[]);setTreatments((treatment.data??[]) as TreatmentRow[]);}if(!silent)setLoading(false);
- },[scopeTenantId,scopeCompanyId,competence,budgetYear,selectedMonth]);
+ },[scopeTenantId,scopeCompanyId,competence,budgetYear]);
  useEffect(()=>{void load();},[load]);
  useEffect(()=>{const next:Record<string,AnnualDraft>={};for(const row of annualPlans){next[`${row.flow_type}:${scopeKey(row.category_id,row.cost_center_id)}`]={annualAmount:String(numberValue(row.annual_amount)),startMonth:Number(row.start_month)||1};}setAnnualDrafts(next);},[annualPlans]);
  useEffect(()=>{if(!feedback)return;const timeout=window.setTimeout(()=>setFeedback(null),feedback.tone==='success'?1800:4000);return()=>window.clearTimeout(timeout);},[feedback]);
