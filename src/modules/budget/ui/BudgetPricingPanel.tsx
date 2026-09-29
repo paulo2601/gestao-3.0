@@ -17,7 +17,7 @@ const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const money=(value:number)=>currency.format(Number.isFinite(value)?value:0);
 const numberValue=(value:number|string|null|undefined)=>{const parsed=Number(String(value??0).replace(',','.'));return Number.isFinite(parsed)?parsed:0;};
 
-export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,annualOperationalCost}:{tenantId:string;companyId:string;costCenterId:string;budgetYear:number;annualOperationalCost:number}){
+export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,annualOperationalCost,compact=false}:{tenantId:string;companyId:string;costCenterId:string;budgetYear:number;annualOperationalCost:number;compact?:boolean}){
  const [loading,setLoading]=useState(true);
  const [saving,setSaving]=useState(false);
  const [feedback,setFeedback]=useState<{tone:'danger'|'success';message:string}|null>(null);
@@ -73,6 +73,8 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
   if(result.error)setFeedback({tone:'danger',message:result.error.message});else{setFeedback({tone:'success',message:'Margem líquida desejada e retenções vinculadas ao orçamento foram salvas.'});await load();}
   setSaving(false);
  }
+
+ if(compact)return <div className="budget-pricing-compact"><Input label="Margem desejada (%)" type="number" min="0" max="99.99" step="0.01" value={markupPercent} onChange={event=>setMarkupPercent(event.target.value)}/><Button size="sm" onClick={()=>{void save();}} disabled={saving||loading||!hasTargetNetMargin}>{saving?'Salvando…':'Salvar'}</Button>{feedback&&<span className="budget-pricing-compact__feedback">{feedback.message}</span>}</div>;
 
  return <Card title="Formação de preço" description={isPersonal?'Defina a margem desejada deste orçamento. O percentual fica salvo e pode ser alterado quando necessário.':'O preço é calculado para que, depois de pagar todas as despesas previstas, reste a margem líquida desejada. Retenções contratuais são compensadas no faturamento bruto.'}>
   <div className="budget-pricing__stack">
