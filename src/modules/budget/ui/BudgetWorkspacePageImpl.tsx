@@ -61,7 +61,7 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const [feedback,setFeedback]=useState<{tone:'danger'|'success';message:string}|null>(null);
  const [itemFeedback,setItemFeedback]=useState<string|null>(null);
  const [itemDraft,setItemDraft]=useState<ItemDraft|null>(null);
- const [categoryDraft,setCategoryDraft]=useState<CategoryDraft|null>(null);
+ const [categoryDraft,setCategoryDraft]=useState<CategoryDraft|null>(null);\n const [activeBudgetTab,setActiveBudgetTab]=useState<'expense'|'income'|'summary'>('expense');
  const company=useMemo(()=>companies.find(item=>item.id===companyId)??companies[0],[companies,companyId]);
  const isPersonal=company?companyLabel(company)==='Pessoal':false;
  const personalCostCenterId=costCenters.find(item=>item.name.trim().toLocaleUpperCase('pt-BR')==='PESSOAL')?.id??'';
@@ -171,7 +171,7 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const draftIncomeResult=draftAnnual-annualPlannedExpense;
  const draftIncomeMargin=draftAnnual>0?draftIncomeResult*100/draftAnnual:0;
  const retentionCount=rows('expense').filter(row=>row.treatment==='retention').length;
- const [activeBudgetTab,setActiveBudgetTab]=useState<'expense'|'income'|'summary'>('expense');
+
 
  return <section className={`budget-workspace${isPersonal?' budget-workspace--personal':''}`} aria-label="Orçamento">
   <div className="budget-editor-head"><div><div className="budget-editor-breadcrumb">Financeiro <span>›</span> Orçamento <span>›</span> <b>Editar orçamento</b></div><h1>Editar orçamento - {companyLabel(company)}</h1></div><div className="budget-workspace__filters"><Input label="Competência" type="month" value={competence} onChange={event=>setCompetence(event.target.value)}/><Select label="Empresa" value={company.id} onChange={event=>{setCompanyId(event.target.value);setSelectedCostCenterId('');}} options={companies.map(item=>({value:item.id,label:companyLabel(item)}))}/>{!isPersonal&&<Select label="Obra / centro de custo" value={selectedCostCenterId} onChange={event=>setSelectedCostCenterId(event.target.value)} options={[{value:'',label:'Todos / geral'},...costCenters.map(item=>({value:item.id,label:item.name}))]}/>}</div></div>
