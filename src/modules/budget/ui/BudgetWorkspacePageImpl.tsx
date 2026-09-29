@@ -35,7 +35,6 @@ const currentMonth=()=>{const date=new Date();return `${date.getFullYear()}-${St
 const numberValue=(value:string|number|null|undefined)=>{const parsed=Number(String(value??0).replace(',','.'));return Number.isFinite(parsed)?parsed:0;};
 const scopeKey=(categoryId:string|null,costCenterId:string|null)=>`${categoryId??'none'}:${costCenterId??'general'}`;
 const monthDate=(year:number,month:number)=>`${year}-${String(month).padStart(2,'0')}-01`;
-const treatmentLabel=(value:Treatment)=>value==='retention'?'Retenção / dedução':value==='tax_cost'?'Imposto / custo tributário':'Custo operacional';
 function companyLabel(company:CompanySummary){const raw=`${company.tradeName??''} ${company.legalName}`.toLocaleUpperCase('pt-BR');if(raw.includes('SARTORI'))return'Sartori';if(raw.includes('PESSOAL'))return'Pessoal';if(raw.includes('BLAZE'))return'Blaze';if(raw.includes('ADMIN'))return'Admin';if(raw.includes('PR-HIST')||/(^|\s)PR(\s|$)/.test(raw))return'PR';if(raw.includes('CR-HIST')||/(^|\s)CR(\s|$)/.test(raw))return'CR';return company.tradeName??company.legalName;}
 function errorMessage(error:unknown){return error&&typeof error==='object'&&'message' in error&&typeof error.message==='string'?error.message:'Não foi possível concluir a operação.';}
 
@@ -112,7 +111,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const compatibleCategories=(flowType:FlowType)=>categories.filter(category=>category.status==='active'&&(category.kind===flowType||category.kind==='both'));
 
  function actualFor(flowType:FlowType,categoryId:string|null,costCenterId:string|null){const row=control.find(item=>scopeKey(item.category_id,item.cost_center_id)===scopeKey(categoryId,costCenterId));return row?numberValue(flowType==='income'?row.actual_income:row.actual_expense):0;}
- function annualFor(flowType:FlowType,categoryId:string|null,costCenterId:string|null,monthlyAmount:number){const found=annualPlans.find(row=>row.flow_type===flowType&&row.category_id===categoryId&&(row.cost_center_id??'')===(costCenterId??''));return found?numberValue(found.annual_amount):monthlyAmount*monthsInPlan;}
  function annualExpenseForCategory(categoryId:string){return scopedYearLimits.filter(row=>row.category_id===categoryId&&treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((total,row)=>total+numberValue(row.limit_amount),0);}
  function rows(flowType:FlowType):BudgetListRow[]{
   if(flowType==='expense'){
