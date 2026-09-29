@@ -8,7 +8,6 @@ import { Dialog } from '../../../shared/ui/Dialog';
 import { EmptyState, Feedback, LoadingState } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { MoneyInput } from '../../../shared/ui/MoneyInput';
-import { PageHeader } from '../../../shared/ui/PageHeader';
 import { Select } from '../../../shared/ui/Select';
 import { BudgetPricingPanel } from './BudgetPricingPanel';
 import './budget-workspace.css';
