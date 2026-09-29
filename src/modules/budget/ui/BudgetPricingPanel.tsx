@@ -17,7 +17,7 @@ const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const money=(value:number)=>currency.format(Number.isFinite(value)?value:0);
 const numberValue=(value:number|string|null|undefined)=>{const parsed=Number(String(value??0).replace(',','.'));return Number.isFinite(parsed)?parsed:0;};
 
-export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,annualOperationalCost,compact=false}:{tenantId:string;companyId:string;costCenterId:string;budgetYear:number;annualOperationalCost:number;compact?:boolean}){
+export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,annualOperationalCost,compact=false,onProjectionChange}:{tenantId:string;companyId:string;costCenterId:string;budgetYear:number;annualOperationalCost:number;compact?:boolean;onProjectionChange?:(value:{margin:number;requiredNetRevenue:number})=>void}){
  const [loading,setLoading]=useState(true);
  const [saving,setSaving]=useState(false);
  const [feedback,setFeedback]=useState<{tone:'danger'|'success';message:string}|null>(null);
@@ -64,6 +64,7 @@ export function BudgetPricingPanel({tenantId,companyId,costCenterId,budgetYear,a
  const projectedNet=projection?numberValue(projection.required_net_revenue):calculatedNet;
  const projectedGross=projection?numberValue(projection.required_gross_revenue):calculatedGross;
  const projectedProfit=Math.max(0,projectedNet-annualOperationalCost);
+ useEffect(()=>{onProjectionChange?.({margin:targetNetMargin,requiredNetRevenue:calculatedNet});},[onProjectionChange,targetNetMargin,calculatedNet]);
  const contractOptions=useMemo(()=>[{value:'',label:'Sem contrato / sem retenções'},...contracts.map(item=>({value:item.id,label:item.client_name?`${item.contract_number} · ${item.client_name}`:item.contract_number}))],[contracts]);
 
  async function save(){
