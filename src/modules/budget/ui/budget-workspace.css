@@ -191,3 +191,59 @@
     z-index:1;
   }
 }
+
+
+/* Budget mobile density + stable vertical scroll. KPI control stays visible while editing. */
+@media(max-width:700px){
+  .budget-editor-head .budget-workspace__filters{
+    grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr)!important;
+    gap:8px!important;
+  }
+  .budget-editor-head .budget-workspace__filters>.ui-field,
+  .budget-editor-head .budget-workspace__filters>.ui-field:last-child{
+    grid-column:auto!important;
+    min-height:72px!important;
+    padding:9px 8px!important;
+  }
+  .budget-editor-head .budget-workspace__filters>.ui-field::before{
+    display:none!important;
+  }
+  .budget-editor-head .budget-workspace__filters>.ui-field>.ui-field__label{
+    grid-column:1/-1;
+    font-size:.68rem;
+  }
+  .budget-editor-head .budget-workspace__filters>.ui-field>.ui-input{
+    grid-column:1/-1;
+    font-size:.86rem!important;
+  }
+  .budget-control-sticky{
+    position:sticky;
+    top:56px;
+    z-index:20;
+    width:100%;
+    max-width:100%;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y;
+  }
+  .budget-control-line{
+    min-width:900px;
+  }
+  .budget-approved-tabs{
+    touch-action:pan-x pan-y;
+    overscroll-behavior-x:contain;
+  }
+  .budget-approved-panel,
+  .budget-workspace__items,
+  .budget-workspace__item--annual,
+  .budget-annual-fields,
+  .budget-save-year{
+    touch-action:pan-y;
+    overscroll-behavior-y:auto;
+  }
+  .budget-save-year{
+    position:relative;
+    bottom:auto;
+  }
+}
