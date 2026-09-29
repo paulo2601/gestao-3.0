@@ -28,6 +28,7 @@ export async function classifyUnregisteredBudgetEntry(client:SupabaseClient,tena
  if(!categoryId)throw new Error('Selecione uma categoria para classificar o lançamento.');
  const table=item.sourceKind==='financial_installment'?'financial_entries':item.sourceKind==='card_installment'?'card_transactions':null;
  if(!table)throw new Error('Origem do lançamento ainda não permite classificação automática.');
- const result=await client.from(table).update({category_id:categoryId,cost_center_id:costCenterId||null}).eq('tenant_id',tenantId).eq('company_id',companyId).eq('id',item.parentId);
+ const targetId=item.sourceKind==='financial_installment'?item.itemId:item.parentId;
+ const result=await client.from(table).update({category_id:categoryId,cost_center_id:costCenterId||null}).eq('tenant_id',tenantId).eq('company_id',companyId).eq('id',targetId);
  if(result.error)throw result.error;
 }
