@@ -103,9 +103,8 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const costCenterMap=new Map(costCenters.map(item=>[item.id,item.name]));
  const treatmentFor=(categoryId:string|null,costCenterId:string|null):Treatment=>{if(!categoryId)return'operational_cost';return treatments.find(item=>item.category_id===categoryId&&(item.cost_center_id??'')===(costCenterId??''))?.treatment??'operational_cost';};
  const scopedYearLimits=selectedCostCenterId?yearLimits.filter(row=>row.cost_center_id===selectedCostCenterId):yearLimits;
- const previewMonthlyExpense=rows('expense').filter(row=>row.treatment!=='retention').reduce((total,row)=>{const key='expense:'+scopeKey(row.categoryId,row.costCenterId);const annual=annualPlans.find(item=>item.flow_type==='expense'&&item.category_id===row.categoryId&&(item.cost_center_id??'')===(row.costCenterId??''));const draft=annualDrafts[key];if(!draft)return total+row.planned;const annualAmount=numberValue(draft.annualAmount);return total+(annualAmount/Math.max(1,13-draft.startMonth));},0);
+ const previewMonthlyExpense=rows('expense').filter(row=>row.treatment!=='retention').reduce((total,row)=>{const key='expense:'+scopeKey(row.categoryId,row.costCenterId);const draft=annualDrafts[key];if(!draft)return total+row.planned;const annualAmount=numberValue(draft.annualAmount);return total+(annualAmount/Math.max(1,13-draft.startMonth));},0);
  const annualPlannedExpense=scopedYearLimits.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((monthlyTotals,row)=>monthlyTotals+numberValue(row.limit_amount),0);
- const scopedMonthLimits=selectedCostCenterId?limits.filter(row=>row.cost_center_id===selectedCostCenterId):limits;
  const scopedMonthControl=selectedCostCenterId?control.filter(row=>row.cost_center_id===selectedCostCenterId):control;
  const monthlyActualExpense=scopedMonthControl.reduce((total,row)=>total+numberValue(row.actual_expense),0);
  const compatibleCategories=(flowType:FlowType)=>categories.filter(category=>category.status==='active'&&(category.kind===flowType||category.kind==='both'));
