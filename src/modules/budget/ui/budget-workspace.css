@@ -147,3 +147,47 @@
 .budget-save-year .ui-button{min-width:210px;box-shadow:0 8px 24px rgba(16,24,40,.15)}
 @media(max-width:900px){.budget-workspace__item--annual{grid-template-columns:1fr}.budget-annual-fields{grid-template-columns:1fr 1fr}.budget-workspace__item--annual .budget-workspace__item-actions{justify-content:flex-start}}
 @media(max-width:520px){.budget-annual-fields{grid-template-columns:1fr 1fr}.budget-save-year{bottom:max(8px,env(safe-area-inset-bottom))}.budget-save-year .ui-button{width:100%}}
+
+
+/* Mobile annual-budget scroll fix: vertical page gestures must not be captured by KPI/editor regions. */
+@media(max-width:700px){
+  .budget-workspace{
+    min-width:0;
+    overflow:visible;
+    touch-action:pan-y;
+  }
+  .budget-control-sticky{
+    position:relative;
+    top:auto;
+    z-index:1;
+    overflow-x:auto;
+    overflow-y:hidden;
+    overscroll-behavior-x:contain;
+    overscroll-behavior-y:auto;
+    touch-action:pan-x pan-y;
+  }
+  .budget-workspace__items,
+  .budget-approved-panel,
+  .budget-workspace__item--annual,
+  .budget-annual-fields{
+    min-width:0;
+    max-width:100%;
+    overflow:visible;
+    touch-action:pan-y;
+  }
+  .budget-workspace__item--annual{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .budget-annual-fields{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  }
+  .budget-annual-fields .ui-input{
+    width:100%;
+    min-width:0;
+  }
+  .budget-save-year{
+    position:relative;
+    bottom:auto;
+    z-index:1;
+  }
+}
