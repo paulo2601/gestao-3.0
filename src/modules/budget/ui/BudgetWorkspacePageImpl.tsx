@@ -105,9 +105,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const annualIncomeDefined=scopedAnnualPlans.filter(row=>row.flow_type==='income').reduce((total,row)=>total+numberValue(row.annual_amount),0);
  const annualPlannedExpense=scopedYearLimits.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((total,row)=>total+numberValue(row.limit_amount),0);
  const filteredYearControl=yearControl.filter(row=>(!selectedCostCenterId||row.cost_center_id===selectedCostCenterId)&&Number(String(row.competence_month??'').slice(5,7))>=startMonth);
- const annualActualIncome=filteredYearControl.reduce((total,row)=>total+numberValue(row.actual_income),0);
- const annualActualExpense=filteredYearControl.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((total,row)=>total+numberValue(row.actual_expense),0);
- const annualPlannedIncome=annualIncomeDefined;
  const compatibleCategories=(flowType:FlowType)=>categories.filter(category=>category.status==='active'&&(category.kind===flowType||category.kind==='both'));
 
  function actualFor(flowType:FlowType,categoryId:string|null,costCenterId:string|null){const row=control.find(item=>scopeKey(item.category_id,item.cost_center_id)===scopeKey(categoryId,costCenterId));return row?numberValue(flowType==='income'?row.actual_income:row.actual_expense):0;}
