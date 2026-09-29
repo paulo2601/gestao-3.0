@@ -165,7 +165,7 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
       const savedDate = activityForm.date;
       const savedCardId = selectedActivity.activityType === 'purchase' ? activityForm.cardId : selected.cardId;
       const targetCard = cards.find((card) => card.cardId === savedCardId) ?? selected;
-      const targetMonth = savedDate ? monthKey(new Date(\`${savedDate}T12:00:00\`)) : selectedStatementMonth;
+      const targetMonth = savedDate ? monthKey(new Date(`${savedDate}T12:00:00`)) : selectedStatementMonth;
       setSelected(targetCard);
       setSelectedStatementMonth(targetMonth);
       setDialog('details');
