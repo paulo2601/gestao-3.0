@@ -89,7 +89,7 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
    supabase.from('budget_annual_plans').select('id,category_id,cost_center_id,budget_year,flow_type,annual_amount,start_month,notes').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear),
    supabase.from('budget_item_treatments').select('id,category_id,cost_center_id,budget_year,treatment').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear),
   ]);
-  const error=cat.error??cc.error??plan.error??lim.error??yearLim.error??ctl.error??yearCtl.error??annual.error??treatment.error;
+  const error=cat.error??cc.error??plan.error??lim.error??yearLim.error??ctl.error??annual.error??treatment.error;
   if(error){setFeedback({tone:'danger',message:error.message});setCategories([]);setCostCenters([]);setPlans([]);setLimits([]);setYearLimits([]);setControl([]);setAnnualPlans([]);setTreatments([]);}else{setCategories((cat.data??[]) as CategoryRow[]);setCostCenters((cc.data??[]) as CostCenterRow[]);setPlans((plan.data??[]) as PlanRow[]);setLimits((lim.data??[]) as LimitRow[]);setYearLimits((yearLim.data??[]) as LimitRow[]);setControl((ctl.data??[]) as ControlRow[]);setAnnualPlans((annual.data??[]) as AnnualPlanRow[]);setTreatments((treatment.data??[]) as TreatmentRow[]);}if(!silent)setLoading(false);
  },[scopeTenantId,scopeCompanyId,competence,budgetYear]);
  useEffect(()=>{void load();},[load]);
