@@ -67,7 +67,7 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const scopedYearLimits=selectedCostCenterId?yearLimits.filter(row=>row.cost_center_id===selectedCostCenterId):yearLimits;
  const monthlyCommittedExpense=rows('expense').reduce((total,row)=>total+row.actual,0);
  const previewMonthlyExpense=rows('expense').filter(row=>row.treatment!=='retention').reduce((total,row)=>{const key='expense:'+scopeKey(row.categoryId,row.costCenterId);const draft=annualDrafts[key];const planned=draft?Number(draft.annualAmount)/Math.max(1,13-draft.startMonth):row.planned;return total+Math.max(planned,row.actual);},0);
- const annualPlannedExpense=scopedYearLimits.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((monthlyTotals,row)=>monthlyTotals+Number(row.limit_amount),0);
+ const annualPlannedExpense=scopedYearLimits.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((total,row)=>total+Number(row.limit_amount),0);
  const scopedMonthControl=selectedCostCenterId?control.filter(row=>row.cost_center_id===selectedCostCenterId):control;
  const monthlyActualExpense=scopedMonthControl.reduce((total,row)=>total+Number(row.actual_expense),0);
  const monthlyPlannedIncome=scopedMonthControl.reduce((total,row)=>total+Number(row.planned_income),0);
