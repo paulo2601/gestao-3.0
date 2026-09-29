@@ -256,3 +256,24 @@
 .budget-year-summary{display:grid;gap:4px;overflow:auto}.budget-year-summary__head,.budget-year-summary__row{min-width:860px;display:grid;grid-template-columns:1.05fr repeat(5,1fr);gap:10px;align-items:center;text-align:right}.budget-year-summary__head{padding:8px 12px;font-size:.76rem;color:var(--ui-text-muted,#64748b);font-weight:700}.budget-year-summary__head span:first-child,.budget-year-summary__row strong{text-align:left}.budget-year-summary__row{border:1px solid var(--ui-border,#e2e8f0);border-radius:9px;background:var(--ui-surface,#fff);padding:10px 12px;color:inherit;cursor:pointer}.budget-year-summary__row:hover,.budget-year-summary__row.is-current{background:var(--ui-surface-soft,#f8fafc)}.budget-year-summary__row b{font-weight:800}@media(max-width:720px){.budget-year-summary__head{display:none}.budget-year-summary{overflow:visible}.budget-year-summary__row{min-width:0;grid-template-columns:1fr 1fr 1fr;padding:10px}.budget-year-summary__row strong{grid-column:1/-1}.budget-year-summary__row span:nth-of-type(1),.budget-year-summary__row span:nth-of-type(3){display:none}.budget-year-summary__row span,.budget-year-summary__row b{font-size:.78rem;text-align:left}.budget-year-summary__row span:nth-of-type(2)::before{content:'Entradas: ';color:var(--ui-text-muted,#64748b)}.budget-year-summary__row span:nth-of-type(4)::before{content:'Despesas: ';color:var(--ui-text-muted,#64748b)}.budget-year-summary__row b::before{content:'Resultado: ';color:var(--ui-text-muted,#64748b);font-weight:400}}
 
 .budget-annual-committed,.budget-annual-balance{display:grid;gap:2px}.budget-annual-balance.is-negative b{color:var(--ui-danger,#b42318)}@media(min-width:721px){.budget-workspace__item--annual .budget-annual-fields{grid-template-columns:minmax(150px,1.3fr) minmax(130px,1fr) repeat(4,minmax(105px,.8fr))}}@media(max-width:720px){.budget-workspace__item--annual .budget-annual-fields{grid-template-columns:1fr 1fr}.budget-annual-monthly,.budget-annual-committed,.budget-annual-actual,.budget-annual-balance{padding:6px 0}}
+
+/* Mobile Orçamento Financeiro: leitura compacta sem replicar a grade desktop */
+@media(max-width:720px){
+ .budget-workspace{gap:10px}
+ .budget-financial-overview{display:flex;overflow-x:auto;gap:8px;margin-inline:-4px;padding:0 4px 4px;scroll-snap-type:x proximity}
+ .budget-financial-overview>div{flex:0 0 145px;min-height:74px;scroll-snap-align:start}
+ .budget-approved-tabs{position:sticky;top:56px;z-index:18;background:var(--color-surface,#fff);margin:0 -8px;padding:6px 8px;border-bottom:1px solid var(--color-border,#dfe3eb)}
+ .budget-approved-panel{padding:0}
+ .budget-workspace__items{gap:8px;border:0;border-radius:0}
+ .budget-workspace__item,.budget-workspace__item--annual{border:1px solid var(--color-border,#dfe3eb)!important;border-radius:12px!important;padding:10px!important;gap:9px;background:var(--color-surface,#fff)!important}
+ .budget-workspace__item-main{display:grid;gap:2px}
+ .budget-workspace__item-main strong{font-size:.9rem}
+ .budget-workspace__item-main span{font-size:.72rem}
+ .budget-annual-fields{gap:6px}
+ .budget-annual-fields label{font-size:.68rem}
+ .budget-annual-fields .ui-input{min-height:38px}
+ .budget-annual-monthly,.budget-annual-committed,.budget-annual-actual,.budget-annual-balance{min-height:48px;padding:6px 8px;border:1px solid var(--color-border,#dfe3eb);border-radius:9px;background:var(--color-surface-soft,#f8fafc);font-size:.67rem}
+ .budget-annual-fields b{font-size:.78rem}
+ .budget-workspace__item-actions .ui-button{min-height:34px;font-size:.72rem}
+ .budget-unregistered-empty{padding:18px 10px}
+}
