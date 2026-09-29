@@ -61,7 +61,8 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const [feedback,setFeedback]=useState<{tone:'danger'|'success';message:string}|null>(null);
  const [itemFeedback,setItemFeedback]=useState<string|null>(null);
  const [itemDraft,setItemDraft]=useState<ItemDraft|null>(null);
- const [categoryDraft,setCategoryDraft]=useState<CategoryDraft|null>(null);\n const [activeBudgetTab,setActiveBudgetTab]=useState<'expense'|'income'|'summary'>('expense');
+ const [categoryDraft,setCategoryDraft]=useState<CategoryDraft|null>(null);
+ const [activeBudgetTab,setActiveBudgetTab]=useState<'expense'|'income'|'summary'>('expense');
  const company=useMemo(()=>companies.find(item=>item.id===companyId)??companies[0],[companies,companyId]);
  const isPersonal=company?companyLabel(company)==='Pessoal':false;
  const personalCostCenterId=costCenters.find(item=>item.name.trim().toLocaleUpperCase('pt-BR')==='PESSOAL')?.id??'';
