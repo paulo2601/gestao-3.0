@@ -494,15 +494,22 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
       } else if (form.paymentMethod === 'credit') {
         const card = parsePaymentRef(form.cardRef);
         if (!card) throw new Error('Selecione um cartão válido.');
-        const result = await getSupabaseClient().rpc('create_card_purchase_cross_company', {
-          p_tenant_id: company.tenantId, p_card_company_id: card.companyId, p_expense_company_id: company.id,
-          p_card_id: card.resourceId, p_purchase_date: form.date, p_description: form.description.trim(),
-          p_counterparty_name: form.counterparty.trim() || null, p_category_id: form.categoryId,
-          p_cost_center_id: form.costCenterId || null, p_total_amount: amount,
-          p_installment_count: form.launchType === 'installment' ? Math.max(2, Math.trunc(Number(form.installmentCount || '2'))) : 1,
-          p_idempotency_key: idempotencyKey('quick-card-purchase'), p_notes: form.notes.trim() || null,
-        });
-        if (result.error) throw result.error;
+        const installmentCount = form.launchType === 'installment' ? Math.max(2, Math.trunc(Number(form.installmentCount || '2'))) : 1;
+        const common = {
+          p_tenant_id: company.tenantId, p_card_id: card.resourceId, p_purchase_date: form.date,
+          p_description: form.description.trim(), p_counterparty_name: form.counterparty.trim() || null,
+          p_category_id: form.categoryId, p_cost_center_id: form.costCenterId || null,
+          p_total_amount: amount, p_installment_count: installmentCount, p_notes: form.notes.trim() || null,
+        };
+        const result = card.companyId === company.id
+          ? await getSupabaseClient().rpc('create_card_purchase', {
+              ...common, p_company_id: company.id, p_idempotency_key: idempotencyKey('quick-card-purchase'),
+            })
+          : await getSupabaseClient().rpc('create_card_purchase_cross_company', {
+              ...common, p_card_company_id: card.companyId, p_expense_company_id: company.id,
+              p_idempotency_key: idempotencyKey('quick-card-purchase-cross-company'),
+            });
+        if (result.error) throw new Error(result.error.message || 'Não foi possível concluir o lançamento no cartão.');
         window.dispatchEvent(new Event('finance-card-order-changed'));
       } else {
         const created = await operations.createEntry({
