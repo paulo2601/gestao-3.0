@@ -13,7 +13,6 @@ import { BudgetPricingPanel } from './BudgetPricingPanel';
 import { BudgetUnregisteredItems } from './BudgetUnregisteredItems';
 import { committedAmount, loadBudgetCommitments, type BudgetCommitments } from '../application/budgetCommitments';
 import './budget-workspace.css';
-
 type FlowType='income'|'expense';
 type CategoryKind='income'|'expense'|'both';
 type Treatment='operational_cost'|'tax_cost'|'retention';
@@ -29,9 +28,6 @@ type CategoryDraft={id:string|null;name:string;kind:CategoryKind};
 type IdRow={id:string};
 type BudgetListRow={id:string|null;source:'plan'|'limit';categoryId:string|null;costCenterId:string|null;planned:number;actual:number;treatment:Treatment};
 type AnnualDraft={annualAmount:string;startMonth:number};
-
-
-
 const supabase=getSupabaseClient();
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const currentMonth=()=>{const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;};
@@ -40,7 +36,6 @@ const scopeKey=(categoryId:string|null,costCenterId:string|null)=>`${categoryId?
 const monthDate=(year:number,month:number)=>`${year}-${String(month).padStart(2,'0')}-01`;
 function companyLabel(company:CompanySummary){const raw=`${company.tradeName??''} ${company.legalName}`.toLocaleUpperCase('pt-BR');if(raw.includes('SARTORI'))return'Sartori';if(raw.includes('PESSOAL'))return'Pessoal';if(raw.includes('BLAZE'))return'Blaze';if(raw.includes('ADMIN'))return'Admin';if(raw.includes('PR-HIST')||/(^|\s)PR(\s|$)/.test(raw))return'PR';if(raw.includes('CR-HIST')||/(^|\s)CR(\s|$)/.test(raw))return'CR';return company.tradeName??company.legalName;}
 function errorMessage(error:unknown){return error&&typeof error==='object'&&'message' in error&&typeof error.message==='string'?error.message:'Não foi possível concluir a operação.';}
-
 export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:readonly CompanySummary[];initialCompanyId?:string|undefined}){
  const [searchParams]=useSearchParams();
  const requestedCompanyId=searchParams.get('companyId')??'';
@@ -59,7 +54,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const [annualPlans,setAnnualPlans]=useState<AnnualPlanRow[]>([]);
  const [treatments,setTreatments]=useState<TreatmentRow[]>([]);
  const [commitments,setCommitments]=useState<BudgetCommitments>(new Map());
-
  const [loading,setLoading]=useState(true);
  const [saving,setSaving]=useState(false);
  const [feedback,setFeedback]=useState<{tone:'danger'|'success';message:string}|null>(null);
@@ -82,7 +76,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const startMonth=budgetYear>today.getFullYear()?1:selectedMonth;
  const monthsInPlan=13-startMonth;
  const monthOptions=Array.from({length:12},(_,index)=>({value:String(index+1),label:new Intl.DateTimeFormat('pt-BR',{month:'long'}).format(new Date(2026,index,1)).replace(/^./,letter=>letter.toUpperCase())}));
-
  useEffect(()=>{if(requestedCompanyId&&companies.some(item=>item.id===requestedCompanyId))setCompanyId(requestedCompanyId);else if(initialCompanyId&&companies.some(item=>item.id===initialCompanyId))setCompanyId(initialCompanyId);},[companies,initialCompanyId,requestedCompanyId]);
  const load=useCallback(async(silent=false)=>{
   if(!scopeTenantId||!scopeCompanyId){if(!silent)setLoading(false);return;}
@@ -106,7 +99,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  useEffect(()=>{if(!feedback)return;const timeout=window.setTimeout(()=>setFeedback(null),feedback.tone==='success'?1800:4000);return()=>window.clearTimeout(timeout);},[feedback]);
  if(!company)return <EmptyState title="Orçamento indisponível" message="Nenhuma empresa disponível."/>;
  if(loading)return <LoadingState label="Carregando orçamento…"/>;
-
  const categoryMap=new Map(categories.map(item=>[item.id,item]));
  const costCenterMap=new Map(costCenters.map(item=>[item.id,item.name]));
  const treatmentFor=(categoryId:string|null,costCenterId:string|null):Treatment=>{if(!categoryId)return'operational_cost';return treatments.find(item=>item.category_id===categoryId&&(item.cost_center_id??'')===(costCenterId??''))?.treatment??'operational_cost';};
@@ -122,7 +114,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const monthlyActualResult=monthlyActualIncome-monthlyActualExpense;
  const annualMonthlySummary=Array.from({length:12},(_,index)=>{const month=index+1;const monthKey=monthDate(budgetYear,month);const monthRows=control.filter(row=>row.competence_month===monthKey);const plannedIncome=monthRows.reduce((t,row)=>t+numberValue(row.planned_income),0);const plannedExpense=monthRows.reduce((t,row)=>t+numberValue(row.planned_expense),0);const actualIncome=monthRows.reduce((t,row)=>t+numberValue(row.actual_income),0);const actualExpense=monthRows.reduce((t,row)=>t+numberValue(row.actual_expense),0);return{month,label:monthOptions[index]?.label??String(month),plannedIncome,plannedExpense,actualIncome,actualExpense};});
  const compatibleCategories=(flowType:FlowType)=>categories.filter(category=>category.status==='active'&&category.name.trim().toLocaleUpperCase('pt-BR')!=='OUTROS'&&(category.kind===flowType||category.kind==='both'));
-
  function actualFor(flowType:FlowType,categoryId:string|null,costCenterId:string|null){const row=control.find(item=>scopeKey(item.category_id,item.cost_center_id)===scopeKey(categoryId,costCenterId));return row?numberValue(flowType==='income'?row.actual_income:row.actual_expense):0;}
  function annualExpenseForCategory(categoryId:string){return scopedYearLimits.filter(row=>row.category_id===categoryId&&treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((total,row)=>total+numberValue(row.limit_amount),0);}
  function rows(flowType:FlowType):BudgetListRow[]{
@@ -171,7 +162,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  async function removeForecast(flowType:FlowType,categoryId:string|null,costCenterId:string|null){if(!scopeTenantId||!scopeCompanyId)return false;if(!window.confirm('Excluir esta previsão anual e os valores previstos dos meses restantes? Os lançamentos realizados serão preservados.'))return false;setSaving(true);setFeedback(null);try{const from=monthDate(budgetYear,startMonth);const to=monthDate(budgetYear,12);let annualDelete=supabase.from('budget_annual_plans').delete().eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear).eq('flow_type',flowType);annualDelete=categoryId?annualDelete.eq('category_id',categoryId):annualDelete.is('category_id',null);annualDelete=costCenterId?annualDelete.eq('cost_center_id',costCenterId):annualDelete.is('cost_center_id',null);const annualResult=await annualDelete;if(annualResult.error)throw annualResult.error;let planDelete=supabase.from('budget_plans').delete().eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('source_kind','manual').eq('flow_type',flowType).gte('competence_month',from).lte('competence_month',to);planDelete=categoryId?planDelete.eq('category_id',categoryId):planDelete.is('category_id',null);planDelete=costCenterId?planDelete.eq('cost_center_id',costCenterId):planDelete.is('cost_center_id',null);const planResult=await planDelete;if(planResult.error)throw planResult.error;if(flowType==='expense'&&categoryId){let limitUpdate=supabase.from('budget_limits').update({status:'inactive'}).eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('category_id',categoryId).gte('competence_month',from).lte('competence_month',to);limitUpdate=costCenterId?limitUpdate.eq('cost_center_id',costCenterId):limitUpdate.is('cost_center_id',null);const limitResult=await limitUpdate;if(limitResult.error)throw limitResult.error;}await load(true);setFeedback({tone:'success',message:'Previsão removida. Os valores realizados e a classificação do item foram preservados.'});return true;}catch(error){setFeedback({tone:'danger',message:errorMessage(error)});return false;}finally{setSaving(false);}}
  async function saveCategory(){if(!categoryDraft||!categoryDraft.name.trim()||!scopeTenantId||!scopeCompanyId)return;setSaving(true);try{const result=categoryDraft.id?await supabase.from('financial_categories').update({name:categoryDraft.name.trim(),kind:categoryDraft.kind}).eq('id',categoryDraft.id).eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId):await supabase.from('financial_categories').insert({tenant_id:scopeTenantId,company_id:scopeCompanyId,name:categoryDraft.name.trim(),kind:categoryDraft.kind,status:'active'});if(result.error)throw result.error;setCategoryDraft(null);await load(true);setFeedback({tone:'success',message:'Categoria salva somente para esta empresa/orçamento.'});}catch(error){setFeedback({tone:'danger',message:errorMessage(error)});}finally{setSaving(false);}}
  async function setCategoryStatus(category:CategoryRow,status:'active'|'inactive'){if(!scopeTenantId||!scopeCompanyId)return false;if(status==='inactive'&&!window.confirm(`Excluir ${category.name} das opções deste orçamento? O histórico será preservado.`))return false;const preservedScroll=window.scrollY;const result=await supabase.from('financial_categories').update({status}).eq('id',category.id).eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId);if(result.error){setFeedback({tone:'danger',message:result.error.message});return false;}await load(true);requestAnimationFrame(()=>window.scrollTo({top:preservedScroll,behavior:'auto'}));setFeedback({tone:'success',message:status==='inactive'?'Categoria desativada. O histórico foi preservado.':'Categoria reativada.'});return true;}
-
  function budgetList(flowType:FlowType,retentionsOnly=false){let list=rows(flowType);if(flowType==='expense')list=list.filter(row=>retentionsOnly?row.treatment==='retention':row.treatment!=='retention');if(!list.length)return <p className="ui-muted">Nenhum item cadastrado neste grupo.</p>;return <div className="budget-workspace__items">{list.map(row=>{const category=row.categoryId?categoryMap.get(row.categoryId):undefined;const key=flowType+':'+scopeKey(row.categoryId,row.costCenterId);const annual=annualPlans.find(item=>item.flow_type===flowType&&item.category_id===row.categoryId&&(item.cost_center_id??'')===(row.costCenterId??''));const existingStartMonth=annual?.start_month??startMonth;const draft=annualDrafts[key]??{annualAmount:String(annual?numberValue(annual.annual_amount):row.planned*(13-existingStartMonth)),startMonth:existingStartMonth};const annualAmount=numberValue(draft.annualAmount);const monthlyAmount=annualAmount/Math.max(1,13-draft.startMonth);const committed=flowType==='expense'?committedAmount(commitments,row.categoryId,row.costCenterId,row.actual):row.actual;const balance=monthlyAmount-committed;return <div className="budget-workspace__item budget-workspace__item--annual" key={row.id??'actual-'+scopeKey(row.categoryId,row.costCenterId)}><div className="budget-workspace__item-main"><strong>{flowType==='income'&&!category?'Entrada prevista':category?.name??'Sem categoria'}</strong><span>{isPersonal?'Orçamento pessoal':row.costCenterId?costCenterMap.get(row.costCenterId)??'Centro de custo':'Geral'}</span></div><div className="budget-annual-fields"><label><span>Valor do período</span><MoneyInput label="" value={annualAmount} onValueChange={value=>updateAnnualDraft(key,{...draft,annualAmount:String(value)})}/></label><label><span>A partir de</span><select className="ui-input" value={draft.startMonth} onChange={event=>updateAnnualDraft(key,{...draft,startMonth:Number(event.target.value)})}>{monthOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label><span className="budget-annual-monthly">Previsto <b>{currency.format(monthlyAmount)}</b></span><span className="budget-annual-committed">Comprometido <b>{currency.format(committed)}</b></span><span className="budget-annual-actual">Realizado <b>{currency.format(row.actual)}</b></span><span className={`budget-annual-balance${balance<0?' is-negative':''}`}>Saldo <b>{currency.format(balance)}</b></span></div><div className="budget-workspace__item-actions"><Button size="sm" variant="danger" onClick={()=>{void removeForecast(flowType,row.categoryId,row.costCenterId);}}>Excluir previsto</Button></div></div>;})}</div>;}
  const unregisteredRows=rows('expense').filter(row=>{const category=row.categoryId?categoryMap.get(row.categoryId):undefined;const isOther=category?.name.trim().toLocaleUpperCase('pt-BR')==='OUTROS';const isBudgeted=annualPlans.some(plan=>plan.flow_type==='expense'&&plan.category_id===row.categoryId&&(plan.cost_center_id??'')===(row.costCenterId??''));return !row.categoryId||isOther||!isBudgeted;});
  const selectedDraftCategory=itemDraft?.categoryId?categoryMap.get(itemDraft.categoryId):undefined;
@@ -179,8 +169,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const draftIncomeResult=draftAnnual-annualPlannedExpense;
  const draftIncomeMargin=draftAnnual>0?draftIncomeResult*100/draftAnnual:0;
  const retentionCount=rows('expense').filter(row=>row.treatment==='retention').length;
-
-
  return <section className={`budget-workspace${isPersonal?' budget-workspace--personal':''}`} aria-label="Orçamento Financeiro">
   <div className="budget-editor-head"><div><div className="budget-editor-breadcrumb">Financeiro <span>›</span> Orçamento Financeiro <span>›</span> <b>Planejamento</b></div><h1>Orçamento Financeiro - {companyLabel(company)}</h1></div><div className="budget-workspace__filters"><Input label="Ano do orçamento" type="number" min="2020" max="2100" value={String(budgetYear)} onChange={event=>{const year=Number(event.target.value);if(year>=2020&&year<=2100)setCompetence(String(year)+"-"+String(selectedMonth).padStart(2,"0"));}}/><Select label="Empresa" value={company.id} onChange={event=>{setCompanyId(event.target.value);setSelectedCostCenterId('');}} options={companies.map(item=>({value:item.id,label:companyLabel(item)}))}/>{!isPersonal&&<Select label="Obra / centro de custo" value={selectedCostCenterId} onChange={event=>setSelectedCostCenterId(event.target.value)} options={[{value:'',label:'Todos / geral'},...costCenters.map(item=>({value:item.id,label:item.name}))]}/>}</div></div>
   {isPersonal&&autosaveState!=='idle'&&<p className="ui-muted" aria-live="polite">{autosaveState==='saving'?'Salvando orçamento automaticamente…':autosaveState==='saved'?'Orçamento salvo automaticamente.':'Falha no salvamento automático.'}</p>}
