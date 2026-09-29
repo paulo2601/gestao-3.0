@@ -110,8 +110,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const annualPlannedIncome=annualIncomeDefined;
  const annualPlannedResult=annualPlannedIncome-annualPlannedExpense;
  const annualActualResult=annualActualIncome-annualActualExpense;
- const annualPlannedMargin=annualPlannedIncome>0?annualPlannedResult*100/annualPlannedIncome:0;
- const annualActualMargin=annualActualIncome>0?annualActualResult*100/annualActualIncome:0;
  const compatibleCategories=(flowType:FlowType)=>categories.filter(category=>category.status==='active'&&(category.kind===flowType||category.kind==='both'));
 
  function actualFor(flowType:FlowType,categoryId:string|null,costCenterId:string|null){const row=control.find(item=>scopeKey(item.category_id,item.cost_center_id)===scopeKey(categoryId,costCenterId));return row?numberValue(flowType==='income'?row.actual_income:row.actual_expense):0;}
