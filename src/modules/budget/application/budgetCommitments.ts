@@ -23,3 +23,11 @@ export async function loadUnregisteredBudgetEntries(client:SupabaseClient,tenant
 }
 export function committedAmount(commitments:BudgetCommitments,categoryId:string|null,costCenterId:string|null,realized:number){return Math.max(realized,commitments.get(key(categoryId,costCenterId))??0);}
 export function budgetScopeKey(categoryId:string|null,costCenterId:string|null){return key(categoryId,costCenterId);}
+
+export async function classifyUnregisteredBudgetEntry(client:SupabaseClient,tenantId:string,companyId:string,item:UnregisteredBudgetEntry,categoryId:string,costCenterId:string|null){
+ if(!categoryId)throw new Error('Selecione uma categoria para classificar o lançamento.');
+ const table=item.sourceKind==='financial_installment'?'financial_entries':item.sourceKind==='card_installment'?'card_transactions':null;
+ if(!table)throw new Error('Origem do lançamento ainda não permite classificação automática.');
+ const result=await client.from(table).update({category_id:categoryId,cost_center_id:costCenterId||null}).eq('tenant_id',tenantId).eq('company_id',companyId).eq('id',item.parentId);
+ if(result.error)throw result.error;
+}
