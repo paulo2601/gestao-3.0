@@ -61,7 +61,7 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  useEffect(()=>{if(!scopeTenantId||!scopeCompanyId){setUnregisteredEntries([]);return;}const keys=new Set(annualPlans.filter(p=>p.flow_type==='expense').map(p=>bc.budgetScopeKey(p.category_id,p.cost_center_id)));const otherIds=new Set(categories.filter(c=>c.name.trim().toLocaleUpperCase('pt-BR')==='OUTROS').map(c=>c.id));void bc.loadUnregisteredBudgetEntries(supabase,scopeTenantId,scopeCompanyId,`${competence}-01`,keys,otherIds).then(setUnregisteredEntries).catch(()=>setUnregisteredEntries([]));},[scopeTenantId,scopeCompanyId,competence,annualPlans,categories]);
  useEffect(()=>{const next:Record<string,AnnualDraft>={};for(const row of annualPlans){next[`${row.flow_type}:${scopeKey(row.category_id,row.cost_center_id)}`]={annualAmount:String(Number(row.annual_amount)),startMonth:Number(row.start_month)||1};}setAnnualDrafts(next);},[annualPlans]);
  useEffect(()=>{if(!feedback)return;const timeout=window.setTimeout(()=>setFeedback(null),feedback.tone==='success'?1800:4000);return()=>window.clearTimeout(timeout);},[feedback]);
- if(!company)return <EmptyState message="Nenhuma empresa disponível."/>;
+ if(!company)return <EmptyState title="Empresa não disponível" message="Nenhuma empresa disponível."/>;
  if(loading)return <LoadingState label="Carregando orçamento…"/>;
  const categoryMap=new Map(categories.map(item=>[item.id,item]));
  const costCenterMap=new Map(costCenters.map(item=>[item.id,item.name]));
