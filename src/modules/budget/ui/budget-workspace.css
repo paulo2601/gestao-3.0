@@ -52,3 +52,31 @@
 .budget-workspace>.ui-card:first-of-type .budget-workspace__metric-head>small{font-size:.6rem}
 .budget-workspace>.ui-card:first-of-type .budget-workspace__metric-foot{padding-top:5px;font-size:.67rem}
 @media(max-width:680px){.budget-workspace>.ui-card:first-of-type{top:58px}.budget-workspace>.ui-card:first-of-type .budget-workspace__metric{min-height:78px;padding:9px 10px}.budget-workspace>.ui-card:first-of-type .budget-workspace__metric>strong{font-size:1rem}}
+
+
+/* 2026-09 budget desktop redesign — approved reference layout */
+@media(min-width:1101px){
+ .budget-workspace{gap:12px}
+ .budget-workspace>.ui-page-header{display:grid;grid-template-columns:minmax(0,1fr) minmax(430px,620px);align-items:end;gap:20px}
+ .budget-workspace>.ui-page-header .ui-page-header__title{font-size:clamp(1.65rem,2vw,2.1rem)}
+ .budget-workspace__filters{grid-template-columns:repeat(2,minmax(0,1fr));padding:0;border:0;background:transparent;box-shadow:none;gap:12px}
+ .budget-workspace__filters>.ui-field{display:block;min-height:68px;padding:10px 14px;border-radius:14px;box-shadow:none}
+ .budget-workspace__filters>.ui-field::before{display:none}
+ .budget-workspace__filters>.ui-field>.ui-field__label{display:block;margin-bottom:5px;font-size:.78rem}
+ .budget-workspace__filters>.ui-field>.ui-input{display:block;width:100%;font-size:.96rem;padding:2px 26px 2px 0}
+ .budget-workspace__filters>.ui-field:last-child{grid-column:auto}
+ .budget-workspace>.ui-card:first-of-type{position:static;top:auto}
+ .budget-workspace>.ui-card:first-of-type .ui-card__header{padding-bottom:8px}
+ .budget-workspace__summary{grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--color-border,#dfe3eb);border-radius:16px;overflow:hidden}
+ .budget-workspace>.ui-card:first-of-type .budget-workspace__metric{min-height:102px;border:0;border-right:1px solid var(--color-border,#dfe3eb);border-radius:0;box-shadow:none;background:var(--color-surface,#fff);padding:14px 18px}
+ .budget-workspace>.ui-card:first-of-type .budget-workspace__metric:last-child{border-right:0}
+ .budget-workspace>.ui-card:first-of-type .budget-workspace__metric::before{width:3px}
+ .budget-workspace>.ui-card:first-of-type .budget-workspace__metric>strong{font-size:1.45rem}
+ .budget-workspace>.ui-card:first-of-type .budget-workspace__metric-head>span{font-size:.86rem}
+ .budget-workspace>.ui-card:first-of-type .budget-workspace__metric-foot{font-size:.7rem}
+ .budget-workspace__columns{grid-template-columns:1fr;gap:12px}
+ .budget-workspace__item{grid-template-columns:minmax(220px,1.2fr) minmax(360px,1.5fr) auto;padding:10px 12px;border-radius:10px;box-shadow:none}
+ .budget-workspace__item-values>span{padding:8px;border-radius:8px}
+ .budget-workspace__category{padding:10px 12px;border-radius:10px;box-shadow:none}
+ .budget-workspace>.ui-card{border-radius:14px;box-shadow:0 3px 12px rgba(16,24,40,.04)}
+}
