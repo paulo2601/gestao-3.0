@@ -31,7 +31,7 @@ const supabase=getSupabaseClient();
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const currentMonth=()=>{const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;};
 const numberValue=(value:string|number|null|undefined)=>{const parsed=Number(String(value??0).replace(',','.'));return Number.isFinite(parsed)?parsed:0;};
-const scopeKey=(categoryId:string|null,costCenterId:string|null)=>`${categoryId??'none'}:${costCenterId??'general'}`;
+const scopeKey=(categoryId:string|null,costCenterId:string|null)=>`${categoryId}:${costCenterId}`;
 const monthDate=(year:number,month:number)=>`${year}-${String(month).padStart(2,'0')}-01`;
 function companyLabel(company:CompanySummary){const raw=`${company.tradeName??''} ${company.legalName}`.toLocaleUpperCase('pt-BR');if(raw.includes('SARTORI'))return'Sartori';if(raw.includes('PESSOAL'))return'Pessoal';if(raw.includes('BLAZE'))return'Blaze';if(raw.includes('ADMIN'))return'Admin';if(raw.includes('PR-HIST')||/(^|\s)PR(\s|$)/.test(raw))return'PR';if(raw.includes('CR-HIST')||/(^|\s)CR(\s|$)/.test(raw))return'CR';return company.tradeName??company.legalName;}
 function errorMessage(error:unknown){return error&&typeof error==='object'&&'message' in error&&typeof error.message==='string'?error.message:'Não foi possível concluir a operação.';}
