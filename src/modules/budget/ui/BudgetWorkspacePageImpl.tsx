@@ -27,9 +27,7 @@ type CategoryDraft={id:string|null;name:string;kind:CategoryKind};
 type IdRow={id:string};
 type BudgetListRow={id:string|null;source:'plan'|'limit';categoryId:string|null;costCenterId:string|null;planned:number;actual:number;treatment:Treatment};
 type AnnualDraft={annualAmount:string;startMonth:number};
-type CommitmentRow={amount:number|string;competence_month:string;entry:{entry_type:FlowType;category_id:string|null;cost_center_id:string|null}|null};
-type RecurrenceRow={id:string;entry_type:FlowType;category_id:string|null;cost_center_id:string|null;amount:number|string;interval_count:number;start_date:string;end_date:string|null};
-type RecurrenceOccurrenceRow={recurrence_rule_id:string;occurrence_date:string};
+
 
 const supabase=getSupabaseClient();
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -67,9 +65,6 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const [activeBudgetTab,setActiveBudgetTab]=useState<'expense'|'income'|'summary'>('expense');
  const [pricingTarget,setPricingTarget]=useState<{margin:number;requiredNetRevenue:number}|null>(null);
  const [annualDrafts,setAnnualDrafts]=useState<Record<string,AnnualDraft>>({});
- const [commitments,setCommitments]=useState<CommitmentRow[]>([]);
- const [recurrenceRules,setRecurrenceRules]=useState<RecurrenceRow[]>([]);
- const [recurrenceOccurrences,setRecurrenceOccurrences]=useState<RecurrenceOccurrenceRow[]>([]);
  const [autosaveState,setAutosaveState]=useState<'idle'|'saving'|'saved'|'error'>('idle');
  const dirtyAnnualKeys=useRef(new Set<string>());
  const company=useMemo(()=>companies.find(item=>item.id===companyId)??companies[0],[companies,companyId]);
@@ -88,8 +83,7 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const load=useCallback(async(silent=false)=>{
   if(!scopeTenantId||!scopeCompanyId){if(!silent)setLoading(false);return;}
   if(!silent)setLoading(true);const month=`${competence}-01`;const yearFrom=`${budgetYear}-01-01`;const yearTo=`${budgetYear}-12-01`;
-  const monthEnd=new Date(budgetYear,selectedMonth,0).toISOString().slice(0,10);
-  const [cat,cc,plan,lim,yearLim,ctl,annual,treatment,commitment,recurrence,occurrence]=await Promise.all([
+  const [cat,cc,plan,lim,yearLim,ctl,annual,treatment]=await Promise.all([
    supabase.from('financial_categories').select('id,name,kind,status').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).order('name'),
    supabase.from('cost_centers').select('id,name,status').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('status','active').order('name'),
    supabase.from('budget_plans').select('id,category_id,cost_center_id,planned_amount,flow_type,notes,competence_month').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month).eq('source_kind','manual'),
@@ -98,12 +92,9 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
    supabase.from('budget_monthly_control').select('category_id,cost_center_id,competence_month,planned_income,planned_expense,actual_income,actual_expense').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month),
    supabase.from('budget_annual_plans').select('id,category_id,cost_center_id,budget_year,flow_type,annual_amount,start_month,notes').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear),
    supabase.from('budget_item_treatments').select('id,category_id,cost_center_id,budget_year,treatment').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('budget_year',budgetYear),
-   supabase.from('financial_installments').select('amount,competence_month,entry:financial_entries!inner(entry_type,category_id,cost_center_id)').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month),
-   supabase.from('financial_recurrence_rules').select('id,entry_type,category_id,cost_center_id,amount,interval_count,start_date,end_date').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('status','active').lte('start_date',monthEnd).or(`end_date.is.null,end_date.gte.${month}`),
-   supabase.from('financial_recurrence_occurrences').select('recurrence_rule_id,occurrence_date').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).gte('occurrence_date',month).lte('occurrence_date',monthEnd),
   ]);
-  const error=cat.error??cc.error??plan.error??lim.error??yearLim.error??ctl.error??annual.error??treatment.error??commitment.error??recurrence.error??occurrence.error;
-  if(error){setFeedback({tone:'danger',message:error.message});setCategories([]);setCostCenters([]);setPlans([]);setLimits([]);setYearLimits([]);setControl([]);setAnnualPlans([]);setTreatments([]);setCommitments([]);setRecurrenceRules([]);setRecurrenceOccurrences([]);}else{setCategories((cat.data??[]) as CategoryRow[]);setCostCenters((cc.data??[]) as CostCenterRow[]);setPlans((plan.data??[]) as PlanRow[]);setLimits((lim.data??[]) as LimitRow[]);setYearLimits((yearLim.data??[]) as LimitRow[]);setControl((ctl.data??[]) as ControlRow[]);setAnnualPlans((annual.data??[]) as AnnualPlanRow[]);setTreatments((treatment.data??[]) as TreatmentRow[]);setCommitments((commitment.data??[]) as unknown as CommitmentRow[]);setRecurrenceRules((recurrence.data??[]) as RecurrenceRow[]);setRecurrenceOccurrences((occurrence.data??[]) as RecurrenceOccurrenceRow[]);}if(!silent)setLoading(false);
+  const error=cat.error??cc.error??plan.error??lim.error??yearLim.error??ctl.error??annual.error??treatment.error;
+  if(error){setFeedback({tone:'danger',message:error.message});setCategories([]);setCostCenters([]);setPlans([]);setLimits([]);setYearLimits([]);setControl([]);setAnnualPlans([]);setTreatments([]);}else{setCategories((cat.data??[]) as CategoryRow[]);setCostCenters((cc.data??[]) as CostCenterRow[]);setPlans((plan.data??[]) as PlanRow[]);setLimits((lim.data??[]) as LimitRow[]);setYearLimits((yearLim.data??[]) as LimitRow[]);setControl((ctl.data??[]) as ControlRow[]);setAnnualPlans((annual.data??[]) as AnnualPlanRow[]);setTreatments((treatment.data??[]) as TreatmentRow[]);}if(!silent)setLoading(false);
  },[scopeTenantId,scopeCompanyId,competence,budgetYear,selectedMonth]);
  useEffect(()=>{void load();},[load]);
  useEffect(()=>{const next:Record<string,AnnualDraft>={};for(const row of annualPlans){next[`${row.flow_type}:${scopeKey(row.category_id,row.cost_center_id)}`]={annualAmount:String(numberValue(row.annual_amount)),startMonth:Number(row.start_month)||1};}setAnnualDrafts(next);},[annualPlans]);
@@ -115,12 +106,8 @@ export function BudgetWorkspacePage({companies,initialCompanyId}:{companies:read
  const costCenterMap=new Map(costCenters.map(item=>[item.id,item.name]));
  const treatmentFor=(categoryId:string|null,costCenterId:string|null):Treatment=>{if(!categoryId)return'operational_cost';return treatments.find(item=>item.category_id===categoryId&&(item.cost_center_id??'')===(costCenterId??''))?.treatment??'operational_cost';};
  const scopedYearLimits=selectedCostCenterId?yearLimits.filter(row=>row.cost_center_id===selectedCostCenterId):yearLimits;
- const committedByScope=new Map<string,number>();
- for(const item of commitments){if(item.entry?.entry_type!=='expense')continue;const key=scopeKey(item.entry.category_id,item.entry.cost_center_id);committedByScope.set(key,(committedByScope.get(key)??0)+numberValue(item.amount));}
- const occurrenceRuleIds=new Set(recurrenceOccurrences.map(item=>item.recurrence_rule_id));
- for(const rule of recurrenceRules){if(rule.entry_type!=='expense'||occurrenceRuleIds.has(rule.id))continue;const start=new Date(rule.start_date+'T12:00:00');const monthIndex=budgetYear*12+selectedMonth-(start.getFullYear()*12+start.getMonth()+1);if(monthIndex<0||monthIndex%Math.max(1,rule.interval_count)!==0)continue;const key=scopeKey(rule.category_id,rule.cost_center_id);committedByScope.set(key,(committedByScope.get(key)??0)+numberValue(rule.amount));}
- const monthlyCommittedExpense=Array.from(committedByScope.values()).reduce((total,value)=>total+value,0);
- const previewMonthlyExpense=rows('expense').filter(row=>row.treatment!=='retention').reduce((total,row)=>{const key='expense:'+scopeKey(row.categoryId,row.costCenterId);const draft=annualDrafts[key];const planned=draft?numberValue(draft.annualAmount)/Math.max(1,13-draft.startMonth):row.planned;const committed=committedByScope.get(scopeKey(row.categoryId,row.costCenterId))??0;committedByScope.delete(scopeKey(row.categoryId,row.costCenterId));return total+Math.max(planned,committed);},0)+Array.from(committedByScope.values()).reduce((total,value)=>total+value,0);
+ const monthlyCommittedExpense=rows('expense').reduce((total,row)=>total+row.actual,0);
+ const previewMonthlyExpense=rows('expense').filter(row=>row.treatment!=='retention').reduce((total,row)=>{const key='expense:'+scopeKey(row.categoryId,row.costCenterId);const draft=annualDrafts[key];const planned=draft?numberValue(draft.annualAmount)/Math.max(1,13-draft.startMonth):row.planned;return total+Math.max(planned,row.actual);},0);
  const annualPlannedExpense=scopedYearLimits.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((monthlyTotals,row)=>monthlyTotals+numberValue(row.limit_amount),0);
  const scopedMonthControl=selectedCostCenterId?control.filter(row=>row.cost_center_id===selectedCostCenterId):control;
  const monthlyActualExpense=scopedMonthControl.reduce((total,row)=>total+numberValue(row.actual_expense),0);
