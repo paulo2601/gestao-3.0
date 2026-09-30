@@ -29,9 +29,15 @@ export function budgetFlowScopeKey(flowType:FlowType,categoryId:string|null,cost
 
 export async function classifyUnregisteredBudgetEntry(client:SupabaseClient,tenantId:string,companyId:string,item:UnregisteredBudgetEntry,categoryId:string,costCenterId:string|null){
  if(!categoryId)throw new Error('Selecione uma categoria para classificar o lançamento.');
- const table=item.sourceKind==='financial_installment'?'financial_entries':item.sourceKind==='card_installment'?'card_transactions':null;
- if(!table)throw new Error('Origem do lançamento ainda não permite classificação automática.');
- const targetId=item.sourceKind==='financial_installment'?item.parentId:item.itemId;
- const result=await client.from(table).update({category_id:categoryId,cost_center_id:costCenterId||null}).eq('tenant_id',tenantId).eq('company_id',companyId).eq('id',targetId);
- if(result.error)throw result.error;
+ if(item.sourceKind==='financial_installment'){
+  const result=await client.from('financial_entries').update({category_id:categoryId,cost_center_id:costCenterId||null}).eq('tenant_id',tenantId).eq('company_id',companyId).eq('id',item.parentId);
+  if(result.error)throw result.error;
+  return;
+ }
+ if(item.sourceKind==='card_installment'){
+  const result=await client.from('card_transactions').update({category_id:categoryId,cost_center_id:costCenterId||null}).eq('tenant_id',tenantId).eq('expense_company_id',companyId).eq('id',item.parentId);
+  if(result.error)throw result.error;
+  return;
+ }
+ throw new Error('Origem do lançamento ainda não permite classificação automática.');
 }
