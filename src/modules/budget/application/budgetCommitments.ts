@@ -10,7 +10,7 @@ const key=(categoryId:string|null,costCenterId:string|null)=>`${categoryId??'non
 const flowKey=(flowType:FlowType,categoryId:string|null,costCenterId:string|null)=>`${flowType}:${key(categoryId,costCenterId)}`;
 
 async function monthlyRows(client:SupabaseClient,tenantId:string,companyId:string,competenceMonth:string){
- const result=await client.from('finance_monthly_items').select('source_kind,item_id,parent_id,competence_month,due_date,entry_type,description,counterparty_name,category_id,cost_center_id,planned_amount,pending_amount,realized_amount').eq('tenant_id',tenantId).eq('company_id',companyId).eq('competence_month',competenceMonth);
+ const result=await client.from('finance_monthly_items').select('source_kind,item_id,parent_id,competence_month,due_date,entry_type,description,counterparty_name,category_id,cost_center_id,installment_number,installment_count,planned_amount,pending_amount,realized_amount').eq('tenant_id',tenantId).eq('company_id',companyId).eq('competence_month',competenceMonth);
  if(result.error)throw result.error;
  return(result.data??[])as MonthlyRow[];
 }
