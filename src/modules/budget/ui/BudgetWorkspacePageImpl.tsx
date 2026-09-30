@@ -68,11 +68,11 @@ const categoryMap=new Map(categories.map(item=>[item.id,item]));
 const costCenterMap=new Map(costCenters.map(item=>[item.id,item.name]));
 const treatmentFor=(categoryId:string|null,costCenterId:string|null):Treatment=>{if(!categoryId)return'operational_cost';return treatments.find(item=>item.category_id===categoryId&&(item.cost_center_id??'')===(costCenterId??''))?.treatment??'operational_cost';};
 const scopedYearLimits=selectedCostCenterId?yearLimits.filter(row=>row.cost_center_id===selectedCostCenterId):yearLimits;
+const scopedYearControl=selectedCostCenterId?control.filter(row=>row.cost_center_id===selectedCostCenterId):control;
+const scopedMonthControl=scopedYearControl.filter(row=>row.competence_month===`${competence}-01`);
 const monthlyCommittedExpense=rows('expense').reduce((total,row)=>total+bc.committedAmount(commitments,row.categoryId,row.costCenterId,row.actual),0);
 const previewMonthlyExpense=rows('expense').filter(row=>row.treatment!=='retention').reduce((total,row)=>{const key='expense:'+scopeKey(row.categoryId,row.costCenterId);const draft=annualDrafts[key];const planned=draft?Number(draft.annualAmount)/Math.max(1,13-draft.startMonth):row.planned;return total+Math.max(planned,bc.committedAmount(commitments,row.categoryId,row.costCenterId,row.actual));},0);
 const annualPlannedExpense=scopedYearLimits.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((total,row)=>total+Number(row.limit_amount),0);
-const scopedYearControl=selectedCostCenterId?control.filter(row=>row.cost_center_id===selectedCostCenterId):control;
-const scopedMonthControl=scopedYearControl.filter(row=>row.competence_month===`${competence}-01`);
 const monthlyActualExpense=scopedMonthControl.reduce((total,row)=>total+Number(row.actual_expense),0);
 const monthlyPlannedIncome=scopedMonthControl.reduce((total,row)=>total+Number(row.planned_income),0);
 const monthlyActualIncome=scopedMonthControl.reduce((total,row)=>total+Number(row.actual_income),0);
@@ -86,12 +86,12 @@ function rows(flowType:FlowType):BudgetListRow[]{
 if(flowType==='expense'){
 const visible=selectedCostCenterId?limits.filter(limit=>limit.cost_center_id===selectedCostCenterId):limits;
 const keys=new Set(visible.map(limit=>scopeKey(limit.category_id,limit.cost_center_id)));
-const unplanned=control.filter(row=>(!selectedCostCenterId||row.cost_center_id===selectedCostCenterId)&&Number(row.actual_expense)>0&&!keys.has(scopeKey(row.category_id,row.cost_center_id)));
+const unplanned=scopedMonthControl.filter(row=>(!selectedCostCenterId||row.cost_center_id===selectedCostCenterId)&&Number(row.actual_expense)>0&&!keys.has(scopeKey(row.category_id,row.cost_center_id)));
 return [...visible.map(limit=>({id:limit.id,source:'limit' as const,categoryId:limit.category_id,costCenterId:limit.cost_center_id,planned:Number(limit.limit_amount),actual:actualFor('expense',limit.category_id,limit.cost_center_id),treatment:treatmentFor(limit.category_id,limit.cost_center_id)})),...unplanned.map(row=>({id:null,source:'limit' as const,categoryId:row.category_id,costCenterId:row.cost_center_id,planned:0,actual:Number(row.actual_expense),treatment:treatmentFor(row.category_id,row.cost_center_id)}))];
 }
 const manual=plans.filter(plan=>plan.flow_type==='income'&&(!selectedCostCenterId||plan.cost_center_id===selectedCostCenterId));
 const keys=new Set(manual.map(plan=>scopeKey(plan.category_id,plan.cost_center_id)));
-const unplanned=control.filter(row=>(!selectedCostCenterId||row.cost_center_id===selectedCostCenterId)&&Number(row.actual_income)>0&&!keys.has(scopeKey(row.category_id,row.cost_center_id)));
+const unplanned=scopedMonthControl.filter(row=>(!selectedCostCenterId||row.cost_center_id===selectedCostCenterId)&&Number(row.actual_income)>0&&!keys.has(scopeKey(row.category_id,row.cost_center_id)));
 return [...manual.map(plan=>({id:plan.id,source:'plan' as const,categoryId:plan.category_id,costCenterId:plan.cost_center_id,planned:Number(plan.planned_amount),actual:actualFor('income',plan.category_id,plan.cost_center_id),treatment:'operational_cost' as const})),...unplanned.map(row=>({id:null,source:'plan' as const,categoryId:row.category_id,costCenterId:row.cost_center_id,planned:0,actual:Number(row.actual_income),treatment:'operational_cost' as const}))];
 }
 function openNewItem(flowType:FlowType,categoryId='',costCenterId=isPersonal?personalCostCenterId:selectedCostCenterId){setFeedback(null);setItemFeedback(null);setItemDraft({id:null,source:flowType==='expense'?'limit':'plan',flowType,categoryId,costCenterId,amount:'',notes:'',treatment:flowType==='expense'?treatmentFor(categoryId||null,costCenterId||null):'operational_cost'});}
