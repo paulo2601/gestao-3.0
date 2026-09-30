@@ -37,3 +37,11 @@
 .home-hero__greeting>span:last-child{font-size:.72rem!important;line-height:1.2!important;white-space:nowrap}
 .home-hero__refresh{min-height:34px!important;padding:6px 9px!important;font-size:.78rem!important;white-space:nowrap}
 }
+
+/* Budget status approved: exceeded categories are explicit red alerts. */
+.home-approved .budget-limit-row--exceeded{border-color:#fecaca;background:linear-gradient(135deg,#fff7f7,#fff1f2)}
+.home-approved .budget-limit-row--exceeded .budget-limit-row__head strong:last-child,
+.home-approved .budget-limit-row--exceeded .budget-limit-row__meta span,
+.home-approved .budget-limit-row--exceeded .budget-limit-row__meta strong{color:#dc2626}
+.home-approved .budget-limit-row__bar--exceeded::-webkit-progress-value{background:#ef4444}
+.home-approved .budget-limit-row__bar--exceeded::-moz-progress-bar{background:#ef4444}
