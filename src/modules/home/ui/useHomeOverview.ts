@@ -14,8 +14,8 @@ export interface HomeBankAccount { tenantId:string; companyId:string; companyNam
 export interface HomeCard { tenantId:string; companyId:string; companyName:string; cardId:string; name:string; creditLimit:number; committedAmount:number; availableLimit:number; sortOrder:number; }
 export interface HomeOverviewData { month:string; bankBalance:number; incomePlanned:number; incomeRealized:number; expensePlanned:number; expenseRealized:number; entries:readonly HomeEntry[]; balanceMovements:readonly HomeBalanceMovement[]; budgets:readonly HomeBudgetItem[]; bankAccounts:readonly HomeBankAccount[]; cards:readonly HomeCard[]; }
 type HomeOverviewState = {status:'idle'|'loading';data:HomeOverviewData|null;errorMessage:null}|{status:'ready';data:HomeOverviewData;errorMessage:null}|{status:'error';data:null;errorMessage:string};
-const HOME_CACHE_KEY='gestao-home-overview-v2';
-function readHomeCache(companyKey:string):HomeOverviewData|null{try{const raw=localStorage.getItem(HOME_CACHE_KEY);if(!raw)return null;const parsed=JSON.parse(raw) as {companyKey:string;data:HomeOverviewData};return parsed.companyKey===companyKey?parsed.data:null;}catch{return null;}}
+const HOME_CACHE_KEY='gestao-home-overview-v3';
+function readHomeCache(companyKey:string):HomeOverviewData|null{try{const raw=localStorage.getItem(HOME_CACHE_KEY);if(!raw)return null;const parsed=JSON.parse(raw) as {companyKey:string;savedAt?:number;data:HomeOverviewData};const fresh=typeof parsed.savedAt==='number'&&Date.now()-parsed.savedAt<60_000;return parsed.companyKey===companyKey&&fresh?parsed.data:null;}catch{return null;}}
 function writeHomeCache(companyKey:string,data:HomeOverviewData){try{localStorage.setItem(HOME_CACHE_KEY,JSON.stringify({companyKey,data,savedAt:Date.now()}));}catch{/* cache é apenas aceleração visual */}}
 type BudgetLimitConsumptionRow = { limit_id:string; consumed_amount:number|string; remaining_amount:number|string; consumed_percent:number|string; };
 type BudgetControlRow = { cost_center_id:string|null; planned_income:number|string; actual_income:number|string; };
