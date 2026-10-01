@@ -12,9 +12,11 @@ async function preparePrintableElement(element:HTMLElement,suggestedName:string,
 }
 
 function sharePrepared(prepared:PreparedShare,shareWindow:Window){
-  const navigators=[window.navigator,shareWindow.navigator].filter((nav,index,list)=>list.indexOf(nav)===index);
-  for(const nav of navigators){if(!('share' in nav)||nav.canShare?.(prepared.data)!==true)continue;return nav.share(prepared.data);}
-  throw new Error('Este navegador não permite compartilhar PDF diretamente.');
+  // User activation belongs to the window where the button was tapped. Calling
+  // window.navigator first from an about:blank report loses that activation on Android.
+  const nav=shareWindow.navigator;
+  if(!('share' in nav)||nav.canShare?.(prepared.data)!==true)throw new Error('Este navegador não permite compartilhar PDF diretamente.');
+  return nav.share(prepared.data);
 }
 
 export async function sharePrintableElement(element:HTMLElement,suggestedName:string,orientation:'portrait'|'landscape'='portrait',shareWindow:Window=window){const requested=shareWindow.prompt('Nome do arquivo PDF',safeReportFileName(suggestedName));if(requested===null)return;const prepared=await preparePrintableElement(element,requested,orientation);await sharePrepared(prepared,shareWindow);}
