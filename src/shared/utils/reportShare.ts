@@ -4,10 +4,29 @@ type PreparedShare={file:File;data:ShareData;name:string};
 
 async function preparePrintableElement(element:HTMLElement,suggestedName:string,orientation:'portrait'|'landscape'='portrait'){
   const [{default:html2canvas},{jsPDF}]=await Promise.all([import('html2canvas'),import('jspdf')]);
-  const hidden=[...element.querySelectorAll<HTMLElement>('.print,.share-pdf,.report-actions,.report-action,.statement-view__footer-actions,.statement-view__actions,.statement-view__period,.statement-view__filters')].map(node=>[node,node.style.display] as const);hidden.forEach(([node])=>{node.style.display='none';});let canvas:HTMLCanvasElement;try{canvas=await html2canvas(element,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});}finally{hidden.forEach(([node,display])=>{node.style.display=display;});}
-  const portrait=orientation==='portrait',pageWidth=portrait?210:297,pageHeight=portrait?297:210,margin=8,imgWidth=pageWidth-margin*2,imgHeight=canvas.height*imgWidth/canvas.width;
-  const pdf=new jsPDF({orientation,unit:'mm',format:'a4',compress:true});let y=0,page=0;const usable=pageHeight-margin*2;
-  while(y<imgHeight){if(page>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.94),'JPEG',margin,margin-y,imgWidth,imgHeight,undefined,'FAST');y+=usable;page++;}
+  const hidden=[...element.querySelectorAll<HTMLElement>('.print,.share-pdf,.report-actions,.report-action,.statement-view__footer-actions,.statement-view__actions,.statement-view__period,.statement-view__filters')].map(node=>[node,node.style.display] as const);
+  hidden.forEach(([node])=>{node.style.display='none';});
+  const portrait=orientation==='portrait',pageWidth=portrait?210:297,pageHeight=portrait?297:210,margin=8;
+  const pdf=new jsPDF({orientation,unit:'mm',format:'a4',compress:true});
+  const reportPages=[...element.querySelectorAll<HTMLElement>(':scope > .page')];
+  try{
+    if(reportPages.length){
+      for(let index=0;index<reportPages.length;index++){
+        const page=reportPages[index];
+        const canvas=await html2canvas(page,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
+        const maxWidth=pageWidth-margin*2,maxHeight=pageHeight-margin*2;
+        const ratio=Math.min(maxWidth/canvas.width,maxHeight/canvas.height);
+        const imgWidth=canvas.width*ratio,imgHeight=canvas.height*ratio;
+        if(index>0)pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/jpeg',0.94),'JPEG',(pageWidth-imgWidth)/2,margin,imgWidth,imgHeight,undefined,'FAST');
+      }
+    }else{
+      const canvas=await html2canvas(element,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
+      const imgWidth=pageWidth-margin*2,imgHeight=canvas.height*imgWidth/canvas.width,usable=pageHeight-margin*2;
+      let y=0,page=0;
+      while(y<imgHeight){if(page>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.94),'JPEG',margin,margin-y,imgWidth,imgHeight,undefined,'FAST');y+=usable;page++;}
+    }
+  }finally{hidden.forEach(([node,display])=>{node.style.display=display;});}
   const name=safeReportFileName(suggestedName);const file=new File([pdf.output('blob')],name+'.pdf',{type:'application/pdf'});return {file,data:{files:[file],title:name},name} satisfies PreparedShare;
 }
 
