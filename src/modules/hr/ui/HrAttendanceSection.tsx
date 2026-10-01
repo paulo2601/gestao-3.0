@@ -7,9 +7,23 @@ import { Dialog } from '../../../shared/ui/Dialog';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
+import { installReportShareButton, sharePrintableElement } from '../../../shared/utils/reportShare';
 
 type Employee=HrEmployeeRow&{companyId:string;companyName:string;tenantId:string};
 const attendanceOptions=[{value:'',label:'Não registrado'},{value:'present',label:'Presente'},{value:'absence',label:'Falta'},{value:'medical_certificate',label:'Atestado'},{value:'vacation',label:'Férias'},{value:'day_off',label:'Folga'},{value:'other',label:'Outro'}];
+const statusLabel=new Map(attendanceOptions.map(item=>[item.value,item.label]));
+function safeFileName(value:string){return value.replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,120)||'Relatorio de Presenca';}
+function escapeHtml(value:string){return value.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]??char));}
+function openAttendanceReport(date:string,rows:AttendanceRecord[],employees:Employee[],mode:'print'|'share'){
+ const title=`Relatório de Presença - ${date.split('-').reverse().join('/')}`;
+ const requested=window.prompt('Nome do arquivo PDF',safeFileName(title));if(requested===null)return;
+ const fileName=safeFileName(requested);const byContract=new Map(employees.map(employee=>[employee.employmentContractId,employee]));
+ const reportRows=rows.map(row=>{const employee=byContract.get(row.employmentContractId);return `<tr><td>${escapeHtml(employee?.fullName??'Colaborador')}</td><td>${escapeHtml(employee?.companyName??'')}</td><td>${escapeHtml(employee?.jobTitle??'')}</td><td>${escapeHtml(statusLabel.get(row.status)??row.status)}</td><td>${row.checkIn?escapeHtml(row.checkIn.slice(0,5)):'-'}</td><td>${row.checkOut?escapeHtml(row.checkOut.slice(0,5)):'-'}</td></tr>`;}).join('');
+ const w=window.open('','_blank');if(!w)return;
+ w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(fileName)}</title><style>body{font-family:Arial,sans-serif;padding:28px;color:#111}h1{font-size:21px;margin:0 0 6px}p{margin:0 0 18px;color:#555}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:7px;text-align:left;font-size:12px}th{font-weight:700}@media print{button{display:none}}</style></head><body><h1>${escapeHtml(title)}</h1><p>${rows.length} registro(s)</p><table><thead><tr><th>Colaborador</th><th>Empresa</th><th>Função</th><th>Presença</th><th>Entrada</th><th>Saída</th></tr></thead><tbody>${reportRows||'<tr><td colspan="6">Nenhum registro encontrado.</td></tr>'}</tbody></table></body></html>`);
+ w.document.close();installReportShareButton(w,fileName,'portrait');
+ if(mode==='share')void sharePrintableElement(w.document.body,fileName,'portrait',w).then(()=>w.close()).catch(error=>w.alert(error instanceof Error?error.message:'Não foi possível compartilhar o PDF.'));
+}
 
 export function HrAttendanceSection({date,setDate,search,setSearch,rows,employees,loading,feedback,onAllPresent,onChange,onRowsChange,onFeedback}:{date:string;setDate:(v:string)=>void;search:string;setSearch:(v:string)=>void;rows:AttendanceRecord[];employees:Employee[];loading:boolean;feedback:string|null;onAllPresent:()=>void;onChange:(employee:Employee,status:AttendanceStatus)=>void;onRowsChange:(rows:AttendanceRecord[])=>void;onFeedback:(message:string)=>void}){
  const [showRegistered,setShowRegistered]=useState(false);
@@ -39,7 +53,7 @@ export function HrAttendanceSection({date,setDate,search,setSearch,rows,employee
   </div>;
  };
  return <div className="hr-workspace__content">
-  <Card title="Presença e ponto" actions={<div className="hr-workspace__actions"><Button variant="secondary" onClick={()=>setShowRegistered(true)}>Registrados {rows.length}</Button></div>}>
+  <Card title="Presença e ponto" actions={<div className="hr-workspace__actions"><Button variant="secondary" onClick={()=>setShowRegistered(true)}>Registrados {rows.length}</Button><Button variant="secondary" disabled={loading} onClick={()=>openAttendanceReport(date,rows,employees,'print')}>Gerar / imprimir PDF</Button><Button disabled={loading} onClick={()=>openAttendanceReport(date,rows,employees,'share')}>Compartilhar PDF</Button></div>}>
    <div className="hr-workspace__attendance-controls"><Input label="Data" type="date" value={date} onChange={e=>setDate(e.target.value)}/><Input label="Buscar colaborador" placeholder="Digite o nome" value={search} onChange={e=>setSearch(e.target.value)}/></div>
    <div className="hr-workspace__actions"><Button onClick={onAllPresent} disabled={loading||pendingEmployees.length===0}>Marcar todos presentes</Button></div>
    {feedback&&<Feedback title="Presença" message={feedback} tone={feedback.includes('marcado')||feedback.includes('registrado')?'success':'info'}/>} 
