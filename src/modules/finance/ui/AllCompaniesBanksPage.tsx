@@ -14,7 +14,7 @@ import { Select } from '../../../shared/ui/Select';
 type GlobalAccount = FinancialAccountBalance & { companyName: string };
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 function companyName(company: CompanySummary): string { return company.tradeName ?? company.legalName; }
-function today(): string { return new Date().toISOString().slice(0, 10); }
+function today(): string { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; }
 
 export function AllCompaniesBanksPage({ companies }: { companies: readonly CompanySummary[] }) {
   const repositories = useMemo(() => getFinanceRepositories(), []);
@@ -28,7 +28,10 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
   const [form, setForm] = useState({ fromAccountId: '', toAccountId: '', transferOn: today(), amount: 0, notes: '' });
 
   const load = useCallback(async () => {
-    setLoading(true); setError(null);
+    // Só bloqueia visualmente na primeira carga. Em atualizações mantém as contas
+    // atuais utilizáveis enquanto os saldos são renovados em segundo plano.
+    if (accounts.length === 0) setLoading(true);
+    setError(null);
     try {
       const groups = await Promise.all(companies.map(async (company) => {
         const scope = { tenantId: company.tenantId, companyId: company.id };
@@ -38,7 +41,7 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
       setAccounts(groups.flat().sort((a, b) => a.companyName.localeCompare(b.companyName) || a.name.localeCompare(b.name)));
     } catch { setError('Não foi possível carregar todas as contas bancárias.'); }
     finally { setLoading(false); }
-  }, [companies, repositories]);
+  }, [accounts.length, companies, repositories]);
 
   useEffect(() => { void load(); }, [load, refreshToken]);
   useEffect(() => { const refresh = () => setRefreshToken((value) => value + 1); window.addEventListener('finance-data-changed', refresh); return () => window.removeEventListener('finance-data-changed', refresh); }, []);
@@ -55,24 +58,14 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
     if (from.accountId === to.accountId) { setError('Origem e destino precisam ser contas diferentes.'); return; }
     setBusy(true); setError(null); setSuccess(null);
     try {
-      await repositories.accounts.recordTransfer({
-        tenantId: from.tenantId,
-        companyId: from.companyId,
-        fromAccountId: from.accountId,
-        toAccountId: to.accountId,
-        transferOn: form.transferOn,
-        amount,
-        idempotencyKey: `transfer:${crypto.randomUUID()}`,
-        notes: form.notes || null,
-      });
+      await repositories.accounts.recordTransfer({ tenantId: from.tenantId, companyId: from.companyId, fromAccountId: from.accountId, toAccountId: to.accountId, transferOn: form.transferOn, amount, idempotencyKey: `transfer:${crypto.randomUUID()}`, notes: form.notes || null });
       setOpen(false);
       setForm({ fromAccountId: '', toAccountId: '', transferOn: today(), amount: 0, notes: '' });
       setSuccess(`Transferência de ${currency.format(amount)} registrada de ${from.companyName} para ${to.companyName}.`);
       setRefreshToken((value) => value + 1);
       window.dispatchEvent(new Event('finance-data-changed'));
-    } catch (cause) {
-      setError(cause instanceof Error && cause.message ? cause.message : 'Não foi possível registrar a transferência.');
-    } finally { setBusy(false); }
+    } catch (cause) { setError(cause instanceof Error && cause.message ? cause.message : 'Não foi possível registrar a transferência.'); }
+    finally { setBusy(false); }
   }
 
   return <div className="app-company-sections app-company-sections--banks">
@@ -80,7 +73,7 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
       <PageHeader id="all-banks-title" title="Bancos" description="Todas as empresas" actions={<Button variant="primary" onClick={() => { setError(null); setSuccess(null); setOpen(true); }}>Transferir entre bancos</Button>} />
       {success && <Feedback tone="success" title="Transferência" message={success} />}
       {error && !open && <Feedback tone="danger" title="Transferência" message={error} />}
-      {loading && <LoadingState label="Carregando contas de todas as empresas…" />}
+      {loading && accounts.length === 0 && <LoadingState label="Carregando contas de todas as empresas…" />}
     </section>
     <AllBanksList key={refreshToken} companies={companies} />
     <Dialog open={open} title="Transferência entre bancos" description="Origem e destino podem pertencer a empresas diferentes." onClose={() => setOpen(false)} onBack={() => setOpen(false)}>
