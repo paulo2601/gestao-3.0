@@ -13,8 +13,8 @@ interface Props { activeTab:TabId; scope:{tenantId:string;companyId:string}; onC
 interface Option { value:string; label:string; }
 
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
-const today=()=>new Date().toISOString().slice(0,10);
-const currentMonth=()=>new Date().toISOString().slice(0,7);
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const currentMonth=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
 const numberValue=(value:string)=>{const parsed=Number(value.replace(',','.'));return Number.isFinite(parsed)?parsed:0;};
 const options=(items:readonly {id:string;name:string}[],placeholder='Selecione…'):Option[]=>[{value:'',label:placeholder},...items.map(item=>({value:item.id,label:item.name}))];
 

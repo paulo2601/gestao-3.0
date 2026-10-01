@@ -22,7 +22,7 @@ type BudgetControlRow = { cost_center_id:string|null; planned_income:number|stri
 type BudgetPricingSettingsRow = { cost_center_id:string|null; target_net_margin_percent:number|string; };
 type PlanningRow = { item_key:string; source_kind:'financial_installment'|'card_statement'; entry_type:'income'|'expense'; description:string; counterparty_name:string|null; installment_number:number; installment_count:number; due_date:string; amount:number|string; payment_status:string; };
 function currentMonthStart(){const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;}
-function isoDate(value:Date){return value.toISOString().slice(0,10);}
+function isoDate(value:Date){return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;}
 function companyName(company:CompanySummary){return company.tradeName??company.legalName;}
 function cardDisplayName(name:string){return name.replace(/^\s*HISTÓRICO\s*[·•-]\s*/i,'').trim();}
 function normalizeLabel(value:string){return value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();}

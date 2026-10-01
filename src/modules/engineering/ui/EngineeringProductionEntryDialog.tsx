@@ -18,12 +18,12 @@ interface Props {
   onClose:()=>void;
   onSaved:()=>void;
 }
-const today=()=>new Date().toISOString().slice(0,10);
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const numberValue=(value:string)=>{const parsed=Number(value.replace(',','.'));return Number.isFinite(parsed)?parsed:0;};
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 
 export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,onSaved}:Props){
-  const currentMonth=new Date().toISOString().slice(0,7);const currentPeriod=snapshot.periods.find(item=>item.status==='open'&&item.competence.slice(0,7)===currentMonth);const [periodId,setPeriodId]=useState(currentPeriod?.id??'');
+  const now=new Date();const currentMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;const currentPeriod=snapshot.periods.find(item=>item.status==='open'&&item.competence.slice(0,7)===currentMonth);const [periodId,setPeriodId]=useState(currentPeriod?.id??'');
   const [structureId,setStructureId]=useState('');
   const [unitIds,setUnitIds]=useState<string[]>([]);
   const [unitPickerOpen,setUnitPickerOpen]=useState(false);

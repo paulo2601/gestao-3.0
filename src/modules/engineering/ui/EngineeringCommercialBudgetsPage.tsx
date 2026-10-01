@@ -13,7 +13,7 @@ import { convertEngineeringCommercialBudgetToContract, deleteEngineeringCommerci
 import './engineering-commercial-budgets.css';
 
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
-const today=()=>new Date().toISOString().slice(0,10);
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 function label(company:CompanySummary){return company.tradeName??company.legalName;}
 function emptyItem():EngineeringCommercialBudgetItem{return{id:crypto.randomUUID(),category:'Serviços gerais',subcategory:'Itens do orçamento',description:'',quantity:1,unit:'un',unitPrice:0};}
 function emptyDraft(company:CompanySummary):EngineeringCommercialBudgetDraft{return{tenantId:company.tenantId,companyId:company.id,title:'',issuer:label(company),customer:'',project:'',issueDate:today(),validityDays:15,paymentTerms:'',notes:'',targetMarginPercent:20,status:'Em andamento',items:[]};}
