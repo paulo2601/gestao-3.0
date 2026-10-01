@@ -37,7 +37,10 @@ export function useFinanceOverview(scope: CompanyScope | null, refreshToken = 0)
     const activeScope: CompanyScope = { tenantId, companyId };
     let cancelled = false;
     const month = currentMonthStart();
-    setState({ status: 'loading', data: null, errorMessage: null });
+
+    // Em atualizações, preserva a visão já renderizada. Isso evita a tela inteira
+    // voltar para "Carregando" enquanto consultas independentes são renovadas.
+    setState(previous => previous.data ? previous : { status: 'loading', data: null, errorMessage: null });
 
     void Promise.all([
       repositories.monthly.summarize({ ...activeScope, competenceFrom: month, competenceTo: month }),
@@ -51,7 +54,11 @@ export function useFinanceOverview(scope: CompanyScope | null, refreshToken = 0)
       })
       .catch(() => {
         if (cancelled) return;
-        setState({ status: 'error', data: null, errorMessage: 'Não foi possível carregar a visão financeira desta empresa.' });
+        // Se a atualização falhar, mantém os últimos dados válidos em vez de
+        // derrubar a página que o usuário já estava utilizando.
+        setState(previous => previous.data
+          ? { status: 'ready', data: previous.data, errorMessage: null }
+          : { status: 'error', data: null, errorMessage: 'Não foi possível carregar a visão financeira desta empresa.' });
       });
 
     return () => { cancelled = true; };
