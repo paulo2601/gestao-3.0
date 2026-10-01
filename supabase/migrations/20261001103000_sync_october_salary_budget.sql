@@ -1,38 +1,28 @@
 begin;
 
--- Sincroniza o planejamento salarial já criado para a competência com a
--- projeção oficial da folha. Mantém os R$ 6.000 fixos de Paulo e João na
--- função payroll_salary_projection, sem alterar salário-base contratual.
-with salary_category as (
-  select id, tenant_id, company_id
-  from public.categories
-  where upper(trim(name)) in ('SALÁRIO','SALARIOS','SALÁRIOS','SALARIO')
+-- Sincroniza o planejamento salarial de outubro com a projeção oficial da folha.
+-- A categoria usada pelo orçamento é PAGAMENTO DE SALÁRIO.
+-- Paulo e João mantêm R$ 6.000/mês fixos na payroll_salary_projection,
+-- separados do salário-base contratual.
+with target as (
+  select bp.id,bp.tenant_id,bp.company_id,bp.cost_center_id
+  from public.budget_plans bp
+  join public.financial_categories c on c.id=bp.category_id
+  where bp.competence_month=date '2026-10-01'
+    and bp.flow_type='expense'
+    and upper(trim(c.name))='PAGAMENTO DE SALÁRIO'
 ), projected as (
-  select
-    sc.tenant_id,
-    sc.company_id,
-    sc.id as category_id,
-    p.cost_center_id,
-    p.competence_month,
-    sum(p.planned_salary)::numeric(14,2) as planned_salary
-  from salary_category sc
+  select t.id,round(sum(p.planned_salary),2)::numeric(14,2) as total
+  from target t
   cross join lateral public.payroll_salary_projection(
-    sc.tenant_id,
-    sc.company_id,
-    date '2026-10-01',
-    date '2026-10-01'
+    t.tenant_id,t.company_id,date '2026-10-01',date '2026-10-01'
   ) p
-  group by sc.tenant_id,sc.company_id,sc.id,p.cost_center_id,p.competence_month
+  where p.cost_center_id is not distinct from t.cost_center_id
+  group by t.id
 )
 update public.budget_plans bp
-set planned_amount = p.planned_salary,
-    updated_at = now()
+set planned_amount=p.total,updated_at=now()
 from projected p
-where bp.tenant_id=p.tenant_id
-  and bp.company_id=p.company_id
-  and bp.category_id=p.category_id
-  and bp.competence_month=p.competence_month
-  and bp.flow_type='expense'
-  and bp.cost_center_id is not distinct from p.cost_center_id;
+where bp.id=p.id;
 
 commit;
