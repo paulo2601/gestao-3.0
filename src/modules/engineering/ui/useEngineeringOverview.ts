@@ -16,14 +16,18 @@ export function useEngineeringOverview(scopes:readonly Scope[], refreshToken = 0
   useEffect(()=>{
     if(scopes.length===0){ setState({status:'idle',data:null,errorMessage:null}); return; }
     let cancelled=false;
-    setState({status:'loading',data:null,errorMessage:null});
+    // Mantém a última visão válida enquanto uma atualização é buscada. Assim,
+    // ações de refresh não desmontam a tela inteira de Engenharia.
+    setState(previous=>previous.status==='ready'?previous:{status:'loading',data:null,errorMessage:null});
     void Promise.allSettled(scopes.map(scope=>repository.load(scope))).then(results=>{
       if(cancelled)return;
       const successful=results
         .filter((result):result is PromiseFulfilledResult<EngineeringOverview>=>result.status==='fulfilled')
         .map(result=>result.value);
       if(successful.length===0){
-        setState({status:'error',data:null,errorMessage:'Não foi possível carregar a Engenharia para o filtro selecionado.'});
+        // Uma falha transitória de atualização não deve apagar dados que já
+        // estavam disponíveis para o usuário.
+        setState(previous=>previous.status==='ready'?previous:{status:'error',data:null,errorMessage:'Não foi possível carregar a Engenharia para o filtro selecionado.'});
         return;
       }
       setState({status:'ready',data:{
@@ -34,7 +38,7 @@ export function useEngineeringOverview(scopes:readonly Scope[], refreshToken = 0
         provisionals:successful.flatMap(item=>item.provisionals),
       },errorMessage:null});
     }).catch(()=>{
-      if(!cancelled)setState({status:'error',data:null,errorMessage:'Não foi possível carregar a Engenharia para o filtro selecionado.'});
+      if(!cancelled)setState(previous=>previous.status==='ready'?previous:{status:'error',data:null,errorMessage:'Não foi possível carregar a Engenharia para o filtro selecionado.'});
     });
     return ()=>{cancelled=true;};
   },[repository,scopes,refreshToken]);
