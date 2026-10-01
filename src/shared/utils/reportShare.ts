@@ -14,7 +14,8 @@ export async function sharePrintableElement(element:HTMLElement,suggestedName:st
   const navigators=[window.navigator,shareWindow.navigator].filter((nav,index,list)=>list.indexOf(nav)===index);
   const nav=navigators.find(candidate=>Boolean(candidate.share)&&Boolean(candidate.canShare?.(data)));
   if(!nav?.share)throw new Error('Este navegador não permite compartilhar PDF diretamente.');
-  await nav.share(data);
+  const share=nav.share.bind(nav);
+  await share(data);
 }
 
 export function installReportShareButton(reportWindow:Window,suggestedName:string,orientation:'portrait'|'landscape'='portrait'){
