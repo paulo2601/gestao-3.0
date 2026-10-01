@@ -39,12 +39,19 @@ export function useHrBudgetOverview(
     }
 
     let cancelled = false;
-    setState({ status: 'loading', data: null, errorMessage: null });
+    // Em refresh da mesma visão, mantém os dados já renderizados enquanto o
+    // repositório atualiza RH/orçamento em segundo plano.
+    setState(previous => previous.data ? previous : { status: 'loading', data: null, errorMessage: null });
 
     void repository.getOverview({ tenantId, companyId, competenceMonth: selectedMonth, year: Number(selectedMonth.slice(0, 4)) })
       .then((data) => { if (!cancelled) setState({ status: 'ready', data, errorMessage: null }); })
       .catch(() => {
-        if (!cancelled) setState({ status: 'error', data: null, errorMessage: 'Não foi possível carregar RH e orçamento desta empresa.' });
+        if (cancelled) return;
+        // Não derruba uma tela que já possui dados válidos por causa de uma
+        // falha transitória de atualização.
+        setState(previous => previous.data
+          ? previous
+          : { status: 'error', data: null, errorMessage: 'Não foi possível carregar RH e orçamento desta empresa.' });
       });
 
     return () => { cancelled = true; };
