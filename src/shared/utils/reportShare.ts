@@ -13,6 +13,7 @@ async function preparePrintableElement(element:HTMLElement,suggestedName:string,
     if(reportPages.length){
       for(let index=0;index<reportPages.length;index++){
         const page=reportPages[index];
+        if(!page)continue;
         const canvas=await html2canvas(page,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
         const maxWidth=pageWidth-margin*2,maxHeight=pageHeight-margin*2;
         const ratio=Math.min(maxWidth/canvas.width,maxHeight/canvas.height);
