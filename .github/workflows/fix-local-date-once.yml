@@ -1,0 +1,53 @@
+name: Fix local date once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-local-date-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-local-date:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Corrigir uso de UTC em datas civis
+        shell: python
+        run: |
+          from pathlib import Path
+
+          replacements = {
+              "const today=()=>new Date().toISOString().slice(0,10);": "const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};",
+              "const currentMonth=()=>new Date().toISOString().slice(0,7);": "const currentMonth=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};",
+              "const currentMonth=new Date().toISOString().slice(0,7);": "const now=new Date();const currentMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;",
+              "const isoDate=(v:Date)=>v.toISOString().slice(0,10);": "const isoDate=(v:Date)=>`${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;",
+              "function isoDate(value:Date){return value.toISOString().slice(0,10);}": "function isoDate(value:Date){return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;}",
+          }
+
+          changed=[]
+          for path in Path('src').rglob('*'):
+              if path.suffix not in {'.ts','.tsx'}:
+                  continue
+              text=path.read_text(encoding='utf-8')
+              updated=text
+              for old,new in replacements.items():
+                  updated=updated.replace(old,new)
+              if updated!=text:
+                  path.write_text(updated,encoding='utf-8')
+                  changed.append(str(path))
+          print('Arquivos corrigidos:')
+          print('\n'.join(changed) if changed else 'nenhum')
+      - name: Remover workflow temporario
+        run: rm .github/workflows/fix-local-date-once.yml
+      - name: Commit da correcao
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: usar data local em vez de UTC"
+          git push
