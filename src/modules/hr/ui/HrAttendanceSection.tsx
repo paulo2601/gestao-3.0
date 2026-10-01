@@ -14,6 +14,7 @@ const attendanceOptions=[{value:'',label:'Não registrado'},{value:'present',lab
 export function HrAttendanceSection({date,setDate,search,setSearch,rows,employees,loading,feedback,onAllPresent,onChange,onRowsChange,onFeedback}:{date:string;setDate:(v:string)=>void;search:string;setSearch:(v:string)=>void;rows:AttendanceRecord[];employees:Employee[];loading:boolean;feedback:string|null;onAllPresent:()=>void;onChange:(employee:Employee,status:AttendanceStatus)=>void;onRowsChange:(rows:AttendanceRecord[])=>void;onFeedback:(message:string)=>void}){
  const [showRegistered,setShowRegistered]=useState(false);
  const registeredIds=useMemo(()=>new Set(rows.map(row=>row.employmentContractId)),[rows]);
+ const pendingEmployees=useMemo(()=>employees.filter(employee=>!registeredIds.has(employee.employmentContractId)),[employees,registeredIds]);
  const registeredEmployees=employees.filter(employee=>registeredIds.has(employee.employmentContractId));
  const byContract=useMemo(()=>new Map(rows.map(row=>[row.employmentContractId,row])),[rows]);
  async function punch(employee:Employee,punch:'check_in'|'check_out'){
@@ -40,11 +41,11 @@ export function HrAttendanceSection({date,setDate,search,setSearch,rows,employee
  return <div className="hr-workspace__content">
   <Card title="Presença e ponto" actions={<div className="hr-workspace__actions"><Button variant="secondary" onClick={()=>setShowRegistered(true)}>Registrados {rows.length}</Button></div>}>
    <div className="hr-workspace__attendance-controls"><Input label="Data" type="date" value={date} onChange={e=>setDate(e.target.value)}/><Input label="Buscar colaborador" placeholder="Digite o nome" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-   <div className="hr-workspace__actions"><Button onClick={onAllPresent} disabled={loading||employees.length===0}>Marcar todos presentes</Button></div>
+   <div className="hr-workspace__actions"><Button onClick={onAllPresent} disabled={loading||pendingEmployees.length===0}>Marcar todos presentes</Button></div>
    {feedback&&<Feedback title="Presença" message={feedback} tone={feedback.includes('marcado')||feedback.includes('registrado')?'success':'info'}/>} 
   </Card>
-  <Card title={`Colaboradores · ${date.split('-').reverse().join('/')}`}>
-   <div className="hr-workspace__list">{loading?<p className="ui-muted">Carregando colaboradores e presença do dia...</p>:employees.length===0?<p className="ui-muted">Nenhum colaborador ativo encontrado para o filtro selecionado.</p>:employees.map(employeeRow)}</div>
+  <Card title={`Colaboradores pendentes · ${date.split('-').reverse().join('/')}`}>
+   <div className="hr-workspace__list">{loading?<p className="ui-muted">Carregando colaboradores e presença do dia...</p>:pendingEmployees.length===0?<p className="ui-muted">Todos os colaboradores exibidos pelo filtro já possuem registro nesta data.</p>:pendingEmployees.map(employeeRow)}</div>
   </Card>
   <Dialog open={showRegistered} title={`Presenças de ${date.split('-').reverse().join('/')}`} description={`${rows.length} colaborador(es) registrado(s) nesta data`} onClose={()=>setShowRegistered(false)} onBack={()=>setShowRegistered(false)}>
    <div className="hr-workspace__list">{loading?<p className="ui-muted">Carregando presença do dia...</p>:registeredEmployees.length===0?<p className="ui-muted">Nenhum registro de presença encontrado nesta data.</p>:registeredEmployees.map(employeeRow)}</div>
