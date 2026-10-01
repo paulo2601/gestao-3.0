@@ -8,7 +8,12 @@ export async function sharePrintableElement(element:HTMLElement,suggestedName:st
   const pdf=new jsPDF({orientation,unit:'mm',format:'a4',compress:true});let y=0,page=0;const usable=pageHeight-margin*2;
   while(y<imgHeight){if(page>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.94),'JPEG',margin,margin-y,imgWidth,imgHeight,undefined,'FAST');y+=usable;page++;}
   const name=safeReportFileName(requested);const file=new File([pdf.output('blob')],name+'.pdf',{type:'application/pdf'});const data={files:[file],title:name};
-  const nav=shareWindow.navigator;if(!nav.share||!nav.canShare?.(data))throw new Error('Este navegador não permite compartilhar PDF diretamente.');
+  // Relatórios podem estar em about:blank. No Android/PWA essa janela secundária
+  // frequentemente não expõe Web Share com arquivos, embora a janela principal exponha.
+  // Prioriza o contexto principal do app e mantém a janela do relatório como fallback.
+  const navigators=[window.navigator,shareWindow.navigator].filter((nav,index,list)=>list.indexOf(nav)===index);
+  const nav=navigators.find(candidate=>Boolean(candidate.share)&&Boolean(candidate.canShare?.(data)));
+  if(!nav?.share)throw new Error('Este navegador não permite compartilhar PDF diretamente.');
   await nav.share(data);
 }
 
