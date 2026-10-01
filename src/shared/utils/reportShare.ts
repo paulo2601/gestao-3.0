@@ -12,10 +12,12 @@ export async function sharePrintableElement(element:HTMLElement,suggestedName:st
   // frequentemente não expõe Web Share com arquivos, embora a janela principal exponha.
   // Prioriza o contexto principal do app e mantém a janela do relatório como fallback.
   const navigators=[window.navigator,shareWindow.navigator].filter((nav,index,list)=>list.indexOf(nav)===index);
-  const nav=navigators.find(candidate=>Boolean(candidate.share)&&Boolean(candidate.canShare?.(data)));
-  if(!nav?.share)throw new Error('Este navegador não permite compartilhar PDF diretamente.');
-  const share=nav.share.bind(nav);
-  await share(data);
+  for(const nav of navigators){
+    if(!('share' in nav)||nav.canShare?.(data)!==true)continue;
+    await nav.share(data);
+    return;
+  }
+  throw new Error('Este navegador não permite compartilhar PDF diretamente.');
 }
 
 export function installReportShareButton(reportWindow:Window,suggestedName:string,orientation:'portrait'|'landscape'='portrait'){
