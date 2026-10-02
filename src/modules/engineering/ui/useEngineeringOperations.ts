@@ -29,6 +29,7 @@ export function useEngineeringOperations(scope: EngineeringScope) {
     updateContractStatus:(id:string,status:Parameters<typeof repository.updateContractStatus>[2])=>execute(()=>repository.updateContractStatus(scope,id,status),'Status do contrato atualizado.'),
     createService:(input:Parameters<typeof repository.createService>[1])=>execute(()=>repository.createService(scope,input),'Serviço cadastrado.'),
     addContractService:(input:Parameters<typeof repository.addContractService>[1])=>execute(()=>repository.addContractService(scope,input),'Serviço adicionado ao contrato.'),
+    updateContractService:(input:Parameters<typeof repository.updateContractService>[1])=>execute(()=>repository.updateContractService(scope,input),'Serviço do contrato atualizado.'),
     allocateContractService:(input:Parameters<typeof repository.allocateContractService>[1])=>execute(()=>repository.allocateContractService(scope,input),'Serviço distribuído na estrutura.'),
     createProvisional:(input:Parameters<typeof repository.createProvisional>[1])=>execute(()=>repository.createProvisional(scope,input),'Provisório criado.'),
     updateProvisional:(input:Parameters<typeof repository.updateProvisional>[1])=>execute(()=>repository.updateProvisional(scope,input),'Provisório atualizado.'),
