@@ -133,3 +133,31 @@
   .approved-measurement-origin-modal__footer{grid-template-columns:1fr 1fr!important;padding:8px!important}
   .approved-measurement-origin-modal__footer button{min-height:42px!important;font-size:.78rem!important;padding:7px!important}
 }
+
+
+/* Mobile measurement editing: direct touch targets + manual services */
+.measurement-service-edit-row{cursor:pointer}
+.measurement-service-edit-row:focus-visible{outline:2px solid #1769d2;outline-offset:-2px}
+@media(max-width:640px){
+  .approved-measurement-origin-modal__header{padding:10px 12px!important;gap:8px!important}
+  .approved-measurement-origin-modal__header h3{font-size:1.05rem!important;margin:1px 0!important}
+  .approved-measurement-origin-modal__header p{font-size:.76rem!important;line-height:1.25}
+  .approved-measurement-origin-modal__toolbar{padding:8px!important}
+  .approved-measurement-origin-modal__table-card{border:0!important;border-radius:0!important}
+  .measurement-service-edit-row{touch-action:manipulation}
+  .measurement-service-edit-row:active{background:#eef6ff!important;border-color:#9ec5f6!important}
+  .measurement-hub__manual-services .approved-measurement-sheet__table-wrap{overflow:visible;max-height:none}
+  .measurement-hub__manual-services .approved-measurement-sheet__table{display:block;min-width:0!important}
+  .measurement-hub__manual-services .approved-measurement-sheet__table thead{display:none}
+  .measurement-hub__manual-services .approved-measurement-sheet__table tbody{display:grid;gap:8px}
+  .measurement-hub__manual-services .approved-measurement-sheet__table tr{display:grid;grid-template-columns:1fr auto;gap:5px 10px;padding:10px;border:1px solid #dbe5ef;border-radius:12px}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td{display:block!important;min-width:0!important;width:auto!important;padding:0!important;border:0!important;white-space:normal!important;font-size:.78rem}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td:first-child{grid-column:1/-1;text-align:left!important;font-size:.88rem}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td:nth-child(2)::before{content:'Un.: ';font-weight:800}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td:nth-child(3)::before{content:'Qtd.: ';font-weight:800}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td:nth-child(4)::before{content:'Unitário: ';font-weight:800}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td:nth-child(5){font-weight:900;text-align:right}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td:nth-child(5)::before{content:'Total: ';font-size:.7rem;color:#64748b}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td:last-child{grid-column:1/-1}
+  .measurement-hub__manual-services .approved-measurement-sheet__table td:last-child .ui-button{width:100%;min-height:38px}
+}
