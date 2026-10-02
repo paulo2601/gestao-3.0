@@ -290,3 +290,15 @@
  .budget-year-summary__row{transition:background .12s ease,border-color .12s ease}
  .budget-year-summary__row.is-current{border-color:var(--color-primary,#2563eb)}
 }
+
+
+/* 2026-10-02 mobile budget editor: one vertical page scroll only. */
+@media(max-width:720px){
+ .budget-workspace{overflow:visible!important;touch-action:pan-y!important}
+ .budget-control-sticky{position:relative!important;top:auto!important;z-index:1!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:auto!important;touch-action:pan-y!important}
+ .budget-control-line{width:max-content!important;min-width:900px!important}
+ .budget-approved-tabs{position:relative!important;top:auto!important;z-index:1!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:auto!important;touch-action:pan-y!important}
+ .budget-approved-panel,.budget-workspace__items,.budget-workspace__item,.budget-workspace__item--annual,.budget-annual-fields{overflow:visible!important;max-height:none!important;touch-action:pan-y!important}
+ .budget-workspace__item-main{position:relative!important;z-index:1!important;overflow:visible!important}
+ .budget-workspace__item-main strong{display:block!important;visibility:visible!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important;line-height:1.25!important}
+}
