@@ -5,7 +5,7 @@ import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
 import type { EngineeringProductionEntryView, EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
-import { createManualProductionEntry, createSharedProductionEntry, updateProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
+import { createManualProductionEntry, createSharedProductionEntry, deleteProductionEntry, updateProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
 import { resolveEngineeringProductionPrice } from '../infrastructure/EngineeringProductionPriceRepository';
 import './engineering-production-entry-dialog.css';
 
@@ -39,6 +39,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const [employeeSearch,setEmployeeSearch]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState<string|null>(null);
+  const [confirmDelete,setConfirmDelete]=useState(false);
   useEffect(()=>{if(!open||!editEntry)return;setPeriodId(editEntry.periodId);setStructureId(editEntry.structureId);setProductionDate(editEntry.productionDate);setExecutedQuantity(String(editEntry.executedQuantity));setUnitValue(editEntry.unitValue==null?'':String(editEntry.unitValue));setNotes(editEntry.notes??'');setUnitIds([]);setParticipants((editEntry.participants.length?editEntry.participants:[{employmentContractId:editEntry.employmentContractId,employeeName:editEntry.employeeName,percentage:100,value:editEntry.productionValue??0}]).map(p=>({id:p.employmentContractId,name:p.employeeName,percentage:String(p.percentage),value:String(p.value)})));setDivisionMode(editEntry.participants.length>1?'percentage':'equal');const price=snapshot.productionPrices.find(p=>p.productionServiceId===editEntry.productionServiceId);if(editEntry.productionServiceId)setServiceId((price?.productionServiceKind==='manual'?'manual:':'general:')+editEntry.productionServiceId);else{const service=snapshot.services.find(s=>s.serviceId===editEntry.serviceId);setServiceId(service?.id??'');}},[open,editEntry,snapshot]);
   const openPeriods=snapshot.periods.filter(item=>item.status==='open');
   const filteredEmployees=useMemo(()=>snapshot.employees.filter(item=>item.name.toLocaleLowerCase('pt-BR').includes(employeeSearch.trim().toLocaleLowerCase('pt-BR'))),[snapshot.employees,employeeSearch]);
@@ -109,7 +110,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     finally{setBusy(false);}
   }
 
-  return <Dialog open={open} title={editEntry?"Editar produção":"Lançar produção"} description={editEntry?"Corrija os dados do lançamento selecionado.":"Selecione o serviço executado e divida entre um ou mais colaboradores."} onClose={close} onBack={close} footer={<>{!editEntry&&<Button type="button" variant="secondary" onClick={()=>void submit(true)} disabled={busy}>＋ Salvar e adicionar outro serviço</Button>}<Button type="button" onClick={()=>void submit(false)} loading={busy}>{editEntry?'Salvar alterações':'Salvar e finalizar'}</Button></>} loading={busy}>
+  return <Dialog open={open} title={editEntry?"Editar produção":"Lançar produção"} description={editEntry?"Corrija os dados do lançamento selecionado.":"Selecione o serviço executado e divida entre um ou mais colaboradores."} onClose={close} onBack={close} footer={<>{editEntry&&<Button type="button" variant="secondary" onClick={()=>setConfirmDelete(true)} disabled={busy}>Excluir lançamento</Button>}{!editEntry&&<Button type="button" variant="secondary" onClick={()=>void submit(true)} disabled={busy}>＋ Salvar e adicionar outro serviço</Button>}<Button type="button" onClick={()=>void submit(false)} loading={busy}>{editEntry?'Salvar alterações':'Salvar e finalizar'}</Button></>} loading={busy}>
     <div className="engineering-production-entry-form">
       {error&&<Feedback tone="danger" title="Não foi possível salvar" message={error}/>} 
       <div className="engineering-production-entry-form__grid">
@@ -130,6 +131,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
         </div>
       </section>
       <Input label="Observações" value={notes} onChange={event=>setNotes(event.target.value)}/>
+      <Dialog open={confirmDelete} title="Excluir lançamento" description="Esta ação não pode ser desfeita." onClose={()=>setConfirmDelete(false)} footer={<><Button type="button" variant="secondary" onClick={()=>setConfirmDelete(false)} disabled={busy}>Cancelar</Button><Button type="button" onClick={()=>void (async()=>{if(!editEntry)return;setBusy(true);setError(null);try{await deleteProductionEntry({tenantId:scope.tenantId,companyId:scope.companyId,entryId:editEntry.id});setConfirmDelete(false);onSaved();onClose();}catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível excluir o lançamento.');setConfirmDelete(false);}finally{setBusy(false);}})()} loading={busy}>Confirmar exclusão</Button></>}>Confirme a exclusão deste lançamento de produção.</Dialog>
       <Dialog open={unitPickerOpen} title="Selecionar apartamentos" description="Marque todos, um pavimento inteiro ou apartamentos individualmente." onClose={()=>setUnitPickerOpen(false)} onBack={()=>setUnitPickerOpen(false)} onConfirm={()=>setUnitPickerOpen(false)} confirmLabel="Confirmar seleção">
         <div className="engineering-production-unit-picker"><div className="engineering-production-unit-picker__all"><label><input type="checkbox" checked={allUnitIds.length>0&&allUnitIds.every(id=>unitIds.includes(id))} onChange={event=>toggleFloor(allUnitIds,event.target.checked)}/><strong>Selecionar todos</strong></label><span>{unitIds.length} selecionado(s)</span></div>{availableFloorUnits.map(({floor,units:floorUnits})=><section key={floor.id}><div className="engineering-production-unit-picker__floor"><label><input type="checkbox" checked={floorUnits.length>0&&floorUnits.every(item=>unitIds.includes(item.id))} onChange={event=>toggleFloor(floorUnits.map(item=>item.id),event.target.checked)}/><strong>{floor.name}</strong></label><span>{floorUnits.filter(item=>unitIds.includes(item.id)).length}/{floorUnits.length}</span></div><div className="engineering-production-unit-picker__units">{floorUnits.map(item=><label key={item.id}><input type="checkbox" checked={unitIds.includes(item.id)} onChange={event=>setUnitIds(current=>event.target.checked?Array.from(new Set([...current,item.id])):current.filter(id=>id!==item.id))}/><span>{item.name}</span></label>)}</div></section>)}</div>
       </Dialog>
