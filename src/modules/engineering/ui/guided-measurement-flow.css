@@ -161,3 +161,28 @@
   .measurement-hub__manual-services .approved-measurement-sheet__table td:last-child{grid-column:1/-1}
   .measurement-hub__manual-services .approved-measurement-sheet__table td:last-child .ui-button{width:100%;min-height:38px}
 }
+
+
+/* Mobile unit editor: keep selection, controls and save action visible */
+@media(max-width:640px){
+  .guided-measurement-unit-picker .guided-measurement-picker__panel{padding-bottom:0!important}
+  .approved-unit-picker__header{padding:9px 12px!important;gap:8px!important}
+  .approved-unit-picker__header h3{font-size:1rem!important;line-height:1.2!important;margin:2px 0!important}
+  .approved-unit-picker__header p{font-size:.74rem!important;line-height:1.2!important}
+  .approved-unit-picker__summary{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;padding:7px 10px!important}
+  .approved-unit-picker__summary>div{min-width:0!important;padding:7px 8px!important}
+  .approved-unit-picker__summary>div:first-child{grid-column:1/-1}
+  .approved-unit-picker__summary strong{font-size:.86rem!important;overflow-wrap:anywhere}
+  .approved-unit-picker__summary small,.approved-unit-picker__summary span{font-size:.68rem!important}
+  .approved-unit-picker__toolbar--compact{padding:7px 10px!important;gap:7px!important}
+  .approved-unit-picker__floors{padding:7px 10px 142px!important}
+  .approved-unit-picker__floor{margin-bottom:7px!important}
+  .approved-unit-picker__floor>header{padding:7px 8px!important}
+  .guided-measurement-floor__units{gap:6px!important;padding:7px!important}
+  .guided-measurement-floor__units label{min-height:38px!important}
+  .approved-unit-picker__footer{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:6px!important;padding:7px 10px calc(7px + env(safe-area-inset-bottom))!important}
+  .approved-unit-picker__footer>div{grid-column:1/-1!important;min-width:0}
+  .approved-unit-picker__footer>div strong,.approved-unit-picker__footer>div span{display:block;overflow-wrap:anywhere}
+  .approved-unit-picker__footer>div span{font-size:.72rem;line-height:1.2}
+  .approved-unit-picker__footer button{min-width:0!important;min-height:40px!important;height:auto!important;padding:7px!important;font-size:.78rem!important;white-space:normal!important}
+}
