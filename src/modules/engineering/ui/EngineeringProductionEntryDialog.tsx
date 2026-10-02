@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { Button } from '../../../shared/ui/Button';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
-import type { EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
-import { createManualProductionEntry, createSharedProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
+import type { EngineeringProductionEntryView, EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
+import { createManualProductionEntry, createSharedProductionEntry, updateProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
 import { resolveEngineeringProductionPrice } from '../infrastructure/EngineeringProductionPriceRepository';
 import './engineering-production-entry-dialog.css';
 
@@ -17,13 +17,14 @@ interface Props {
   snapshot:EngineeringProductionSnapshot;
   onClose:()=>void;
   onSaved:()=>void;
+  editEntry?:EngineeringProductionEntryView|null;
 }
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const numberValue=(value:string)=>{const parsed=Number(value.replace(',','.'));return Number.isFinite(parsed)?parsed:0;};
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const competenceDate=(competence:string)=>`${competence.slice(0,7)}-01`;
 
-export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,onSaved}:Props){
+export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,onSaved,editEntry=null}:Props){
   const now=new Date();const currentMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;const currentPeriod=snapshot.periods.find(item=>item.status==='open'&&item.competence.slice(0,7)===currentMonth);const [periodId,setPeriodId]=useState(currentPeriod?.id??'');
   const [structureId,setStructureId]=useState('');
   const [unitIds,setUnitIds]=useState<string[]>([]);
@@ -38,6 +39,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const [employeeSearch,setEmployeeSearch]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState<string|null>(null);
+  useEffect(()=>{if(!open||!editEntry)return;setPeriodId(editEntry.periodId);setStructureId(editEntry.structureId);setProductionDate(editEntry.productionDate);setExecutedQuantity(String(editEntry.executedQuantity));setUnitValue(editEntry.unitValue==null?'':String(editEntry.unitValue));setNotes(editEntry.notes??'');setUnitIds([]);setParticipants((editEntry.participants.length?editEntry.participants:[{employmentContractId:editEntry.employmentContractId,employeeName:editEntry.employeeName,percentage:100,value:editEntry.productionValue??0}]).map(p=>({id:p.employmentContractId,name:p.employeeName,percentage:String(p.percentage),value:String(p.value)})));setDivisionMode(editEntry.participants.length>1?'percentage':'equal');const price=snapshot.productionPrices.find(p=>p.productionServiceId===editEntry.productionServiceId);if(editEntry.productionServiceId)setServiceId((price?.productionServiceKind==='manual'?'manual:':'general:')+editEntry.productionServiceId);else{const service=snapshot.services.find(s=>s.serviceId===editEntry.serviceId);setServiceId(service?.id??'');}},[open,editEntry,snapshot]);
   const openPeriods=snapshot.periods.filter(item=>item.status==='open');
   const filteredEmployees=useMemo(()=>snapshot.employees.filter(item=>item.name.toLocaleLowerCase('pt-BR').includes(employeeSearch.trim().toLocaleLowerCase('pt-BR'))),[snapshot.employees,employeeSearch]);
   const periodOptions=[{value:'',label:'Selecione…'},...openPeriods.map(item=>({value:item.id,label:item.competence.slice(0,7).split('-').reverse().join('/')}))];
@@ -101,12 +103,12 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     if(divisionMode==='percentage'&&Math.abs(payload.reduce((sum,item)=>sum+(item.percentage??0),0)-100)>0.01){setError('A soma dos percentuais deve ser 100%.');return;}
     if(divisionMode==='value'&&Math.abs(payload.reduce((sum,item)=>sum+(item.value??0),0)-total)>0.01){setError(`A soma dos valores deve ser ${currency.format(total)}.`);return;}
     setBusy(true);
-    try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:manualValueMode?1:numberValue(executedQuantity),unitValue:manualValueMode?numberValue(executedQuantity):numberValue(unitValue),notes:notes||null,divisionMode,participants:payload,selectedUnits:availableFloorUnits.flatMap(group=>group.units.filter(unit=>unitIds.includes(unit.id)).map(unit=>unitKey(group.floor.name,unit.name)))};if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}onSaved();if(addAnother)resetForAnotherService();else{reset();onClose();}}
+    try{const common={tenantId:scope.tenantId,companyId:scope.companyId,periodId,structureId,productionDate,executedQuantity:usesApartmentUnits?unitIds.length:manualValueMode?1:numberValue(executedQuantity),unitValue:manualValueMode?numberValue(executedQuantity):numberValue(unitValue),notes:notes||null,divisionMode,participants:payload,selectedUnits:availableFloorUnits.flatMap(group=>group.units.filter(unit=>unitIds.includes(unit.id)).map(unit=>unitKey(group.floor.name,unit.name)))};if(editEntry)await updateProductionEntry({...common,entryId:editEntry.id});else if(serviceId.startsWith('manual:'))await createManualProductionEntry({...common,productionServiceId:serviceId.slice(7)});else{const selected=snapshot.services.find(item=>item.id===serviceId);if(!selected)throw new Error('Serviço não encontrado.');await createSharedProductionEntry({...common,contractServiceId:selected.contractServiceId,serviceId:selected.serviceId});}onSaved();if(addAnother)resetForAnotherService();else{reset();onClose();}}
     catch(cause){const rawMessage=typeof cause==='object'&&cause!==null&&'message' in cause?(cause as {message?:unknown}).message:undefined;const details=typeof rawMessage==='string'?rawMessage:'';setError(details||'Não foi possível salvar a produção. Tente novamente.');}
     finally{setBusy(false);}
   }
 
-  return <Dialog open={open} title="Lançar produção" description="Selecione o serviço executado e divida entre um ou mais colaboradores." onClose={close} onBack={close} footer={<><Button type="button" variant="secondary" onClick={()=>void submit(true)} disabled={busy}>＋ Salvar e adicionar outro serviço</Button><Button type="button" onClick={()=>void submit(false)} loading={busy}>Salvar e finalizar</Button></>} loading={busy}>
+  return <Dialog open={open} title={editEntry?"Editar produção":"Lançar produção"} description={editEntry?"Corrija os dados do lançamento selecionado.":"Selecione o serviço executado e divida entre um ou mais colaboradores."} onClose={close} onBack={close} footer={<>{!editEntry&&<Button type="button" variant="secondary" onClick={()=>void submit(true)} disabled={busy}>＋ Salvar e adicionar outro serviço</Button>}<Button type="button" onClick={()=>void submit(false)} loading={busy}>{editEntry?'Salvar alterações':'Salvar e finalizar'}</Button></>} loading={busy}>
     <div className="engineering-production-entry-form">
       {error&&<Feedback tone="danger" title="Não foi possível salvar" message={error}/>} 
       <div className="engineering-production-entry-form__grid">
