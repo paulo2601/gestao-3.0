@@ -5,7 +5,7 @@ import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
 import type { EngineeringProductionEntryView, EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
-import { createManualProductionEntry, createSharedProductionEntry, updateProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
+import { createManualProductionEntry, createSharedProductionEntry, deleteProductionEntry, updateProductionEntry, type SharedProductionParticipantInput } from '../infrastructure/EngineeringProductionWriteRepository';
 import { resolveEngineeringProductionPrice } from '../infrastructure/EngineeringProductionPriceRepository';
 import './engineering-production-entry-dialog.css';
 
@@ -109,7 +109,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
     finally{setBusy(false);}
   }
 
-  return <Dialog open={open} title={editEntry?"Editar produção":"Lançar produção"} description={editEntry?"Corrija os dados do lançamento selecionado.":"Selecione o serviço executado e divida entre um ou mais colaboradores."} onClose={close} onBack={close} footer={<>{!editEntry&&<Button type="button" variant="secondary" onClick={()=>void submit(true)} disabled={busy}>＋ Salvar e adicionar outro serviço</Button>}<Button type="button" onClick={()=>void submit(false)} loading={busy}>{editEntry?'Salvar alterações':'Salvar e finalizar'}</Button></>} loading={busy}>
+  return <Dialog open={open} title={editEntry?"Editar produção":"Lançar produção"} description={editEntry?"Corrija os dados do lançamento selecionado.":"Selecione o serviço executado e divida entre um ou mais colaboradores."} onClose={close} onBack={close} footer={<>{editEntry&&<Button type="button" variant="secondary" onClick={async()=>{if(!window.confirm('Excluir este lançamento de produção? Esta ação não pode ser desfeita.'))return;setBusy(true);setError(null);try{await deleteProductionEntry({tenantId:scope.tenantId,companyId:scope.companyId,entryId:editEntry.id});onSaved();onClose();}catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível excluir o lançamento.');}finally{setBusy(false);}}} disabled={busy}>Excluir lançamento</Button>}{!editEntry&&<Button type="button" variant="secondary" onClick={()=>void submit(true)} disabled={busy}>＋ Salvar e adicionar outro serviço</Button>}<Button type="button" onClick={()=>void submit(false)} loading={busy}>{editEntry?'Salvar alterações':'Salvar e finalizar'}</Button></>} loading={busy}>
     <div className="engineering-production-entry-form">
       {error&&<Feedback tone="danger" title="Não foi possível salvar" message={error}/>} 
       <div className="engineering-production-entry-form__grid">
