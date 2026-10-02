@@ -478,8 +478,9 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
       setLocalError('Selecione um cartão válido.');
       return;
     }
-    if (form.paymentMethod === 'pix' && form.launchType === 'single' && !form.accountRef) {
-      setLocalError('Selecione o banco/conta para concluir o Pix automaticamente.');
+    const immediatePayment = ['pix', 'debit', 'cash'].includes(form.paymentMethod);
+    if (immediatePayment && !form.accountRef) {
+      setLocalError('Selecione o banco/conta usado no pagamento.');
       return;
     }
     setSubmitting(true);
@@ -539,15 +540,18 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
         if (budgetUpdate.error) throw budgetUpdate.error;
         const account = parsePaymentRef(form.accountRef);
         if (account) await getFinanceRepositories().entries.setPlannedAccount(scope, created.entryId, account.resourceId, account.companyId);
-        if (form.paymentMethod === 'pix' && form.launchType === 'single' && form.date <= today()) {
-          if (!account || !created.installmentId) throw new Error('Não foi possível identificar a conta ou parcela para concluir o Pix.');
+        const shouldAutoSettle = ['pix', 'debit', 'cash'].includes(form.paymentMethod)
+          && form.launchType === 'single'
+          && form.date <= today();
+        if (shouldAutoSettle) {
+          if (!account || !created.installmentId) throw new Error('Não foi possível identificar a conta ou parcela para concluir o pagamento.');
           await operations.settleInstallment({
             installmentId: created.installmentId,
             accountId: account.resourceId,
             settledOn: form.date,
             amount,
-            idempotencyKey: idempotencyKey('quick-pix-settlement'),
-            notes: form.notes.trim() || 'Liquidação automática via Pix',
+            idempotencyKey: idempotencyKey(`quick-${form.paymentMethod}-settlement`),
+            notes: form.notes.trim() || `Liquidação automática via ${form.paymentMethod === 'pix' ? 'Pix' : form.paymentMethod === 'debit' ? 'débito' : 'dinheiro'}`,
           });
           window.dispatchEvent(new Event('finance-bank-order-changed'));
         }
