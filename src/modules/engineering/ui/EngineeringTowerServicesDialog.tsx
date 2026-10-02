@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useMemo, useState, type ChangeEvent } from 'react';
 import { Button } from '../../../shared/ui/Button';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { Feedback } from '../../../shared/ui/Feedback';
@@ -6,38 +6,37 @@ import { Input } from '../../../shared/ui/Input';
 import { useEngineeringOperations } from './useEngineeringOperations';
 
 type Row={description:string;unit:string;quantity:number;unitPrice:number};
+type EditDraft={id:string;description:string;unit:string;quantity:string;unitPrice:string;allocationQuantity:string;allocationNotes:string};
 interface Props{open:boolean;scope:{tenantId:string;companyId:string};contractId:string;workId:string;structure:{id:string;name:string};onClose:()=>void;onChanged:()=>void;}
 
+const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const qtyFmt=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:3});
 const n=(v:string)=>{const x=Number(v.trim().replace(/\./g,'').replace(',','.'));return Number.isFinite(x)?x:0;};
 function parseCsv(text:string):Row[]{
- const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);
- const headerLine=lines[0];if(!headerLine||lines.length<2)return[];
- const sep=(headerLine.match(/;/g)?.length??0)>=(headerLine.match(/,/g)?.length??0)?';':',';
- const clean=(v:string|undefined)=>(v??'').trim().replace(/^"|"$/g,'').trim();
- const h=headerLine.split(sep).map(x=>clean(x).toLocaleLowerCase('pt-BR'));
- const idx=(...names:string[])=>h.findIndex(x=>names.some(name=>x.includes(name)));
+ const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);const headerLine=lines[0];if(!headerLine||lines.length<2)return[];
+ const sep=(headerLine.match(/;/g)?.length??0)>=(headerLine.match(/,/g)?.length??0)?';':',';const clean=(v:string|undefined)=>(v??'').trim().replace(/^"|"$/g,'').trim();
+ const h=headerLine.split(sep).map(x=>clean(x).toLocaleLowerCase('pt-BR'));const idx=(...names:string[])=>h.findIndex(x=>names.some(name=>x.includes(name)));
  const di=idx('serviço','servico','descrição','descricao'),ui=idx('unidade','unid'),qi=idx('quantidade','quantitativo','qtd'),vi=idx('valor unit','preço unit','preco unit');
  if(di<0||qi<0||vi<0)throw new Error('A planilha precisa ter as colunas Serviço/Descrição, Quantidade e Valor unitário.');
- const rows:Row[]=[];
- for(const line of lines.slice(1)){const c=line.split(sep).map(clean);const description=clean(c[di]);if(!description)continue;const quantity=n(clean(c[qi]));if(quantity<=0)continue;rows.push({description,unit:ui>=0?(clean(c[ui])||'UN'):'UN',quantity,unitPrice:n(clean(c[vi]))});}
- return rows;
+ const rows:Row[]=[];for(const line of lines.slice(1)){const x=line.split(sep).map(clean),description=clean(x[di]);if(!description)continue;const quantity=n(clean(x[qi]));if(quantity<=0)continue;rows.push({description,unit:ui>=0?(clean(x[ui])||'UN'):'UN',quantity,unitPrice:n(clean(x[vi]))});}return rows;
 }
 export function EngineeringTowerServicesDialog({open,scope,contractId,workId,structure,onClose,onChanged}:Props){
  const operations=useEngineeringOperations(scope);
- const[manual,setManual]=useState(false),[description,setDescription]=useState(''),[unit,setUnit]=useState('UN'),[qty,setQty]=useState(''),[price,setPrice]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState<string|null>(null),[info,setInfo]=useState<string|null>(null);
+ const[manual,setManual]=useState(false),[description,setDescription]=useState(''),[unit,setUnit]=useState('UN'),[qty,setQty]=useState(''),[price,setPrice]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState<string|null>(null),[info,setInfo]=useState<string|null>(null),[edit,setEdit]=useState<EditDraft|null>(null);
+ const data=operations.state.data;
+ const towerRows=useMemo(()=>{if(!data)return[];const contractIds=new Set(data.contractServices.filter(x=>x.contractId===contractId).map(x=>x.id));return data.allocations.filter(a=>a.structureId===structure.id&&a.status==='active'&&contractIds.has(a.contractServiceId)).map(a=>{const s=data.contractServices.find(x=>x.id===a.contractServiceId);return s?{service:s,allocation:a}:null;}).filter((x):x is NonNullable<typeof x>=>Boolean(x));},[data,contractId,structure.id]);
+ function openEdit(id:string){const row=towerRows.find(x=>x.service.id===id);if(!row)return;setError(null);setInfo(null);setEdit({id,description:row.service.description,unit:row.service.unit,quantity:String(row.service.quantity).replace('.',','),unitPrice:String(row.service.unitPrice).replace('.',','),allocationQuantity:String(row.allocation.allocatedQuantity).replace('.',','),allocationNotes:row.allocation.notes??''});}
+ async function saveEdit(){if(!edit)return;const quantity=n(edit.quantity),allocationQuantity=n(edit.allocationQuantity);if(!edit.description.trim()||quantity<=0||allocationQuantity<=0){setError('Informe descrição e quantitativos maiores que zero.');return;}if(allocationQuantity>quantity){setError('O quantitativo desta torre não pode ser maior que a quantidade contratada.');return;}setBusy(true);setError(null);try{await operations.updateContractService({contractServiceId:edit.id,description:edit.description.trim(),unit:edit.unit||'UN',quantity,unitPrice:n(edit.unitPrice),notes:null});await operations.allocateContractService({workId,contractServiceId:edit.id,structureId:structure.id,quantity:allocationQuantity,notes:edit.allocationNotes||null});setEdit(null);setInfo('Serviço atualizado.');onChanged();}catch(e){setError(e instanceof Error?e.message:'Não foi possível atualizar o serviço.');}finally{setBusy(false);}}
  async function saveRow(row:Row){const id=await operations.addContractService({contractId,serviceId:null,description:row.description,unit:row.unit,quantity:row.quantity,unitPrice:row.unitPrice,notes:null});await operations.allocateContractService({workId,contractServiceId:id,structureId:structure.id,quantity:row.quantity,notes:null});}
  async function saveManual(){if(!description.trim()||n(qty)<=0){setError('Informe o serviço e um quantitativo maior que zero.');return;}setBusy(true);setError(null);try{await saveRow({description:description.trim(),unit:unit||'UN',quantity:n(qty),unitPrice:n(price)});setDescription('');setQty('');setPrice('');setManual(false);setInfo('Serviço adicionado e vinculado à torre.');onChanged();}catch(e){setError(e instanceof Error?e.message:'Não foi possível adicionar o serviço.');}finally{setBusy(false);}}
  async function importFile(event:ChangeEvent<HTMLInputElement>){const file=event.target.files?.[0];event.target.value='';if(!file)return;setBusy(true);setError(null);setInfo(null);try{const rows=parseCsv(await file.text());if(!rows.length)throw new Error('Nenhum serviço válido foi encontrado na planilha.');for(const row of rows)await saveRow(row);setInfo(`${rows.length} serviço(s) importado(s) e vinculados à ${structure.name}.`);onChanged();}catch(e){setError(e instanceof Error?e.message:'Não foi possível importar a planilha.');}finally{setBusy(false);}}
- return <Dialog open={open} title={structure.name} description="Planilha de serviços da torre" onClose={onClose} onBack={onClose} loading={busy}>
+ return <Dialog open={open} title={structure.name} description="Serviços do contrato · toque em um item para editar" onClose={onClose} onBack={onClose} loading={busy}>
   <div className="engineering-tower-services">
-   {error&&<Feedback tone="danger" title="Não foi possível concluir" message={error}/>}
-   {info&&<Feedback tone="success" title="Concluído" message={info}/>}
-   <div className="engineering-tower-services__actions">
-    <label className="ui-button ui-button--secondary">Importar planilha CSV<input type="file" accept=".csv,text/csv" hidden disabled={busy} onChange={e=>void importFile(e)}/></label>
-    <Button disabled={busy} onClick={()=>setManual(v=>!v)}>＋ Adicionar serviço manual</Button>
-   </div>
-   <small className="ui-muted">Importação: Serviço/Descrição, Unidade, Quantidade e Valor unitário. O serviço é vinculado automaticamente a esta torre.</small>
+   {error&&<Feedback tone="danger" title="Não foi possível concluir" message={error}/>} {info&&<Feedback tone="success" title="Concluído" message={info}/>}
+   <div className="engineering-tower-services__actions"><label className="ui-button ui-button--secondary">Importar planilha CSV<input type="file" accept=".csv,text/csv" hidden disabled={busy} onChange={e=>void importFile(e)}/></label><Button disabled={busy} onClick={()=>setManual(v=>!v)}>＋ Adicionar serviço</Button></div>
    {manual&&<div className="engineering-standard-form"><div className="engineering-form-grid"><Input label="Serviço / descrição" value={description} onChange={e=>setDescription(e.target.value)} required/><Input label="Unidade" value={unit} onChange={e=>setUnit(e.target.value)}/><Input label="Quantidade" inputMode="decimal" value={qty} onChange={e=>setQty(e.target.value)} required/><Input label="Valor unitário" inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)}/></div><div className="engineering-tower-services__manual-actions"><Button variant="secondary" onClick={()=>setManual(false)}>Cancelar</Button><Button loading={busy} onClick={()=>void saveManual()}>Salvar serviço</Button></div></div>}
+   <div className="engineering-tower-services__list">{towerRows.length===0?<small className="ui-muted">Nenhum serviço vinculado a esta torre.</small>:towerRows.map(({service,allocation})=><button key={service.id} type="button" className="engineering-contract-origin-card engineering-tower-services__row" onClick={()=>openEdit(service.id)}><span><strong>{service.description}</strong><small>{service.unit} · {qtyFmt.format(allocation.allocatedQuantity)} · {money.format(service.unitPrice)}</small></span><strong>{money.format(allocation.allocatedQuantity*service.unitPrice)}</strong></button>)}</div>
   </div>
+  {edit&&<Dialog open title="Editar item do contrato" description={structure.name} loading={busy} onClose={()=>!busy&&setEdit(null)} onBack={()=>!busy&&setEdit(null)} onConfirm={()=>void saveEdit()} confirmLabel="Salvar alterações"><div className="engineering-standard-form"><div className="engineering-form-grid"><Input label="Serviço / descrição" value={edit.description} onChange={e=>setEdit({...edit,description:e.target.value})} required/><Input label="Unidade" value={edit.unit} onChange={e=>setEdit({...edit,unit:e.target.value})}/><Input label="Quantidade contratada" inputMode="decimal" value={edit.quantity} onChange={e=>setEdit({...edit,quantity:e.target.value})} required/><Input label="Quantidade nesta torre" inputMode="decimal" value={edit.allocationQuantity} onChange={e=>setEdit({...edit,allocationQuantity:e.target.value})} required/><Input label="Valor unitário" inputMode="decimal" value={edit.unitPrice} onChange={e=>setEdit({...edit,unitPrice:e.target.value})}/><Input label="Observações da distribuição" value={edit.allocationNotes} onChange={e=>setEdit({...edit,allocationNotes:e.target.value})}/></div></div></Dialog>}
  </Dialog>;
 }
