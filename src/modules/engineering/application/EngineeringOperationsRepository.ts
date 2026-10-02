@@ -38,6 +38,7 @@ export interface EngineeringOperationsRepository {
   updateContractStatus(scope: EngineeringScope, contractId: string, status: 'draft' | 'active' | 'suspended' | 'completed' | 'cancelled'): Promise<void>;
   createService(scope: EngineeringScope, input: { name: string; unit: string; code?: string | null; category?: string | null; notes?: string | null }): Promise<void>;
   addContractService(scope: EngineeringScope, input: { contractId: string; serviceId?: string | null; description: string; unit: string; quantity: number; unitPrice: number; notes?: string | null }): Promise<string>;
+  updateContractService(scope: EngineeringScope, input: { contractServiceId:string; description:string; unit:string; quantity:number; unitPrice:number; notes?:string|null }): Promise<void>;
   allocateContractService(scope: EngineeringScope, input: { workId: string; contractServiceId: string; structureId: string; quantity: number; notes?: string | null; scopeConfig?: {active?:boolean;startFloor?:number|null;floors?:string[];units?:string[];scopeQuantity?:number;outsideQuantity?:number} | null }): Promise<void>;
   createProvisional(scope: EngineeringScope, input: { workId: string; number: string; title?: string | null; clientName?: string | null; notes?: string | null }): Promise<void>;
   updateProvisional(scope: EngineeringScope, input:{ provisionalId:string; title?:string|null; clientName?:string|null; status:'draft'|'negotiation'|'approved'|'cancelled'; notes?:string|null }):Promise<void>;
