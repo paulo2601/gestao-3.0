@@ -339,3 +339,17 @@
  .approved-measurement-origin-modal__summary .approved-measurement-sheet__summary-card strong{font-size:.78rem!important;white-space:nowrap}
  .approved-measurement-origin-modal__summary .approved-measurement-sheet__summary-card b{display:none!important}
 }
+
+/* Keep approved launched-service cards on desktop */
+@media(min-width:641px){
+ .measurement-batch-editor{min-height:0;overflow:auto;padding:14px 22px 90px;background:#f8fafc}
+ .measurement-batch-editor__list{display:grid;gap:10px}
+ .measurement-batch-editor__item{border:1px solid #dce6f0;border-radius:15px;background:#f7faff;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px}
+ .measurement-batch-editor__item:nth-child(even){background:#f4f9f7}
+ .measurement-batch-editor__service{display:grid;gap:4px}
+ .measurement-batch-editor__service span,.measurement-batch-editor__values span{font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase}
+ .measurement-batch-editor__service strong{font-size:.94rem;line-height:1.3;color:#17243b}
+ .measurement-batch-editor__values{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ .measurement-batch-editor__values>div{background:rgba(255,255,255,.82);border:1px solid #e1e8f0;border-radius:10px;padding:9px 10px;display:grid;gap:3px}
+ .measurement-batch-editor__actions{grid-column:2;grid-row:1;align-self:start}
+}
