@@ -1,0 +1,23 @@
+begin;
+-- statement_month now means the month in which the bill is due.
+-- Therefore open cycles use due_day inside statement_month itself.
+create or replace view public.finance_planning_items with (security_invoker=true) as
+select fib.tenant_id,fib.company_id,'financial:'||fib.installment_id::text item_key,'financial_installment'::text source_kind,fe.entry_type,fe.description,fe.counterparty_name,
+coalesce(nullif(substring(coalesce(fe.notes,'') from 'parcela=([0-9]+)/[0-9]+'),'')::integer,fib.installment_number) installment_number,
+coalesce(nullif(substring(coalesce(fe.notes,'') from 'parcela=[0-9]+/([0-9]+)'),'')::integer,fib.installment_count) installment_count,
+fib.due_date,fib.remaining_amount amount,fib.financial_status payment_status
+from public.financial_installment_balances fib join public.financial_entries fe on fe.tenant_id=fib.tenant_id and fe.company_id=fib.company_id and fe.id=fib.entry_id
+where fib.remaining_amount>0 and coalesce(fe.notes,'') not like '%[LEGACY_RECONCILED_PAID]%'
+union all
+select ci.tenant_id,ci.company_id,'card:'||ci.card_id::text||':'||ci.statement_month::text,'card_statement','expense','Fatura '||cc.name,cc.name,1,1,
+coalesce(cs.due_date,(ci.statement_month+((cc.due_day-1)::text||' days')::interval)::date),
+case when cs.id is not null then coalesce(sb.remaining_amount,0)::numeric(14,2) else sum(ci.amount)::numeric(14,2) end,
+case when cs.id is null then 'open' else coalesce(sb.payment_status,'pending') end
+from public.card_installments ci join public.credit_cards cc on cc.tenant_id=ci.tenant_id and cc.company_id=ci.company_id and cc.id=ci.card_id
+left join public.card_statements cs on cs.tenant_id=ci.tenant_id and cs.company_id=ci.company_id and cs.card_id=ci.card_id and cs.statement_month=ci.statement_month
+left join public.credit_card_statement_balances sb on sb.statement_id=cs.id
+where cc.status='active'
+group by ci.tenant_id,ci.company_id,ci.card_id,ci.statement_month,cc.name,cc.due_day,cc.closing_day,cs.id,cs.due_date,sb.remaining_amount,sb.payment_status
+having (case when cs.id is not null then coalesce(sb.remaining_amount,0) else sum(ci.amount) end)>0
+and (cs.id is not null or (ci.statement_month+((cc.due_day-1)::text||' days')::interval)::date>=date_trunc('month',current_date)::date);
+commit;
