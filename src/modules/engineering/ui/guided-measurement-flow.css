@@ -223,3 +223,26 @@
     letter-spacing:.04em;
   }
 }
+
+
+/* Dedicated editor for one measured service */
+.guided-measurement-service-editor{z-index:1350;padding:18px;background:rgba(15,23,42,.68);backdrop-filter:blur(3px)}
+.measurement-service-editor__panel{width:min(620px,calc(100vw - 36px));height:auto;max-height:calc(100dvh - 36px);grid-template-rows:auto minmax(0,1fr) auto;border-radius:22px}
+.measurement-service-editor__body{overflow:auto;padding:16px;display:grid;gap:14px;background:#f8fafc}
+.measurement-service-editor__facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.measurement-service-editor__facts>div{display:grid;gap:3px;padding:11px;border:1px solid #dbe5ef;border-radius:12px;background:#fff}
+.measurement-service-editor__facts span{font-size:.72rem;font-weight:800;color:#64748b}
+.measurement-service-editor__facts strong{font-size:.95rem;color:#14243d;overflow-wrap:anywhere}
+.measurement-service-editor__fields{display:grid;gap:10px}
+.measurement-service-editor__units{width:100%;min-height:46px}
+.measurement-service-editor__footer{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;padding:12px 16px!important;background:#fff!important}
+.measurement-service-editor__footer button{width:100%;min-height:44px}
+@media(max-width:640px){
+ .guided-measurement-service-editor{padding:12px!important;align-items:center!important}
+ .measurement-service-editor__panel{width:calc(100vw - 24px)!important;height:auto!important;max-height:calc(100dvh - 24px)!important;border-radius:18px!important}
+ .measurement-service-editor__body{padding:12px}
+ .measurement-service-editor__facts{grid-template-columns:1fr 1fr}
+ .measurement-service-editor__panel .approved-unit-picker__header{padding:12px!important}
+ .measurement-service-editor__panel .approved-unit-picker__header h3{font-size:1rem!important}
+ .measurement-service-editor__panel .approved-unit-picker__header p{font-size:.76rem!important}
+}
