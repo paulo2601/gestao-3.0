@@ -186,3 +186,40 @@
   .approved-unit-picker__footer>div span{font-size:.72rem;line-height:1.2}
   .approved-unit-picker__footer button{min-width:0!important;min-height:40px!important;height:auto!important;padding:7px!important;font-size:.78rem!important;white-space:normal!important}
 }
+
+
+/* Service editor must render as a distinct modal above the origin sheet */
+.guided-measurement-picker.guided-measurement-unit-picker{
+  z-index:1400;
+  padding:clamp(12px,3vw,28px);
+  background:rgba(15,23,42,.72);
+  backdrop-filter:blur(3px);
+}
+.guided-measurement-unit-picker .guided-measurement-picker__panel{
+  width:min(920px,calc(100vw - 28px));
+  height:min(860px,calc(100dvh - 28px));
+  max-height:calc(100dvh - 28px);
+  border-radius:22px;
+  border:1px solid #d8e2ee;
+  box-shadow:0 30px 90px rgba(15,23,42,.42);
+}
+@media(max-width:640px){
+  .guided-measurement-picker.guided-measurement-unit-picker{
+    padding:10px!important;
+    align-items:center!important;
+  }
+  .guided-measurement-unit-picker .guided-measurement-picker__panel{
+    width:calc(100vw - 20px)!important;
+    height:calc(100dvh - 20px)!important;
+    max-height:calc(100dvh - 20px)!important;
+    border-radius:18px!important;
+  }
+  .guided-measurement-unit-picker .approved-unit-picker__header{
+    border-bottom:2px solid #dbe7f5!important;
+  }
+  .guided-measurement-unit-picker .approved-unit-picker__header small{
+    color:#1769d2!important;
+    font-weight:900!important;
+    letter-spacing:.04em;
+  }
+}
