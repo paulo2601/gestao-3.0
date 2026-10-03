@@ -281,3 +281,29 @@
   .measurement-service-editor__units{min-height:48px!important}
   .measurement-service-editor__footer{position:sticky;bottom:0;padding:9px 10px calc(9px + env(safe-area-inset-bottom))!important}
 }
+
+/* Mobile stacked launched services */
+.measurement-batch-editor{min-height:0;overflow:auto;padding:12px 18px 110px;background:#f8fafc}
+.measurement-batch-editor__list{display:grid;gap:10px}
+.measurement-batch-editor__item{border:1px solid #dce6f0;border-radius:15px;background:#f7faff;padding:12px;display:grid;gap:10px}
+.measurement-batch-editor__item:nth-child(even){background:#f4f9f7}
+.measurement-batch-editor__service{display:grid;gap:4px}
+.measurement-batch-editor__service span,.measurement-batch-editor__values span{font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.02em}
+.measurement-batch-editor__service strong{font-size:.92rem;line-height:1.25;color:#17243b}
+.measurement-batch-editor__values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.measurement-batch-editor__values>div{background:rgba(255,255,255,.8);border:1px solid #e1e8f0;border-radius:10px;padding:8px;display:grid;gap:3px;min-width:0}
+.measurement-batch-editor__values strong{font-size:.82rem;color:#17243b;overflow-wrap:anywhere}
+.measurement-batch-editor__actions{display:flex;justify-content:flex-end}
+.measurement-batch-editor__actions .ui-button{min-height:38px;padding:6px 14px}
+@media(max-width:640px){
+ .approved-measurement-origin-modal{grid-template-rows:auto auto minmax(0,1fr) auto!important}
+ .approved-measurement-origin-modal__header p{display:none}
+ .measurement-batch-editor{padding:8px 10px 105px}
+ .measurement-batch-editor__list{gap:8px}
+ .measurement-batch-editor__item{padding:10px;border-radius:13px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+ .measurement-batch-editor__service strong{font-size:.84rem}
+ .measurement-batch-editor__values>div{padding:7px 6px}
+ .measurement-batch-editor__values span{font-size:.59rem}
+ .measurement-batch-editor__values strong{font-size:.76rem}
+ .measurement-batch-editor__actions .ui-button{min-height:36px!important;font-size:.75rem!important}
+}
