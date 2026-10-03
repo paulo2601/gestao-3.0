@@ -307,3 +307,35 @@
  .measurement-batch-editor__values strong{font-size:.76rem}
  .measurement-batch-editor__actions .ui-button{min-height:36px!important;font-size:.75rem!important}
 }
+
+/* Compact origin summary approved for mobile */
+@media(max-width:640px){
+ .approved-measurement-origin-modal__summary{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:0!important;
+  padding:0 10px 10px!important;
+  background:#f8fbff!important;
+ }
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__origin{
+  grid-column:1/-1!important;
+  min-height:64px!important;
+  padding:8px 4px!important;
+  margin:0!important;
+ }
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__building{
+  width:42px!important;height:42px!important;min-width:42px!important;
+ }
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__origin h3{font-size:.96rem!important;margin:0!important}
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__origin p{font-size:.72rem!important;margin:2px 0 0!important}
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__summary-card{
+  min-width:0!important;border:0!important;border-radius:0!important;background:transparent!important;
+  padding:7px 8px!important;box-shadow:none!important;border-top:1px solid #dbe5ef!important;
+ }
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__summary-card+ .approved-measurement-sheet__summary-card{
+  border-left:1px solid #dbe5ef!important;
+ }
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__summary-card span{font-size:.62rem!important;white-space:nowrap}
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__summary-card strong{font-size:.78rem!important;white-space:nowrap}
+ .approved-measurement-origin-modal__summary .approved-measurement-sheet__summary-card b{display:none!important}
+}
