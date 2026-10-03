@@ -138,7 +138,6 @@ export function GuidedMeasurementFlow({scope,contractId,initialMeasurementId='',
   }
   async function removeLaunchedService(index:number){
     const item=stages[index]; if(!item||!activeMeasurementId)return;
-    if(!window.confirm(`Excluir o lançamento de “${item.description}” desta medição?`))return;
     setSaving(true);setError(null);
     try{
       await replaceMeasurementParityStage(scope,{measurementId:activeMeasurementId,targetKind:item.targetKind,targetId:item.targetId,quantity:0,references:[],originName:origin?.name??'',legacyServiceId:item.legacyServiceId,exactValue:null});
