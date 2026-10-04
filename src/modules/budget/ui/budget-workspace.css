@@ -325,3 +325,23 @@
  .budget-annual-fields{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;width:100%!important;min-width:0!important;overflow:visible!important}
  .budget-annual-fields>*{min-width:0!important}
 }
+
+/* 2026-10-04 desktop budget: prevent rows/actions from being clipped by viewport. */
+@media(min-width:721px){
+ .budget-workspace{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
+ .budget-editor-head{min-width:0;flex-wrap:wrap}
+ .budget-workspace__filters{min-width:0;flex-wrap:wrap}
+ .budget-control-sticky,.budget-control-line,.budget-financial-overview,.budget-approved-panel,.budget-workspace__items{width:100%;max-width:100%;min-width:0}
+ .budget-control-line{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}
+ .budget-workspace__item{width:100%;max-width:100%;min-width:0;grid-template-columns:minmax(180px,1fr) minmax(0,3fr) minmax(120px,auto)!important}
+ .budget-workspace__item--annual{grid-template-columns:minmax(180px,.85fr) minmax(0,2.5fr) minmax(120px,auto)!important}
+ .budget-workspace__item-main,.budget-annual-fields,.budget-workspace__item-actions{min-width:0}
+ .budget-workspace__item-main strong,.budget-workspace__item-main span{overflow-wrap:anywhere}
+ .budget-annual-fields{grid-template-columns:repeat(3,minmax(105px,1fr))!important}
+ .budget-workspace__item-actions{display:flex;flex-wrap:wrap;justify-content:flex-end}
+}
+@media(min-width:721px) and (max-width:1180px){
+ .budget-workspace__item,.budget-workspace__item--annual{grid-template-columns:minmax(160px,.8fr) minmax(0,2.2fr)!important}
+ .budget-workspace__item-actions{grid-column:1/-1;justify-content:flex-end}
+ .budget-annual-fields{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
