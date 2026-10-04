@@ -353,3 +353,6 @@
  .measurement-batch-editor__values>div{background:rgba(255,255,255,.82);border:1px solid #e1e8f0;border-radius:10px;padding:9px 10px;display:grid;gap:3px}
  .measurement-batch-editor__actions{grid-column:2;grid-row:1;align-self:start}
 }
+
+/* Desktop unit picker: reserve space for Windows/taskbar and keep footer fully visible */
+@media(min-width:641px){.guided-measurement-picker.guided-measurement-unit-picker{padding:14px 18px 34px!important;align-items:start!important}.guided-measurement-unit-picker .guided-measurement-picker__panel{height:calc(100dvh - 52px)!important;max-height:calc(100dvh - 52px)!important}.approved-unit-picker__floors{padding-bottom:18px!important}.approved-unit-picker__footer{position:sticky;bottom:0;z-index:5;background:#fff;box-shadow:0 -8px 20px rgba(15,23,42,.06)}}
