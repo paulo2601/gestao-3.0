@@ -224,7 +224,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
       installmentCount: '2', recurrenceCount: '12', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
       counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
     });
-  }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues, open]);
+  }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
 
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
   const scope = useMemo(() => ({ tenantId: company?.tenantId ?? '', companyId: company?.id ?? '' }), [company?.id, company?.tenantId]);
