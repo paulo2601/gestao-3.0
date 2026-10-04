@@ -64,6 +64,7 @@ interface QuickEntryDialogProps {
   initialAccountRef?: string;
   initialCardRef?: string;
   embedded?: boolean;
+  initialValues?: { date?: string; description?: string; amount?: number; counterparty?: string; notes?: string };
   onSaved?: () => void;
   onClose: () => void;
 }
@@ -179,7 +180,7 @@ function recurrenceEnd(start: string, count: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCompaniesMode = false, initialPaymentMethod, initialAccountRef = '', initialCardRef = '', embedded = false, onSaved, onClose }: QuickEntryDialogProps) {
+export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCompaniesMode = false, initialPaymentMethod, initialAccountRef = '', initialCardRef = '', embedded = false, initialValues, onSaved, onClose }: QuickEntryDialogProps) {
   const navigate = useNavigate();
   const [companyId, setCompanyId] = useState(initialCompanyId || companies[0]?.id || '');
   const [moreOptions, setMoreOptions] = useState(false);
@@ -219,11 +220,11 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
     setLocalError(null);
     setLocalSuccess(null);
     setForm({
-      entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: initialPaymentMethod ?? 'pix', launchType: 'single',
+      entryType: 'expense', date: initialValues?.date ?? today(), description: initialValues?.description ?? '', amountDigits: initialValues?.amount ? String(Math.round(initialValues.amount * 100)) : '', paymentMethod: initialPaymentMethod ?? 'pix', launchType: 'single',
       installmentCount: '2', recurrenceCount: '12', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
-      counterparty: '', notes: '', includeInBudget: false,
+      counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
     });
-  }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, open]);
+  }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues, open]);
 
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
   const scope = useMemo(() => ({ tenantId: company?.tenantId ?? '', companyId: company?.id ?? '' }), [company?.id, company?.tenantId]);
