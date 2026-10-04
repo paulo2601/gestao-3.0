@@ -73,8 +73,7 @@ const monthlyCommittedExpense=rows('expense').reduce((total,row)=>total+bc.commi
 const previewMonthlyExpense=rows('expense').filter(row=>row.treatment!=='retention').reduce((total,row)=>{const key='expense:'+scopeKey(row.categoryId,row.costCenterId);const draft=annualDrafts[key];const planned=draft?(isPersonal?(selectedMonth>=draft.startMonth?Number(draft.annualAmount):0):Number(draft.annualAmount)/Math.max(1,13-draft.startMonth)):row.planned;return total+planned;},0);
 const annualPlannedExpense=scopedYearLimits.filter(row=>treatmentFor(row.category_id,row.cost_center_id)!=='retention').reduce((total,row)=>total+Number(row.limit_amount),0);
 const monthlyActualExpense=scopedMonthControl.reduce((total,row)=>total+Number(row.actual_expense),0);
-const previewMonthlyIncome=rows('income').reduce((total,row)=>{const key='income:'+scopeKey(row.categoryId,row.costCenterId);const draft=annualDrafts[key];const planned=draft?(isPersonal?(selectedMonth>=draft.startMonth?Number(draft.annualAmount):0):Number(draft.annualAmount)/Math.max(1,13-draft.startMonth)):row.planned;return total+planned;},0);
-const monthlyPlannedIncome=isPersonal?previewMonthlyIncome:scopedMonthControl.reduce((total,row)=>total+Number(row.planned_income),0);
+const monthlyPlannedIncome=isPersonal?rows('income').reduce((total,row)=>{const draft=annualDrafts['income:'+scopeKey(row.categoryId,row.costCenterId)];return total+(draft?Number(draft.annualAmount):row.planned);},0):scopedMonthControl.reduce((total,row)=>total+Number(row.planned_income),0);
 const monthlyActualIncome=scopedMonthControl.reduce((total,row)=>total+Number(row.actual_income),0);
 const monthlyPlannedResult=monthlyPlannedIncome-previewMonthlyExpense;
 const monthlyActualResult=monthlyActualIncome-monthlyActualExpense;
