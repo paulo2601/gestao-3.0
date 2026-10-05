@@ -13,6 +13,7 @@ import { EngineeringContractWorkspace, type EngineeringContractSection } from '.
 import { EngineeringContractSummaryDashboard } from './EngineeringContractSummaryDashboard';
 import { EngineeringProductionWorkspace } from './EngineeringProductionWorkspace';
 import { EngineeringProductionPage } from './EngineeringProductionPage';
+import { EngineeringServiceControl } from './EngineeringServiceControl';
 import { NewEngineeringContractDialog } from './NewEngineeringContractDialog';
 import { useEngineeringOverview } from './useEngineeringOverview';
 import './engineering.css';
@@ -52,6 +53,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const [selectedContract,setSelectedContract]=useState<EngineeringContractSummary|null>(null);
   const [contractSection,setContractSection]=useState<ContractPageSection>('resumo');
   const [createOpen,setCreateOpen]=useState(false);
+  const [serviceControlOpen,setServiceControlOpen]=useState(false);
   const selectedCompany=initialCompanyId?companies.find(item=>item.id===initialCompanyId)??null:null;
   const engineeringCompanies=companies.filter(item=>companyLabel(item)!=='Pessoal');
   const scopes=useMemo(()=>{const sourceCompanies=selectedCompany?[selectedCompany]:companies;return sourceCompanies.map(item=>({tenantId:item.tenantId,companyId:item.id}));},[selectedCompany,companies]);
@@ -82,7 +84,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   return <section className="engineering-overview engineering-overview--contratos engineering-parity-overview" aria-labelledby="engineering-title">
     <header className="engineering-parity-header">
       <div><h1 id="engineering-title">{productionFocus?'Produção':'Engenharia'}</h1><p className="ui-muted">{productionFocus?'Selecione a obra para acessar exclusivamente a produção':'Obras e contratos'}</p></div>
-      {!productionFocus&&<Button onClick={()=>setCreateOpen(true)} disabled={engineeringCompanies.length===0}>＋ Novo contrato</Button>}
+      {!productionFocus&&<div className="engineering-header-actions"><Button variant="secondary" onClick={()=>setServiceControlOpen(true)}>Controle de Serviço</Button><Button onClick={()=>setCreateOpen(true)} disabled={engineeringCompanies.length===0}>＋ Novo contrato</Button></div>}
     </header>
 
     <section className="engineering-contracts-reference" aria-label="Contratos">
@@ -104,6 +106,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
       <div className="engineering-contract-list">{filteredContracts.length===0?empty:filteredContracts.map(item=>{const company=companies.find(c=>c.id===item.companyId);return <Card className="engineering-contract-card" key={item.contractId}><Button variant="tertiary" className="engineering-contract-card__open" onClick={()=>openContract(item)}><div className="engineering-contract-card__head"><div className="engineering-contract-card__icon" aria-hidden="true">▥</div><div className="engineering-contract-card__identity"><strong>{item.workName}</strong><span>{item.clientName??item.contractNumber} · {item.contractNumber}{company?` · ${companyLabel(company)}`:''}</span></div><div className="engineering-contract-card__percent">{item.measuredPercent.toFixed(1)}%</div><div className="engineering-contract-card__chevron" aria-hidden="true">›</div></div><progress className="engineering-contract-card__progress" max={100} value={Math.max(0,Math.min(100,item.measuredPercent))} aria-label={`${item.measuredPercent.toFixed(1)}% medido`}/><div className="engineering-contract-card__values"><span>Contratado <strong>{currency.format(item.updatedContractValue)}</strong></span><span>Medido <strong>{currency.format(item.measuredNet)}</strong></span><span>Saldo <strong>{currency.format(item.grossBalance)}</strong></span></div></Button></Card>;})}</div>
     </section>
 
+    <Dialog open={serviceControlOpen} title="Controle de Serviço" description="Execução física e financeira independente da Medição" onClose={()=>setServiceControlOpen(false)} onBack={()=>setServiceControlOpen(false)}><EngineeringServiceControl contracts={data.contracts} companies={companies}/></Dialog>
     <NewEngineeringContractDialog open={createOpen} companies={companies} {...(selectedCompany ? { initialCompanyId: selectedCompany.id } : {})} onClose={()=>setCreateOpen(false)} onSaved={refresh}/>
     <Dialog open={selectedContract!==null} title={selectedContract?.workName??(productionFocus?'Produção':'Contrato')} description={selectedContract?`${selectedContract.clientName??'Cliente'} · ${selectedContract.contractNumber} · ${statusLabel(selectedContract.status)}`:undefined} onClose={closeContract} onBack={closeContract}>
       {selectedContract&&maintenanceScope&&<div className="engineering-contract-workspace engineering-parity-contract">
