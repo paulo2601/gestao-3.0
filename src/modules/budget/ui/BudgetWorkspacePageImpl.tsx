@@ -152,8 +152,7 @@ if(planResult.error)throw planResult.error;
 if(isPersonal){
 const month=`${competence}-01`;
 const verification=await supabase.from('budget_plans').select('category_id,cost_center_id,flow_type,planned_amount').eq('tenant_id',scopeTenantId).eq('company_id',scopeCompanyId).eq('competence_month',month).eq('source_kind','manual');
-if(verification.error)throw verification.error;
-const saved=verification.data??[];
+if(verification.error)throw verification.error;const saved=verification.data??[];
 const failed=expected.filter(item=>{
 const found=saved.find(row=>row.flow_type===item.flowType&&row.category_id===item.categoryId&&(row.cost_center_id??'')===item.costCenterId);
 return !found||Math.abs(Number(found.planned_amount)-item.amount)>0.009;
