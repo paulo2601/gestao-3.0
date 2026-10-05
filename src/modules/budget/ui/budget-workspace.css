@@ -111,3 +111,19 @@
 
 /* Pessoal desktop: resumo principal inteiro e visível enquanto edita. */
 @media(min-width:721px){.budget-workspace--personal .budget-control-sticky--personal{top:var(--app-header-height,76px);overflow:visible}.budget-workspace--personal .budget-control-sticky--personal .budget-control-line{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));width:100%;min-width:0}.budget-workspace--personal .budget-control-sticky--personal .budget-control-line>div:not(.budget-pricing-compact){min-width:0;padding:7px 9px}.budget-workspace--personal .budget-control-sticky--personal .budget-pricing-compact{grid-column:1/-1}.budget-workspace--personal .budget-annual-fields{grid-template-columns:minmax(125px,1.1fr) minmax(115px,.9fr) repeat(4,minmax(90px,.8fr))}}
+
+/* Mobile budget summary: compact readable cards matching the approved reference. */
+@media(max-width:720px){
+ .budget-workspace--personal .budget-control-sticky--personal{position:sticky;top:60px;padding:10px;border-radius:18px;overflow:hidden}
+ .budget-workspace--personal .budget-control-sticky--personal .budget-control-line{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .budget-workspace--personal .budget-control-sticky--personal .budget-control-line>div:not(.budget-pricing-compact){min-height:84px;padding:11px;border:1px solid color-mix(in srgb,var(--color-border,#dfe3eb) 85%,transparent);border-radius:14px;background:color-mix(in srgb,var(--color-primary,#2563eb) 3%,var(--color-surface,#fff));align-content:center;gap:6px}
+ .budget-workspace--personal .budget-control-sticky--personal .budget-control-line>div>span{font-size:.72rem;line-height:1.2;color:var(--color-text-muted,#667085)}
+ .budget-workspace--personal .budget-control-sticky--personal .budget-control-line>div>strong{font-size:1.02rem;line-height:1.12;overflow-wrap:normal;word-break:normal}
+ .budget-financial-overview{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 12px}
+ .budget-financial-overview>div{display:grid;gap:3px;padding:10px 11px;border:1px solid var(--color-border,#dfe3eb);border-radius:13px;background:var(--color-surface,#fff)}
+ .budget-financial-overview>div>span{font-size:.72rem;color:var(--color-text-muted,#667085)}
+ .budget-financial-overview>div>strong{font-size:1rem;line-height:1.15;overflow-wrap:normal;word-break:normal}
+ .budget-financial-overview>div>small{font-size:.68rem;line-height:1.2;color:var(--color-text-muted,#667085);overflow-wrap:normal;word-break:normal}
+ .budget-approved-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:0;padding:0;margin-bottom:12px}
+ .budget-approved-tabs>button{padding:10px 6px;font-size:.82rem;line-height:1.2}
+}
