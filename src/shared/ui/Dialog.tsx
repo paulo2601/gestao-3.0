@@ -49,7 +49,8 @@ export function Dialog({
   useEffect(() => {
     if (!open) return;
     const marker = `dialog-${titleId}`;
-    const currentState = window.history.state && typeof window.history.state === 'object' ? window.history.state : {};
+    const rawState: unknown = window.history.state;
+    const currentState: Record<string, unknown> = rawState !== null && typeof rawState === 'object' ? rawState as Record<string, unknown> : {};
     window.history.pushState({ ...currentState, __gestaoDialog: marker }, '');
     historyEntryRef.current = true;
 
