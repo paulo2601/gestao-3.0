@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
 import type { EngineeringContractSummary } from '../domain/overview';
 import { Button } from '../../../shared/ui/Button';
@@ -19,11 +19,11 @@ export function EngineeringServiceControl({contracts,companies}:Props){
  const selectedContract=contracts.find(c=>c.contractId===selectedContractId)??null;
  const company=selectedContract?companies.find(c=>c.id===selectedContract.companyId)??null:null;
  const scope=company?{tenantId:company.tenantId,companyId:company.id}:null;
- async function load(){
-  if(!scope||!selectedContract)return setControl(null);setLoading(true);setError('');
+ const load=useCallback(async()=>{
+  if(!scope||!selectedContract){setControl(null);return;}setLoading(true);setError('');
   try{const all=await listServiceControls(scope);setControl(all.find(x=>x.contractId===selectedContract.contractId)??null);}catch(e){setError(e instanceof Error?e.message:'Falha ao carregar o controle.');}finally{setLoading(false);}
- }
- useEffect(()=>{void load();},[selectedContractId]);
+ },[scope?.tenantId,scope?.companyId,selectedContract?.contractId]);
+ useEffect(()=>{void load();},[load]);
  async function importSelected(){if(!scope||!selectedContract)return;setLoading(true);setError('');try{await importContractToServiceControl(scope,selectedContract.contractId,selectedContract.workName+' · '+selectedContract.contractNumber);await load();}catch(e){setError(e instanceof Error?e.message:'Falha ao importar contrato.');setLoading(false);}}
  async function saveEntry(){if(!scope||!control||!entryItem||Number(quantity.replace(',','.'))<=0)return;setLoading(true);setError('');try{await addServiceControlEntry(scope,control.id,entryItem,date,Number(quantity.replace(',','.')),notes);setQuantity('');setNotes('');await load();}catch(e){setError(e instanceof Error?e.message:'Falha ao salvar lançamento.');setLoading(false);}}
  const rows=useMemo(()=>control?.items.map(item=>{const entries=control.entries.filter(e=>e.itemId===item.id),acc=entries.reduce((s,e)=>s+e.executedQuantity,0),monthly=entries.filter(e=>e.executionDate.slice(0,7)===month).reduce((s,e)=>s+e.executedQuantity,0),remaining=Math.max(0,item.contractedQuantity-acc);return {...item,acc,monthly,remaining,monthlyValue:monthly*item.unitPrice,accValue:acc*item.unitPrice,remainingValue:remaining*item.unitPrice,percent:item.contractedQuantity>0?acc/item.contractedQuantity*100:0};})??[],[control,month]);
