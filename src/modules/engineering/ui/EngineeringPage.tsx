@@ -53,7 +53,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const [selectedContract,setSelectedContract]=useState<EngineeringContractSummary|null>(null);
   const [contractSection,setContractSection]=useState<ContractPageSection>('resumo');
   const [createOpen,setCreateOpen]=useState(false);
-  const [serviceControlOpen,setServiceControlOpen]=useState(false);
+  const [serviceControlOpen,setServiceControlOpen]=useState(searchParams.get('area')==='controle-servico');
   const selectedCompany=initialCompanyId?companies.find(item=>item.id===initialCompanyId)??null:null;
   const engineeringCompanies=companies.filter(item=>companyLabel(item)!=='Pessoal');
   const scopes=useMemo(()=>{const sourceCompanies=selectedCompany?[selectedCompany]:companies;return sourceCompanies.map(item=>({tenantId:item.tenantId,companyId:item.id}));},[selectedCompany,companies]);
@@ -84,7 +84,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   return <section className="engineering-overview engineering-overview--contratos engineering-parity-overview" aria-labelledby="engineering-title">
     <header className="engineering-parity-header">
       <div><h1 id="engineering-title">{productionFocus?'Produção':'Engenharia'}</h1><p className="ui-muted">{productionFocus?'Selecione a obra para acessar exclusivamente a produção':'Obras e contratos'}</p></div>
-      {!productionFocus&&<div className="engineering-header-actions"><Button variant="secondary" onClick={()=>setServiceControlOpen(true)}>Controle de Serviço</Button><Button onClick={()=>setCreateOpen(true)} disabled={engineeringCompanies.length===0}>＋ Novo contrato</Button></div>}
+      {!productionFocus&&<div className="engineering-header-actions"><Button onClick={()=>setCreateOpen(true)} disabled={engineeringCompanies.length===0}>＋ Novo contrato</Button></div>}
     </header>
 
     <section className="engineering-contracts-reference" aria-label="Contratos">
