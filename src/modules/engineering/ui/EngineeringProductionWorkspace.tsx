@@ -5,7 +5,6 @@ import { Card } from '../../../shared/ui/Card';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { EmptyState, Feedback, LoadingState } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
-import { Select } from '../../../shared/ui/Select';
 import { loadEngineeringProduction, type EngineeringProductionEntryView, type EngineeringProductionSnapshot } from '../infrastructure/EngineeringProductionReadRepository';
 import { EngineeringOperationsPanel } from './EngineeringOperationsPanel';
 import { EngineeringProductionEntryDialog } from './EngineeringProductionEntryDialog';
