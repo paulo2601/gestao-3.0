@@ -47,6 +47,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const location=useLocation();
   const [searchParams]=useSearchParams();
   const productionFocus=location.pathname==='/producao'||searchParams.get('area')==='producao';
+  const serviceControlFocus=searchParams.get('area')==='controle-servico';
   const [refreshToken,setRefreshToken]=useState(0);
   const [contractSearch,setContractSearch]=useState('');
   const [contractStatus,setContractStatus]=useState('all');
@@ -80,6 +81,7 @@ export function EngineeringPage({companies,initialCompanyId}:EngineeringPageProp
   const navigateLegacyContract=(section:EngineeringContractSection)=>navigateContract(section);
 
   if(productionFocus)return initialCompanyId?<EngineeringProductionPage companies={companies} initialCompanyId={initialCompanyId}/>:<EngineeringProductionPage companies={companies}/>;
+  if(serviceControlFocus)return <section className="engineering-overview engineering-overview--service-control"><EngineeringServiceControl contracts={data.contracts} companies={companies}/></section>;
 
   return <section className="engineering-overview engineering-overview--contratos engineering-parity-overview" aria-labelledby="engineering-title">
     <header className="engineering-parity-header">
