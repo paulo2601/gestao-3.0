@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FinancialAccountMovement } from '../domain/accounts';
 import type { FinancialEntryListItem } from '../domain/entries';
 import type { FinancialAccountType, FinancialBankInstitution, RegistryStatus } from '../domain/registries';
@@ -79,8 +78,7 @@ export function BanksPage({ company, companies = [company], showHeader = true }:
   const [movementForm, setMovementForm] = useState({ date: '', description: '', amount: '' });
   const [orderError, setOrderError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogKind>(null);
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const extractHistoryRef = useRef(false);
   const [accountForm, setAccountForm] = useState({ id: '', companyId: company.id, sourceCompanyId: company.id, name: '', accountType: 'bank' as FinancialAccountType, bankInstitution: '' as FinancialBankInstitution | '', openingBalance: '0', status: 'active' as RegistryStatus });
   const [transferForm, setTransferForm] = useState({ fromAccountId: '', toAccountId: '', transferOn: today(), amount: '', notes: '' });
   const [planForm, setPlanForm] = useState({ entryId: '', plannedAccountId: '' });
@@ -101,12 +99,16 @@ export function BanksPage({ company, companies = [company], showHeader = true }:
   useEffect(() => { const refreshOrder = () => setRefreshToken((value) => value + 1); window.addEventListener('finance-bank-order-changed', refreshOrder); return () => window.removeEventListener('finance-bank-order-changed', refreshOrder); }, []);
 
   useEffect(() => {
-    if (!searchParams.get('extrato') && dialog === 'extract') {
-      setDialog(null);
+    const handlePopState = () => {
+      if (!extractHistoryRef.current) return;
+      extractHistoryRef.current = false;
+      setDialog((current) => current === 'extract' ? null : current);
       setSelectedMovement(null);
       operations.clearFeedback();
-    }
-  }, [dialog, operations, searchParams]);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [operations]);
 
   if (overview.status === 'idle' || overview.status === 'loading') return <LoadingState label="Carregando bancos…" />;
   if (overview.status === 'error') return <EmptyState title="Bancos indisponíveis" message={overview.errorMessage} />;
@@ -135,8 +137,8 @@ export function BanksPage({ company, companies = [company], showHeader = true }:
   const entryOptions = [{ value: '', label: 'Selecione…' }, ...uniqueOpenEntries.map((item) => ({ value: item.entryId, label: `${item.description} · ${item.entryType === 'income' ? 'Receber' : 'Pagar'}` }))];
   const monthOptions = Array.from({ length: 36 }, (_, index) => { const value = shiftMonth(monthKey(), -index); return { value, label: monthLabel(value) }; });
 
-  function closeDialog() { if (dialog === 'extract' && searchParams.get('extrato')) { void navigate(-1); return; } setDialog(null); setSelectedMovement(null); operations.clearFeedback(); }
-  function openExtract(accountId: string) { setMenuAccountId(null); setSelectedAccountId(accountId); setExtractTab('realized'); setMovementFilter('all'); setSelectedMonth(monthKey()); operations.clearFeedback(); const next=new URLSearchParams(searchParams); next.set('extrato',accountId); setDialog('extract'); setSearchParams(next); }
+  function closeDialog() { if (dialog === 'extract' && extractHistoryRef.current) { window.history.back(); return; } setDialog(null); setSelectedMovement(null); operations.clearFeedback(); }
+  function openExtract(accountId: string) { setMenuAccountId(null); setSelectedAccountId(accountId); setExtractTab('realized'); setMovementFilter('all'); setSelectedMonth(monthKey()); operations.clearFeedback(); if (!extractHistoryRef.current) { window.history.pushState({ ...(window.history.state ?? {}), __gestaoLayer: 'bank-extract' }, '', window.location.href); extractHistoryRef.current = true; } setDialog('extract'); }
   function openNewAccount() { setMenuAccountId(null); setAccountForm({ id: '', companyId: company.id, sourceCompanyId: company.id, name: '', accountType: 'bank', bankInstitution: '', openingBalance: '0', status: 'active' }); operations.clearFeedback(); setDialog('account'); }
   function openEditAccount(accountId: string) { const account = (references?.accounts ?? []).find((item) => item.id === accountId); if (!account) return; setMenuAccountId(null); setAccountForm({ id: account.id, companyId: account.companyId, sourceCompanyId: account.companyId, name: account.name, accountType: account.accountType, bankInstitution: account.bankInstitution ?? '', openingBalance: String(account.openingBalance), status: account.status }); operations.clearFeedback(); setDialog('account'); }
   function openDeleteAccount(accountId: string) { setMenuAccountId(null); setSelectedAccountId(accountId); operations.clearFeedback(); setDialog('accountDelete'); }
