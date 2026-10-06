@@ -24,3 +24,31 @@
 .engineering-production-work-list .engineering-contract-card__identity span{font-size:.72rem;white-space:nowrap}
 @media(max-width:1000px){.engineering-production-work-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.engineering-production-work-list{grid-template-columns:1fr}}
+
+/* Production workspace compact mobile controls + visual hierarchy */
+.engineering-production-parity__actions--compact{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.engineering-production-parity__actions--compact .ui-button{width:100%;min-width:0;min-height:34px;padding:6px 8px;font-size:.74rem;line-height:1.1}
+.engineering-production-parity__actions--compact .ui-button:first-child{grid-column:span 2}
+.engineering-production-parity__kpis--values{grid-template-columns:repeat(3,minmax(0,1fr))}
+.engineering-production-parity__kpis--values .ui-card__content{min-height:86px;padding:12px}
+.engineering-production-parity__kpi--planned{background:color-mix(in srgb,var(--primary) 5%,var(--surface) 95%)}
+.engineering-production-parity__kpi--registered{background:color-mix(in srgb,#16a34a 5%,var(--surface) 95%)}
+.engineering-production-parity__kpi--month{background:color-mix(in srgb,#64748b 6%,var(--surface) 94%)}
+.engineering-production-parity__period.is-open{background:color-mix(in srgb,var(--primary) 5%,var(--surface) 95%);border-color:color-mix(in srgb,var(--primary) 22%,var(--border) 78%)}
+.engineering-production-parity__period.is-closed{background:color-mix(in srgb,#64748b 6%,var(--surface) 94%)}
+@media(max-width:760px){
+.engineering-production-parity__actions--compact{grid-template-columns:repeat(3,minmax(0,1fr))}
+.engineering-production-parity__actions--compact .ui-button:first-child{grid-column:span 2}
+.engineering-production-parity__kpis--values{grid-template-columns:repeat(3,minmax(0,1fr))}
+.engineering-production-parity__kpis--values .ui-card__content{min-height:76px;padding:9px}
+.engineering-production-parity__kpis--values strong{font-size:clamp(.72rem,2.7vw,.94rem)}
+.engineering-production-parity__kpis--values span{font-size:.62rem}
+}
+@media(max-width:430px){
+.engineering-production-parity__actions--compact{grid-template-columns:repeat(3,minmax(0,1fr))}
+.engineering-production-parity__actions--compact .ui-button,.engineering-production-parity__actions--compact .ui-button:first-child{width:100%;grid-column:auto;min-height:33px;padding:5px 4px;font-size:.68rem}
+.engineering-production-parity__actions--compact .ui-button:first-child{grid-column:span 2}
+.engineering-production-parity__kpis--values{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.engineering-production-parity__kpis--values .ui-card__content{padding:8px 6px}
+.engineering-production-parity__kpis--values .ui-card__title{font-size:.64rem;line-height:1.05}
+}
