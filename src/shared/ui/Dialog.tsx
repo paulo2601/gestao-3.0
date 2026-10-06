@@ -43,33 +43,6 @@ export function Dialog({
   const descriptionId = useId();
   const dialogRef = useRef<HTMLElement>(null);
   const previousLoadingRef = useRef(loading);
-  const historyEntryRef = useRef(false);
-  const closingFromHistoryRef = useRef(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const marker = `dialog-${titleId}`;
-    const rawState: unknown = window.history.state;
-    const currentState: Record<string, unknown> = rawState !== null && typeof rawState === 'object' ? rawState as Record<string, unknown> : {};
-    window.history.pushState({ ...currentState, __gestaoDialog: marker }, '');
-    historyEntryRef.current = true;
-
-    const handlePopState = () => {
-      if (!historyEntryRef.current) return;
-      historyEntryRef.current = false;
-      closingFromHistoryRef.current = true;
-      onClose();
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      if (historyEntryRef.current && !closingFromHistoryRef.current) {
-        historyEntryRef.current = false;
-        window.history.back();
-      }
-      closingFromHistoryRef.current = false;
-    };
-  }, [open, onClose, titleId]);
 
   useEffect(() => {
     if (!open) return;
