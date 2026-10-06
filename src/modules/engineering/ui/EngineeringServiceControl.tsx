@@ -18,11 +18,11 @@ export function EngineeringServiceControl({contracts,companies}:Props){
  const [selectedContractId,setSelectedContractId]=useState(''),[control,setControl]=useState<ServiceControl|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState(''),[month,setMonth]=useState(monthNow()),[entryItem,setEntryItem]=useState(''),[date,setDate]=useState(today()),[quantity,setQuantity]=useState(''),[notes,setNotes]=useState('');
  const selectedContract=contracts.find(c=>c.contractId===selectedContractId)??null;
  const company=selectedContract?companies.find(c=>c.id===selectedContract.companyId)??null:null;
- const scope=company?{tenantId:company.tenantId,companyId:company.id}:null;
+ const scope=useMemo(()=>company?{tenantId:company.tenantId,companyId:company.id}:null,[company]);
  const load=useCallback(async()=>{
   if(!scope||!selectedContract){setControl(null);return;}setLoading(true);setError('');
   try{const all=await listServiceControls(scope);setControl(all.find(x=>x.contractId===selectedContract.contractId)??null);}catch(e){setError(e instanceof Error?e.message:'Falha ao carregar o controle.');}finally{setLoading(false);}
- },[scope?.tenantId,scope?.companyId,selectedContract?.contractId]);
+ },[scope,selectedContract]);
  useEffect(()=>{void load();},[load]);
  async function importSelected(){if(!scope||!selectedContract)return;setLoading(true);setError('');try{await importContractToServiceControl(scope,selectedContract.contractId,selectedContract.workName+' · '+selectedContract.contractNumber);await load();}catch(e){setError(e instanceof Error?e.message:'Falha ao importar contrato.');setLoading(false);}}
  async function saveEntry(){if(!scope||!control||!entryItem||Number(quantity.replace(',','.'))<=0)return;setLoading(true);setError('');try{await addServiceControlEntry(scope,control.id,entryItem,date,Number(quantity.replace(',','.')),notes);setQuantity('');setNotes('');await load();}catch(e){setError(e instanceof Error?e.message:'Falha ao salvar lançamento.');setLoading(false);}}
