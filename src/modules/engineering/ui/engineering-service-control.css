@@ -67,3 +67,24 @@
 .service-control__history-row{min-height:78px}
 .service-control__edit-entry.ui-button{font-size:.72rem!important}
 }
+
+/* Compact primary metrics: contracted, executed and balance on one row */
+.service-control__dashboard{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.service-control__dashboard>article{min-height:66px}
+.service-control__dashboard>article .ui-card__header{padding:7px 10px 0}
+.service-control__dashboard>article .ui-card__content{padding:3px 10px 8px}
+.service-control__dashboard>article .ui-card__title{font-size:.72rem}
+.service-control__dashboard strong{font-size:.92rem}
+@media(max-width:800px){
+.service-control__dashboard{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.service-control__kpi{min-height:62px!important}
+.service-control__dashboard>article .ui-card__header{padding:6px 7px 0}
+.service-control__dashboard>article .ui-card__content{padding:3px 7px 6px}
+.service-control__dashboard>article .ui-card__title{font-size:.61rem!important;white-space:normal;line-height:1.05}
+.service-control__dashboard strong{font-size:clamp(.64rem,2.55vw,.82rem)!important;letter-spacing:-.035em}
+.service-control__dashboard small{font-size:.56rem}
+}
+@media(max-width:390px){
+.service-control__dashboard{grid-template-columns:repeat(3,minmax(0,1fr))}
+.service-control__dashboard strong{font-size:.7rem!important}
+}
