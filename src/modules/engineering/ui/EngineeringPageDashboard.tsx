@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
 import { Card } from '../../../shared/ui/Card';
 import { EngineeringPage } from './EngineeringPage';
@@ -13,7 +13,9 @@ const monthLabels=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','
 
 export function EngineeringPageDashboard({companies,initialCompanyId}:Props){
   const location=useLocation();
-  const productionFocus=location.pathname==='/producao';
+  const [searchParams]=useSearchParams();
+  const productionFocus=location.pathname==='/producao'||searchParams.get('area')==='producao';
+  const serviceControlFocus=searchParams.get('area')==='controle-servico';
   const scopes=useMemo(()=>companies.map(item=>({tenantId:item.tenantId,companyId:item.id})),[companies]);
   const overview=useEngineeringOverview(scopes,0);
   const data=overview.status==='ready'?overview.data:null;
@@ -28,7 +30,7 @@ export function EngineeringPageDashboard({companies,initialCompanyId}:Props){
   const completed=data?.contracts.filter(item=>item.status==='completed').length??0;
   return <>
     <EngineeringPage companies={companies} {...(initialCompanyId?{initialCompanyId}:{})}/>
-    {!productionFocus&&data&&<section className="engineering-dashboard" aria-label="Dashboard da Engenharia">
+    {!productionFocus&&!serviceControlFocus&&data&&<section className="engineering-dashboard" aria-label="Dashboard da Engenharia">
       <div className="engineering-dashboard__head"><div><h2>Dashboard</h2><p>Visão geral dos contratos e medições</p></div><div className="engineering-dashboard__tabs" aria-label="Visão do dashboard"><strong>Geral</strong><span>Por empresa</span><span>Por obra</span></div></div>
       <div className="engineering-dashboard__main">
         <Card className="engineering-dashboard__progress" title="Execução geral"><div className="engineering-dashboard__donut"><strong>{percent.toFixed(1)}%</strong><span>Executado</span></div><progress className="engineering-dashboard__progress-meter" max={100} value={percent} aria-label={`${percent.toFixed(1)}% executado`}/><div className="engineering-dashboard__legend"><span><i className="is-measured"/>Medido <strong>{currency.format(measured)}</strong></span><span><i className="is-balance"/>Saldo <strong>{currency.format(balance)}</strong></span><span><i className="is-contract"/>Contratado <strong>{currency.format(contracted)}</strong></span></div></Card>
