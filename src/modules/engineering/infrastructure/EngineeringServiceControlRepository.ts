@@ -31,7 +31,7 @@ export async function importContractToServiceControl(scope:{tenantId:string;comp
  const masterIds=[...new Set(((services.data??[]) as ContractServiceRow[]).map(x=>x.service_id).filter(Boolean))];let categories=new Map<string,string|null>();
  if(masterIds.length){const m=await client.from('engineering_services').select('id,category').in('id',masterIds);if(m.error)throw m.error;categories=new Map(((m.data??[]) as EngineeringServiceRow[]).map(x=>[x.id,x.category??null]));}
  const created=await client.from('engineering_service_controls').insert({tenant_id:scope.tenantId,company_id:scope.companyId,contract_id:contractId,name}).select('id').single();if(created.error)throw created.error;
- const id=String(created.data.id);const rows=((services.data??[]) as any[]).map(x=>({tenant_id:scope.tenantId,company_id:scope.companyId,control_id:id,source_contract_service_id:x.id,description:x.description,category:categories.get(x.service_id)??null,unit:x.unit,contracted_quantity:Number(x.contracted_quantity),unit_price:Number(x.unit_price)}));
+ const id=String(created.data.id);const rows=((services.data??[]) as ContractServiceRow[]).map(x=>({tenant_id:scope.tenantId,company_id:scope.companyId,control_id:id,source_contract_service_id:x.id,description:x.description,category:categories.get(x.service_id)??null,unit:x.unit,contracted_quantity:Number(x.contracted_quantity),unit_price:Number(x.unit_price)}));
  if(rows.length){const ins=await client.from('engineering_service_control_items').insert(rows);if(ins.error){await client.from('engineering_service_controls').delete().eq('id',id);throw ins.error;}}
  return id;
 }
