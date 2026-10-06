@@ -62,6 +62,8 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
   const [cards, setCards] = useState<readonly ListedCard[]>([]);
   const [selected, setSelected] = useState<ListedCard | null>(null);
   const [dialog, setDialog] = useState<CardDialog>(null);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [menuCardId, setMenuCardId] = useState<string | null>(null);
   const [cardForm, setCardForm] = useState<CardForm>({ companyId: defaultCompanyId, sourceCompanyId: defaultCompanyId, name: '', bankInstitution: '', creditLimit: '', closingDay: '10', dueDay: '20', status: 'active', lastFour: '', defaultPaymentAccountId: '' });
   const [activities, setActivities] = useState<readonly CardStatementActivity[]>([]);
@@ -79,6 +81,13 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
   const [quickEntryCard, setQuickEntryCard] = useState<ListedCard | null>(null);
   const tenantId = formCompanies[0]?.tenantId ?? uniqueCompanies[0]?.tenantId ?? '';
   const currentMonth = monthKey();
+
+  useEffect(() => {
+    if (!searchParams.get('fatura') && dialog === 'details') {
+      setDialog(null);
+      setSelectedActivity(null);
+    }
+  }, [dialog, searchParams]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -129,10 +138,10 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
 
   async function reorder(orderedIds: readonly string[]) { if (!tenantId || orderedIds.length < 2) return; try { await repositories.cards.reorder(tenantId, orderedIds); await load(); window.dispatchEvent(new Event('finance-card-order-changed')); } catch { setError('Não foi possível salvar a nova ordem dos cartões.'); } }
   function openCreate() { setSelected(null); setCardForm({ companyId: defaultCompanyId, sourceCompanyId: defaultCompanyId, name: '', bankInstitution: '', creditLimit: '', closingDay: '10', dueDay: '20', status: 'active', lastFour: '', defaultPaymentAccountId: '' }); setDialog('create'); }
-  async function openDetails(item: ListedCard) { setMenuCardId(null); setSelected(item); setActivityFilter('all'); setDialog('details'); await loadDetails(item); }
+  async function openDetails(item: ListedCard) { setMenuCardId(null); setSelected(item); setActivityFilter('all'); const next=new URLSearchParams(searchParams); next.set('fatura',item.cardId); setSearchParams(next); setDialog('details'); await loadDetails(item); }
   function openEdit(item: ListedCard) { setMenuCardId(null); setSelected(item); setCardForm({ companyId: item.companyId, sourceCompanyId: item.companyId, name: item.name, bankInstitution: item.bankInstitution ?? '', creditLimit: String(item.creditLimit), closingDay: String(item.closingDay || 1), dueDay: String(item.dueDay || 1), status: item.status, lastFour: item.lastFour ?? '', defaultPaymentAccountId: item.defaultPaymentAccountId ?? '' }); setDialog('edit'); }
   function openDelete(item: ListedCard) { setMenuCardId(null); setSelected(item); setDialog('delete'); }
-  function closeDialog() { setDialog(null); setSelectedActivity(null); }
+  function closeDialog() { if (dialog === 'details' && searchParams.get('fatura')) { void navigate(-1); return; } setDialog(null); setSelectedActivity(null); }
 
   async function openActivityEdit(item: CardStatementActivity) {
     setSelectedActivity(item);
