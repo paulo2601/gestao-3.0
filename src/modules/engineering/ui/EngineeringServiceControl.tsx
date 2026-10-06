@@ -16,13 +16,14 @@ const qty=(v:number)=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).f
 const localDate=(date=new Date())=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 const localMonth=(date=new Date())=>localDate(date).slice(0,7);
 const today=()=>localDate();
+const firstDayOfMonth=()=>`${localMonth()}-01`;
 const numberOf=(v:string)=>Number(v.replace(/\./g,'').replace(',','.'))||0;
 interface Props{contracts:readonly EngineeringContractSummary[];companies:readonly CompanySummary[]}
 const LAST_CONTRACT_KEY='gestao:engineering:service-control:last-contract';
 
 export function EngineeringServiceControl({contracts,companies}:Props){
  const [selectedContractId,setSelectedContractId]=useState(()=>localStorage.getItem(LAST_CONTRACT_KEY)??''),[control,setControl]=useState<ServiceControl|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState(''),[entryOpen,setEntryOpen]=useState(false),[reportOpen,setReportOpen]=useState(false),[reportMonth,setReportMonth]=useState(()=>localMonth());
- const [reportMode,setReportMode]=useState<'summary'|'history'>('summary'),[historyFrom,setHistoryFrom]=useState(()=>today()),[historyTo,setHistoryTo]=useState(()=>today()),[historyItem,setHistoryItem]=useState('');
+ const [reportMode,setReportMode]=useState<'summary'|'history'>('summary'),[historyFrom,setHistoryFrom]=useState(()=>firstDayOfMonth()),[historyTo,setHistoryTo]=useState(()=>today()),[historyItem,setHistoryItem]=useState('');
  const [serviceName,setServiceName]=useState(''),[unit,setUnit]=useState('m'),[totalValue,setTotalValue]=useState(0),[contractedQty,setContractedQty]=useState(''),[serviceNotes,setServiceNotes]=useState(''),[editing,setEditing]=useState<ServiceControlItem|null>(null),[pendingDelete,setPendingDelete]=useState<ServiceControlItem|null>(null);
  const [entryItem,setEntryItem]=useState(''),[date,setDate]=useState(today()),[quantity,setQuantity]=useState(''),[notes,setNotes]=useState('');
  const selectedContract=contracts.find(c=>c.contractId===selectedContractId)??null;
