@@ -98,6 +98,19 @@ export function BanksPage({ company, companies = [company], showHeader = true }:
 
   useEffect(() => { const refreshOrder = () => setRefreshToken((value) => value + 1); window.addEventListener('finance-bank-order-changed', refreshOrder); return () => window.removeEventListener('finance-bank-order-changed', refreshOrder); }, []);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      if (historyDialogRef.current === 'extract') {
+        historyDialogRef.current = null;
+        setDialog(null);
+        setSelectedMovement(null);
+        operations.clearFeedback();
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [operations]);
+
   if (overview.status === 'idle' || overview.status === 'loading') return <LoadingState label="Carregando bancos…" />;
   if (overview.status === 'error') return <EmptyState title="Bancos indisponíveis" message={overview.errorMessage} />;
   if (!overview.data) return <LoadingState label="Carregando bancos…" />;
@@ -125,18 +138,6 @@ export function BanksPage({ company, companies = [company], showHeader = true }:
   const entryOptions = [{ value: '', label: 'Selecione…' }, ...uniqueOpenEntries.map((item) => ({ value: item.entryId, label: `${item.description} · ${item.entryType === 'income' ? 'Receber' : 'Pagar'}` }))];
   const monthOptions = Array.from({ length: 36 }, (_, index) => { const value = shiftMonth(monthKey(), -index); return { value, label: monthLabel(value) }; });
 
-  useEffect(() => {
-    const handlePopState = () => {
-      if (historyDialogRef.current === 'extract') {
-        historyDialogRef.current = null;
-        setDialog(null);
-        setSelectedMovement(null);
-        operations.clearFeedback();
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [operations]);
   function closeDialog() { if (historyDialogRef.current === dialog) { historyDialogRef.current = null; window.history.back(); } setDialog(null); setSelectedMovement(null); operations.clearFeedback(); }
   function openExtract(accountId: string) { setMenuAccountId(null); setSelectedAccountId(accountId); setExtractTab('realized'); setMovementFilter('all'); setSelectedMonth(monthKey()); operations.clearFeedback(); historyDialogRef.current='extract'; window.history.pushState({...window.history.state,__gestaoLayer:'bank-extract'},''); setDialog('extract'); }
   function openNewAccount() { setMenuAccountId(null); setAccountForm({ id: '', companyId: company.id, sourceCompanyId: company.id, name: '', accountType: 'bank', bankInstitution: '', openingBalance: '0', status: 'active' }); operations.clearFeedback(); setDialog('account'); }
