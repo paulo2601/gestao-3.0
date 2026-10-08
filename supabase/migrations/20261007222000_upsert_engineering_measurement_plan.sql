@@ -31,7 +31,8 @@ begin
   select l.unit_price into v_price from public.contract_addendum_lines l
   join public.contract_addenda a on a.id=l.addendum_id
   where l.id=p_target_id and a.contract_id=v_measurement.contract_id
-  and l.tenant_id=v_measurement.tenant_id and l.company_id=v_measurement.company_id;
+  and l.tenant_id=v_measurement.tenant_id and l.company_id=v_measurement.company_id
+  and a.tenant_id=v_measurement.tenant_id and a.company_id=v_measurement.company_id;
  end if;
  if v_price is null then raise exception 'Serviço não pertence ao contrato'; end if;
  insert into public.engineering_measurement_plans
