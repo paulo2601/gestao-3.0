@@ -19,6 +19,8 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const [saving,setSaving]=useState(false);
  const [error,setError]=useState<string|null>(null);
  const [loading,setLoading]=useState(true);
+ const [search,setSearch]=useState('');
+ const [statusFilter,setStatusFilter]=useState<'all'|'pending'|'done'>('all');
  const ids=useMemo(()=>items.map(item=>item.measurementLineId),[items]);
  useEffect(()=>{let live=true;setLoading(true);setError(null);void loadLineExecutions(scope,ids)
  .then(rows=>{if(live)setEntries(rows)})
@@ -28,6 +30,13 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const doneByLine=useMemo(()=>{const sums=new Map<string,number>();for(const entry of entries)sums.set(entry.measurementLineId,(sums.get(entry.measurementLineId)??0)+entry.executedQuantity);return sums},[entries]);
  const projected=items.reduce((sum,item)=>sum+item.plannedValue,0);
  const executed=items.reduce((sum,item)=>sum+Math.min(item.plannedQuantity,doneByLine.get(item.measurementLineId)??0)*(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0),0);
+ const filtered=items.filter(item=>{
+  const done=doneByLine.get(item.measurementLineId)??0;
+  if(statusFilter==='pending'&&done>=item.plannedQuantity)return false;
+  if(statusFilter==='done'&&done<item.plannedQuantity)return false;
+  const query=search.trim().toLocaleLowerCase('pt-BR');
+  return !query||[item.description,item.reference??'',item.unit].some(value=>value.toLocaleLowerCase('pt-BR').includes(query));
+ });
  const current=items.find(item=>item.measurementLineId===selected);
  const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
@@ -49,8 +58,12 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    <div><small>Pendente</small><strong>{money.format(Math.max(0,projected-executed))}</strong></div>
    <div><small>Conclusão</small><strong>{projected>0?(executed/projected*100).toLocaleString('pt-BR',{maximumFractionDigits:1}):'0'}%</strong></div>
   </div>
+  <div className="measurement-execution-overview__filters">
+   <label>Buscar serviço ou apartamento<input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Ex.: 1102 ou esgoto"/></label>
+   <label>Situação<select value={statusFilter} onChange={event=>setStatusFilter(event.target.value as 'all'|'pending'|'done')}><option value="all">Todos</option><option value="pending">Pendentes</option><option value="done">Concluídos</option></select></label>
+  </div>
   {error&&<p role="alert">{error}</p>}
-  {loading?<p>Carregando execução…</p>:items.length===0?<p>Nenhum serviço lançado nesta medição.</p>:<div className="measurement-execution-overview__items">{items.map(item=>{
+  {loading?<p>Carregando execução…</p>:items.length===0?<p>Nenhum serviço lançado nesta medição.</p>:filtered.length===0?<p>Nenhum serviço corresponde aos filtros.</p>:<div className="measurement-execution-overview__items">{filtered.map(item=>{
    const done=doneByLine.get(item.measurementLineId)??0;
    return <button type="button" key={item.measurementLineId} onClick={()=>{setSelected(item.measurementLineId);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
     <strong>{item.description}</strong><small>{item.reference||'Serviço geral'}</small>
