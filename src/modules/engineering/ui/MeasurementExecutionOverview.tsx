@@ -12,6 +12,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const items=useMemo(()=>activeId?deriveExecutionProjection(model,activeId):[],[model,activeId]);
  const [entries,setEntries]=useState<LineExecution[]>([]);
  const [selected,setSelected]=useState<string|null>(null);
+ const [selectedReferences,setSelectedReferences]=useState<string[]>([]);
  const [editing,setEditing]=useState<string|null>(null);
  const [pendingDelete,setPendingDelete]=useState<string|null>(null);
  const [quantity,setQuantity]=useState('1');
@@ -37,16 +38,28 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   const query=search.trim().toLocaleLowerCase('pt-BR');
   return !query||[item.description,item.reference??'',item.unit].some(value=>value.toLocaleLowerCase('pt-BR').includes(query));
  });
- const current=items.find(item=>item.measurementLineId===selected);
+ const groups=useMemo(()=>{
+  const map=new Map<string,typeof items>();
+  for(const item of items){const key=item.targetKind+':'+item.targetId;map.set(key,[...(map.get(key)??[]),item]);}
+  return [...map.entries()].map(([key,lines])=>({key,lines}));
+ },[items]);
+ const filteredGroups=groups.filter(group=>group.lines.some(item=>filtered.includes(item)));
+ const activeGroup=groups.find(group=>group.key===selected);
+ const current=items.find(item=>item.measurementLineId===selected)??activeGroup?.lines[0];
+ const groupCandidates=activeGroup?.lines.filter(item=>(doneByLine.get(item.measurementLineId)??0)<item.plannedQuantity)??[];
+ const floorOf=(reference:string|null)=>{const match=reference?.match(/^(\\d+)$/);return match&&match[1]!.length>=3?match[1]!.slice(0,-2)+'º pavimento':'Outros'};
+ const floorGroups=[...new Set(groupCandidates.map(item=>floorOf(item.reference)))].map(floor=>({floor,lines:groupCandidates.filter(item=>floorOf(item.reference)===floor)}));
  const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
   if(!current)return;
   const value=Number(quantity.replace(',','.'));
-  if(!Number.isFinite(value)||value<=0||value>remaining){setError('Quantidade inválida ou acima do saldo projetado.');return}
+  const batch=activeGroup&&!editing?groupCandidates.filter(item=>selectedReferences.includes(item.measurementLineId)):[];
+  if(activeGroup&&!editing&&batch.length===0){setError('Selecione ao menos um apartamento.');return}
+  if(!Number.isFinite(value)||value<=0||(!activeGroup&&value>remaining)){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
-  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
-   setEntries(await loadLineExecutions(scope,ids));setSelected(null);setEditing(null);setQuantity('1')}
+  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){for(const line of batch){await saveLineExecution({measurementLineId:line.measurementLineId,executionDate:date,quantity:Math.min(line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0),value)})}}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
+   setEntries(await loadLineExecutions(scope,ids));setSelected(null);setSelectedReferences([]);setEditing(null);setQuantity('1')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
  }
@@ -63,20 +76,33 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    <label>Situação<select value={statusFilter} onChange={event=>setStatusFilter(event.target.value as 'all'|'pending'|'done')}><option value="all">Todos</option><option value="pending">Pendentes</option><option value="done">Concluídos</option></select></label>
   </div>
   {error&&<p role="alert">{error}</p>}
-  {loading?<p>Carregando execução…</p>:items.length===0?<p>Nenhum serviço lançado nesta medição.</p>:filtered.length===0?<p>Nenhum serviço corresponde aos filtros.</p>:<div className="measurement-execution-overview__items">{filtered.map(item=>{
-   const done=doneByLine.get(item.measurementLineId)??0;
-   return <button type="button" key={item.measurementLineId} onClick={()=>{setSelected(item.measurementLineId);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
-    <strong>{item.description}</strong><small>{item.reference||'Serviço geral'}</small>
-    <span>Projetado: {item.plannedQuantity.toLocaleString('pt-BR')} {item.unit} · {money.format(item.plannedValue)}</span>
-    <span>Executado: {done.toLocaleString('pt-BR')} · Pendente: {Math.max(0,item.plannedQuantity-done).toLocaleString('pt-BR')}</span>
-    <span>{done>=item.plannedQuantity?'Concluído':'Registrar execução ›'}</span>
+  {loading?<p>Carregando execução…</p>:items.length===0?<p>Nenhum serviço lançado nesta medição.</p>:filteredGroups.length===0?<p>Nenhum serviço corresponde aos filtros.</p>:<div className="measurement-execution-overview__items">{filteredGroups.map(group=>{
+   const planned=group.lines.reduce((sum,item)=>sum+item.plannedQuantity,0);
+   const done=group.lines.reduce((sum,item)=>sum+(doneByLine.get(item.measurementLineId)??0),0);
+   const value=group.lines.reduce((sum,item)=>sum+item.plannedValue,0);
+   return <button type="button" key={group.key} className={`measurement-execution-overview__service ${done>=planned?'is-done':'is-pending'}`} onClick={()=>{setSelected(group.key);setSelectedReferences([]);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
+    <strong>{group.lines[0]?.description}</strong>
+    <small>{group.lines.length} unidade(s) prevista(s)</small>
+    <span>Projetado: {planned.toLocaleString('pt-BR')} · {money.format(value)}</span>
+    <span>Executado: {done.toLocaleString('pt-BR')} · Pendente: {Math.max(0,planned-done).toLocaleString('pt-BR')}</span>
+    <span>{done>=planned?'Concluído · Consultar':'Selecionar apartamentos ›'}</span>
    </button>})}</div>}
+  <Dialog open={Boolean(current)} title={editing?"Editar execução":"Registrar execução"} description={current?`${current.reference||"Serviço geral"} · Medição ${measurement?.measurementNumber??"—"}`:undefined} onClose={()=>{if(!saving){setSelected(null);setEditing(null)}}}>
   {current&&<div className="measurement-execution-overview__entry" role="group" aria-label="Registrar execução">
+   {activeGroup&&!editing&&<div className="measurement-execution-overview__units"><strong>Selecione as unidades executadas</strong>
+    <button type="button" onClick={()=>setSelectedReferences(groupCandidates.map(item=>item.measurementLineId))}>Marcar todas as pendentes</button>
+    <button type="button" onClick={()=>setSelectedReferences([])}>Limpar seleção</button>
+    {floorGroups.map(group=><fieldset key={group.floor}><legend>{group.floor}</legend>
+     <label><input type="checkbox" checked={group.lines.every(item=>selectedReferences.includes(item.measurementLineId))} onChange={event=>setSelectedReferences(old=>event.target.checked?[...new Set([...old,...group.lines.map(item=>item.measurementLineId)])]:old.filter(id=>!group.lines.some(item=>item.measurementLineId===id)))}/> Todo o pavimento</label>
+     <div className="measurement-execution-overview__unit-grid">{group.lines.map(item=><label key={item.measurementLineId}><input type="checkbox" checked={selectedReferences.includes(item.measurementLineId)} onChange={event=>setSelectedReferences(old=>event.target.checked?[...old,item.measurementLineId]:old.filter(id=>id!==item.measurementLineId))}/>{item.reference??'Serviço geral'}</label>)}</div>
+    </fieldset>)}
+   </div>}
    <strong>{current.description}</strong><small>Saldo: {remaining.toLocaleString('pt-BR')} {current.unit}</small>
    <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
-   <label>Quantidade executada<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
-   <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||remaining<=0}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
+   <label>Quantidade por unidade<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
+   <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||(activeGroup&&!editing?selectedReferences.length===0:remaining<=0)}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
   </div>}
+  </Dialog>
   <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>setPendingDelete(entry.id)}>Excluir</button></div>)}</details>
   <Dialog open={Boolean(pendingDelete)} title="Excluir execução" description="Esta ação excluirá apenas o registro físico de execução, sem alterar a medição financeira." onClose={()=>{if(!saving)setPendingDelete(null)}}>
    <div className="measurement-execution-overview__entry">
