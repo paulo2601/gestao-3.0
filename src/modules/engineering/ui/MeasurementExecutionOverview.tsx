@@ -65,18 +65,20 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   {error&&<p role="alert">{error}</p>}
   {loading?<p>Carregando execução…</p>:items.length===0?<p>Nenhum serviço lançado nesta medição.</p>:filtered.length===0?<p>Nenhum serviço corresponde aos filtros.</p>:<div className="measurement-execution-overview__items">{filtered.map(item=>{
    const done=doneByLine.get(item.measurementLineId)??0;
-   return <button type="button" key={item.measurementLineId} onClick={()=>{setSelected(item.measurementLineId);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
+   return <button type="button" key={item.measurementLineId} className={`measurement-execution-overview__service ${done>=item.plannedQuantity?'is-done':'is-pending'}`} onClick={()=>{setSelected(item.measurementLineId);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
     <strong>{item.description}</strong><small>{item.reference||'Serviço geral'}</small>
     <span>Projetado: {item.plannedQuantity.toLocaleString('pt-BR')} {item.unit} · {money.format(item.plannedValue)}</span>
     <span>Executado: {done.toLocaleString('pt-BR')} · Pendente: {Math.max(0,item.plannedQuantity-done).toLocaleString('pt-BR')}</span>
     <span>{done>=item.plannedQuantity?'Concluído':'Registrar execução ›'}</span>
    </button>})}</div>}
+  <Dialog open={Boolean(current)} title={editing?"Editar execução":"Registrar execução"} description={current?`${current.reference||"Serviço geral"} · Medição ${measurement?.measurementNumber??"—"}`:undefined} onClose={()=>{if(!saving){setSelected(null);setEditing(null)}}}>
   {current&&<div className="measurement-execution-overview__entry" role="group" aria-label="Registrar execução">
    <strong>{current.description}</strong><small>Saldo: {remaining.toLocaleString('pt-BR')} {current.unit}</small>
    <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
    <label>Quantidade executada<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
    <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||remaining<=0}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
   </div>}
+  </Dialog>
   <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>setPendingDelete(entry.id)}>Excluir</button></div>)}</details>
   <Dialog open={Boolean(pendingDelete)} title="Excluir execução" description="Esta ação excluirá apenas o registro físico de execução, sem alterar a medição financeira." onClose={()=>{if(!saving)setPendingDelete(null)}}>
    <div className="measurement-execution-overview__entry">
