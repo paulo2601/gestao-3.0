@@ -84,3 +84,45 @@
   .guided-measurement-floor__units label{min-height:40px!important;font-size:.68rem!important}
   .guided-measurement-picker__panel>footer{padding-inline:10px!important}
 }
+/* Origem expansível: navegação compacta, sem confundir medido com executado. */
+.measurement-hub__origin-list .measurement-origin-expandable{min-width:0;border:1px solid var(--border,#dbe2ea);border-radius:12px;overflow:hidden;background:var(--surface,#fff)}
+.measurement-origin-expandable>button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;border:0;background:transparent;padding:11px;cursor:pointer}
+.measurement-origin-expandable>button span{display:grid;gap:3px;min-width:0}
+.measurement-origin-expandable>button strong{font-size:.83rem}
+.measurement-origin-expandable>button small{font-size:.7rem;opacity:.75}
+.measurement-origin-expandable>button b{white-space:nowrap;font-size:.8rem}
+.measurement-origin-expandable>button em{font-size:.7rem;font-style:normal;white-space:nowrap}
+.measurement-origin-expandable__services{display:grid;gap:5px;padding:8px;border-top:1px solid var(--border,#dbe2ea)}
+.measurement-origin-expandable__services>small{font-size:.68rem;opacity:.7}
+.measurement-origin-expandable__services>button{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;width:100%;padding:10px;border:1px solid var(--border,#dbe2ea);border-radius:9px;background:var(--surface-subtle,#f8fafc);cursor:pointer}
+.measurement-origin-expandable__services>button span:first-child{display:grid;gap:4px;min-width:0}
+.measurement-origin-expandable__services>button strong{font-size:.78rem;overflow-wrap:anywhere}
+.measurement-origin-expandable__services>button small{font-size:.7rem}
+.measurement-origin-expandable__services>button span:last-child{white-space:nowrap;font-size:.72rem}
+@media(max-width:430px){.measurement-origin-expandable>button{flex-wrap:wrap}.measurement-origin-expandable>button em{margin-left:auto}}
+
+.measurement-execution-panel{display:grid;gap:10px;padding:12px;border:1px solid var(--border,#dbe2ea);border-radius:14px;background:var(--surface,#fff)}
+.measurement-execution-panel>header{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.measurement-execution-panel>header strong{font-size:.9rem}
+.measurement-execution-panel>header small{font-size:.72rem;opacity:.75}
+.measurement-execution-panel__cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.measurement-execution-panel__cards>div{display:grid;gap:4px;padding:9px;border-radius:10px;background:var(--surface-subtle,#f8fafc);min-width:0}
+.measurement-execution-panel__cards small{font-size:.67rem}
+.measurement-execution-panel__cards strong{font-size:.84rem;overflow-wrap:anywhere}
+.measurement-execution-panel__items{display:grid;gap:6px}
+.measurement-execution-panel__items>button{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:9px 10px;text-align:left;border:1px solid var(--border,#dbe2ea);border-radius:10px;background:var(--surface,#fff);cursor:pointer}
+.measurement-execution-panel__items>button span:first-child{display:grid;gap:3px}
+.measurement-execution-panel__items>button strong{font-size:.78rem}
+.measurement-execution-panel__items>button small{font-size:.68rem}
+.measurement-execution-panel__items>button span:last-child{font-size:.7rem;white-space:nowrap}
+.measurement-execution-panel__selection{display:grid;gap:7px;padding:10px;border:1px solid var(--border,#dbe2ea);border-radius:10px}
+.measurement-execution-panel__selection button{justify-self:start}
+@media(max-width:760px){.measurement-execution-panel__cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.measurement-execution-entry{display:grid;gap:10px;padding:12px;border:1px solid var(--border,#dbe2ea);border-radius:12px;background:var(--surface,#fff)}
+.measurement-execution-entry header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.measurement-execution-entry header small{font-size:.73rem}
+.measurement-execution-entry label{display:grid;gap:4px;font-size:.78rem;font-weight:600}
+.measurement-execution-entry input{min-height:42px;width:100%;padding:8px 10px;border:1px solid var(--border,#cbd5e1);border-radius:9px;background:var(--surface,#fff);color:inherit}
+.measurement-execution-entry footer{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.measurement-execution-entry [role=alert]{font-size:.75rem;color:var(--danger,#b91c1c)}

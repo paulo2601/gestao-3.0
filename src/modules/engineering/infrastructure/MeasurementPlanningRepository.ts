@@ -1,0 +1,93 @@
+import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
+
+export interface PlanningScope { tenantId: string; companyId: string }
+export interface PlannedService {
+  id: string; measurementId: string; contractId: string; competence: string;
+  originType: string; originId: string; targetKind: 'contract'|'addendum';
+  targetId: string; plannedQuantity: number; unitPriceSnapshot: number;
+}
+export interface ExecutionEntry {
+  id: string; planId: string; executionDate: string;
+  executedQuantity: number; unitReference: string|null; notes: string|null;
+}
+type PlanRow = {
+  id:string; measurement_id:string; contract_id:string; competence:string;
+  origin_type:string; origin_id:string; target_kind:'contract'|'addendum';
+  target_id:string; planned_quantity:number|string; unit_price_snapshot:number|string;
+};
+type ExecutionRow = {
+  id:string; plan_id:string; execution_date:string;
+  executed_quantity:number|string; unit_reference:string|null; notes:string|null;
+};
+/** Apenas leitura: a gravação será habilitada após RPC transacional e validação da migração. */
+export async function loadMeasurementPlanning(scope:PlanningScope,measurementId:string):
+ Promise<{plans:PlannedService[];executions:ExecutionEntry[]}> {
+  const client=getSupabaseClient();
+  const plansResponse=await client.from('engineering_measurement_plans')
+    .select('id,measurement_id,contract_id,competence,origin_type,origin_id,target_kind,target_id,planned_quantity,unit_price_snapshot')
+    .eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('measurement_id',measurementId);
+  if(plansResponse.error)throw plansResponse.error;
+  const plans=((plansResponse.data??[]) as PlanRow[]).map(row=>({
+    id:row.id,measurementId:row.measurement_id,contractId:row.contract_id,competence:row.competence,
+    originType:row.origin_type,originId:row.origin_id,targetKind:row.target_kind,
+    targetId:row.target_id,plannedQuantity:Number(row.planned_quantity),unitPriceSnapshot:Number(row.unit_price_snapshot)
+  }));
+  if(plans.length===0)return {plans,executions:[]};
+  const response=await client.from('engineering_execution_entries')
+    .select('id,plan_id,execution_date,executed_quantity,unit_reference,notes')
+    .eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId)
+    .in('plan_id',plans.map(plan=>plan.id));
+  if(response.error)throw response.error;
+  const executions=((response.data??[]) as ExecutionRow[]).map(row=>({
+    id:row.id,planId:row.plan_id,executionDate:row.execution_date,
+    executedQuantity:Number(row.executed_quantity),unitReference:row.unit_reference,notes:row.notes
+  }));
+  return {plans,executions};
+}
+
+/** Registra uma execução pela função transacional; não modifica linhas de medição. */
+export async function recordMeasurementExecution(
+  scope:PlanningScope,
+  input:{planId:string;executionDate:string;quantity:number;unitReference?:string;notes?:string}
+):Promise<string>{
+  if(!Number.isFinite(input.quantity)||input.quantity<=0)throw new Error('Informe uma quantidade positiva.');
+  const client=getSupabaseClient();
+  // Verificação adicional de escopo; a função SQL faz a validação definitiva sob RLS.
+  const plan=await client.from('engineering_measurement_plans').select('id')
+    .eq('id',input.planId).eq('tenant_id',scope.tenantId)
+    .eq('company_id',scope.companyId).single();
+  if(plan.error)throw plan.error;
+  const response=await client.rpc('record_engineering_execution',{
+    p_plan_id:input.planId,
+    p_execution_date:input.executionDate,
+    p_quantity:input.quantity,
+    p_unit_reference:input.unitReference?.trim()||null,
+    p_notes:input.notes?.trim()||null
+  });
+  if(response.error)throw response.error;
+  if(typeof response.data!=='string')throw new Error('O registro não retornou confirmação.');
+  return response.data;
+}
+
+/** Salva meta física mensal sem criar ou alterar uma linha financeira. */
+export async function upsertMeasurementPlan(
+  scope:PlanningScope,
+  input:{measurementId:string;originType:string;originId:string;
+    targetKind:'contract'|'addendum';targetId:string;plannedQuantity:number}
+):Promise<string>{
+  if(!Number.isFinite(input.plannedQuantity)||input.plannedQuantity<=0)
+    throw new Error('Informe uma meta maior que zero.');
+  const client=getSupabaseClient();
+  const measurement=await client.from('measurements').select('id')
+    .eq('id',input.measurementId).eq('tenant_id',scope.tenantId)
+    .eq('company_id',scope.companyId).single();
+  if(measurement.error)throw measurement.error;
+  const response=await client.rpc('upsert_engineering_measurement_plan',{
+    p_measurement_id:input.measurementId,p_origin_type:input.originType,
+    p_origin_id:input.originId,p_target_kind:input.targetKind,
+    p_target_id:input.targetId,p_planned_quantity:input.plannedQuantity
+  });
+  if(response.error)throw response.error;
+  if(typeof response.data!=='string')throw new Error('Meta não confirmada.');
+  return response.data;
+}
