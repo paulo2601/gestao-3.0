@@ -68,3 +68,26 @@ export async function recordMeasurementExecution(
   if(typeof response.data!=='string')throw new Error('O registro não retornou confirmação.');
   return response.data;
 }
+
+/** Salva meta física mensal sem criar ou alterar uma linha financeira. */
+export async function upsertMeasurementPlan(
+  scope:PlanningScope,
+  input:{measurementId:string;originType:string;originId:string;
+    targetKind:'contract'|'addendum';targetId:string;plannedQuantity:number}
+):Promise<string>{
+  if(!Number.isFinite(input.plannedQuantity)||input.plannedQuantity<=0)
+    throw new Error('Informe uma meta maior que zero.');
+  const client=getSupabaseClient();
+  const measurement=await client.from('measurements').select('id')
+    .eq('id',input.measurementId).eq('tenant_id',scope.tenantId)
+    .eq('company_id',scope.companyId).single();
+  if(measurement.error)throw measurement.error;
+  const response=await client.rpc('upsert_engineering_measurement_plan',{
+    p_measurement_id:input.measurementId,p_origin_type:input.originType,
+    p_origin_id:input.originId,p_target_kind:input.targetKind,
+    p_target_id:input.targetId,p_planned_quantity:input.plannedQuantity
+  });
+  if(response.error)throw response.error;
+  if(typeof response.data!=='string')throw new Error('Meta não confirmada.');
+  return response.data;
+}
