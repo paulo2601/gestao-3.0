@@ -118,3 +118,11 @@
 .measurement-execution-panel__selection{display:grid;gap:7px;padding:10px;border:1px solid var(--border,#dbe2ea);border-radius:10px}
 .measurement-execution-panel__selection button{justify-self:start}
 @media(max-width:760px){.measurement-execution-panel__cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.measurement-execution-entry{display:grid;gap:10px;padding:12px;border:1px solid var(--border,#dbe2ea);border-radius:12px;background:var(--surface,#fff)}
+.measurement-execution-entry header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.measurement-execution-entry header small{font-size:.73rem}
+.measurement-execution-entry label{display:grid;gap:4px;font-size:.78rem;font-weight:600}
+.measurement-execution-entry input{min-height:42px;width:100%;padding:8px 10px;border:1px solid var(--border,#cbd5e1);border-radius:9px;background:var(--surface,#fff);color:inherit}
+.measurement-execution-entry footer{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.measurement-execution-entry [role=alert]{font-size:.75rem;color:var(--danger,#b91c1c)}
