@@ -431,3 +431,12 @@
 .measurement-execution-overview__history-row span{flex:1 1 170px;overflow-wrap:anywhere;font-size:.83rem}
 .measurement-execution-overview__history-row button{padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;font-weight:700;cursor:pointer}
 @media(max-width:640px){.measurement-execution-overview__filters{grid-template-columns:minmax(0,1fr)}.measurement-execution-overview__items{grid-template-columns:minmax(0,1fr)}}
+
+/* A aba Executado usa a medição como fonte de dados, mas não exibe seus
+   formulários financeiros nem controles de edição. */
+.measurement-hub--execution-tab>.measurement-hub__header-card,
+.measurement-hub--execution-tab>.measurement-hub__financial,
+.measurement-hub--execution-tab>.measurement-hub__origin-picker,
+.measurement-hub--execution-tab>.measurement-hub__origins,
+.measurement-hub--execution-tab>.measurement-hub__footer{display:none!important}
+.measurement-hub--execution-tab>.measurement-execution-tabs{position:relative;z-index:1}
