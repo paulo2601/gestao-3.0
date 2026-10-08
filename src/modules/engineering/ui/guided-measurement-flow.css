@@ -440,3 +440,17 @@
 .measurement-hub--execution-tab>.measurement-hub__origins,
 .measurement-hub--execution-tab>.measurement-hub__footer{display:none!important}
 .measurement-hub--execution-tab>.measurement-execution-tabs{position:relative;z-index:1}
+
+/* Executado: cards de serviços diferenciados com cores discretas. */
+.measurement-execution-overview__items>.measurement-execution-overview__service{display:grid;gap:7px;text-align:left;width:100%;min-width:0;border:1px solid #dbe3ed;border-left:4px solid #8db8e9;border-radius:13px;padding:15px 17px;background:#f5f9ff;color:#243348;box-shadow:0 2px 6px rgba(31,50,77,.035);cursor:pointer}
+.measurement-execution-overview__items>.measurement-execution-overview__service:nth-child(3n+2){background:#f4f9f7;border-left-color:#84b9a5}
+.measurement-execution-overview__items>.measurement-execution-overview__service:nth-child(3n){background:#faf7f0;border-left-color:#d9b67d}
+.measurement-execution-overview__items>.measurement-execution-overview__service.is-done{background:#eff9f1;border-left-color:#48a575}
+.measurement-execution-overview__service strong,.measurement-execution-overview__service span,.measurement-execution-overview__service small{overflow-wrap:anywhere}
+.measurement-execution-overview__service span:last-child{color:#1665bb;font-weight:700}
+.measurement-execution-overview__entry{display:grid;gap:12px;min-width:0}
+.measurement-execution-overview__entry label{display:grid;gap:5px;font-weight:650}
+.measurement-execution-overview__entry input{width:100%;box-sizing:border-box;min-height:44px;border:1px solid #cbd5e1;border-radius:9px;padding:9px 12px;background:#fff;color:#243348}
+.measurement-execution-overview__entry>div:last-child{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.measurement-execution-overview__entry>div:last-child button{min-height:42px;padding:9px 15px;border-radius:9px;border:1px solid #aac0dd;background:#fff;color:#1665bb;font-weight:700}
+.measurement-execution-overview__entry>div:last-child button:last-child{background:#2469e8;border-color:#2469e8;color:#fff}
