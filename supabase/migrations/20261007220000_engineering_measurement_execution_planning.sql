@@ -3,7 +3,7 @@ create table if not exists public.engineering_measurement_plans (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null,
   company_id uuid not null,
-  contract_id uuid not null references public.contracts(id),
+  contract_id uuid not null references public.engineering_contracts(id),
   measurement_id uuid not null references public.measurements(id),
   competence date not null,
   origin_type text not null check (origin_type in ('tower','addendum','provisional','other')),
