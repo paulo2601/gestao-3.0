@@ -44,3 +44,27 @@ export async function loadMeasurementPlanning(scope:PlanningScope,measurementId:
   }));
   return {plans,executions};
 }
+
+/** Registra uma execução pela função transacional; não modifica linhas de medição. */
+export async function recordMeasurementExecution(
+  scope:PlanningScope,
+  input:{planId:string;executionDate:string;quantity:number;unitReference?:string;notes?:string}
+):Promise<string>{
+  if(!Number.isFinite(input.quantity)||input.quantity<=0)throw new Error('Informe uma quantidade positiva.');
+  const client=getSupabaseClient();
+  // Verificação adicional de escopo; a função SQL faz a validação definitiva sob RLS.
+  const plan=await client.from('engineering_measurement_plans').select('id')
+    .eq('id',input.planId).eq('tenant_id',scope.tenantId)
+    .eq('company_id',scope.companyId).single();
+  if(plan.error)throw plan.error;
+  const response=await client.rpc('record_engineering_execution',{
+    p_plan_id:input.planId,
+    p_execution_date:input.executionDate,
+    p_quantity:input.quantity,
+    p_unit_reference:input.unitReference?.trim()||null,
+    p_notes:input.notes?.trim()||null
+  });
+  if(response.error)throw response.error;
+  if(typeof response.data!=='string')throw new Error('O registro não retornou confirmação.');
+  return response.data;
+}
