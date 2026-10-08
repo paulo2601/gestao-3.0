@@ -17,12 +17,11 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const [error,setError]=useState<string|null>(null);
  const [loading,setLoading]=useState(true);
  const ids=useMemo(()=>items.map(item=>item.measurementLineId),[items]);
- const idsKey=ids.join(',');
  useEffect(()=>{let live=true;setLoading(true);setError(null);void loadLineExecutions(scope,ids)
  .then(rows=>{if(live)setEntries(rows)})
  .catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao carregar execução')})
  .finally(()=>{if(live)setLoading(false)});
- return()=>{live=false};},[scope.tenantId,scope.companyId,idsKey]);
+ return()=>{live=false};},[scope,ids]);
  const doneByLine=useMemo(()=>{const sums=new Map<string,number>();for(const entry of entries)sums.set(entry.measurementLineId,(sums.get(entry.measurementLineId)??0)+entry.executedQuantity);return sums},[entries]);
  const projected=items.reduce((sum,item)=>sum+item.plannedValue,0);
  const executed=items.reduce((sum,item)=>sum+Math.min(item.plannedQuantity,doneByLine.get(item.measurementLineId)??0)*(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0),0);
