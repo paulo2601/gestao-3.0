@@ -42,7 +42,7 @@ export function MeasurementPlanningSection({scope,mid,model,planning,setPlanning
       alreadyExecuted={planning.executions.filter(entry=>entry.planId===selectedExecutionPlan.id).reduce((sum,entry)=>sum+entry.executedQuantity,0)}
       onCancel={()=>setSelectedExecutionPlan(null)}
       onSave={async input=>{
-        await recordMeasurementExecution(scope,{planId:selectedExecutionPlan.id,executionDate:input.executionDate,quantity:input.quantity,unitReference:input.unitReference});
+        await recordMeasurementExecution(scope,{planId:selectedExecutionPlan.id,executionDate:input.executionDate,quantity:input.quantity,...(input.unitReference ? {unitReference:input.unitReference} : {})});
         setPlanning(await loadMeasurementPlanning(scope,selectedExecutionPlan.measurementId));
         setSelectedExecutionPlan(null);
       }}/>}
