@@ -28,3 +28,14 @@ export async function saveLineExecution(input:{measurementLineId:string;executio
  if(response.error)throw response.error;
  return response.data as string;
 }
+
+export async function updateLineExecution(input:{id:string;executionDate:string;quantity:number}):Promise<void>{
+ const response=await getSupabaseClient().rpc('update_measurement_line_execution',{
+  p_execution_id:input.id,p_execution_date:input.executionDate,p_quantity:input.quantity
+ });
+ if(response.error)throw response.error;
+}
+export async function deleteLineExecution(id:string):Promise<void>{
+ const response=await getSupabaseClient().rpc('delete_measurement_line_execution',{p_execution_id:id});
+ if(response.error)throw response.error;
+}
