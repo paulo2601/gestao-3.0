@@ -1,0 +1,91 @@
+import { Dialog } from '../../../shared/ui/Dialog';
+import { useEffect, useMemo, useState } from 'react';
+import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
+import { chooseActiveExecutionMeasurement, deriveExecutionProjection } from '../domain/measurementExecutionProjection';
+import { loadLineExecutions, saveLineExecution, updateLineExecution, deleteLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
+const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+interface Props {model:MeasurementParityModel;measurementId?:string;scope:{tenantId:string;companyId:string}}
+const today=()=>{const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')};
+export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
+ const activeId=measurementId||chooseActiveExecutionMeasurement(model);
+ const measurement=model.measurements.find(item=>item.id===activeId);
+ const items=useMemo(()=>activeId?deriveExecutionProjection(model,activeId):[],[model,activeId]);
+ const [entries,setEntries]=useState<LineExecution[]>([]);
+ const [selected,setSelected]=useState<string|null>(null);
+ const [editing,setEditing]=useState<string|null>(null);
+ const [pendingDelete,setPendingDelete]=useState<string|null>(null);
+ const [quantity,setQuantity]=useState('1');
+ const [date,setDate]=useState(today);
+ const [saving,setSaving]=useState(false);
+ const [error,setError]=useState<string|null>(null);
+ const [loading,setLoading]=useState(true);
+ const [search,setSearch]=useState('');
+ const [statusFilter,setStatusFilter]=useState<'all'|'pending'|'done'>('all');
+ const ids=useMemo(()=>items.map(item=>item.measurementLineId),[items]);
+ useEffect(()=>{let live=true;setLoading(true);setError(null);void loadLineExecutions(scope,ids)
+ .then(rows=>{if(live)setEntries(rows)})
+ .catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao carregar execução')})
+ .finally(()=>{if(live)setLoading(false)});
+ return()=>{live=false};},[scope,ids]);
+ const doneByLine=useMemo(()=>{const sums=new Map<string,number>();for(const entry of entries)sums.set(entry.measurementLineId,(sums.get(entry.measurementLineId)??0)+entry.executedQuantity);return sums},[entries]);
+ const projected=items.reduce((sum,item)=>sum+item.plannedValue,0);
+ const executed=items.reduce((sum,item)=>sum+Math.min(item.plannedQuantity,doneByLine.get(item.measurementLineId)??0)*(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0),0);
+ const filtered=items.filter(item=>{
+  const done=doneByLine.get(item.measurementLineId)??0;
+  if(statusFilter==='pending'&&done>=item.plannedQuantity)return false;
+  if(statusFilter==='done'&&done<item.plannedQuantity)return false;
+  const query=search.trim().toLocaleLowerCase('pt-BR');
+  return !query||[item.description,item.reference??'',item.unit].some(value=>value.toLocaleLowerCase('pt-BR').includes(query));
+ });
+ const current=items.find(item=>item.measurementLineId===selected);
+ const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
+ async function submit(){
+  if(!current)return;
+  const value=Number(quantity.replace(',','.'));
+  if(!Number.isFinite(value)||value<=0||value>remaining){setError('Quantidade inválida ou acima do saldo projetado.');return}
+  if(!date){setError('Informe a data da execução.');return}
+  setSaving(true);setError(null);
+  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
+   setEntries(await loadLineExecutions(scope,ids));setSelected(null);setEditing(null);setQuantity('1')}
+  catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
+  finally{setSaving(false)}
+ }
+ return <section className="measurement-execution-overview">
+  <header><strong>Executado</strong><small>Medição {measurement?.measurementNumber??'—'} · {measurement?.competence?.slice(0,7)??'Sem competência'}</small></header>
+  <div className="measurement-execution-overview__cards">
+   <div><small>Projetado</small><strong>{money.format(projected)}</strong></div>
+   <div><small>Executado</small><strong>{money.format(executed)}</strong></div>
+   <div><small>Pendente</small><strong>{money.format(Math.max(0,projected-executed))}</strong></div>
+   <div><small>Conclusão</small><strong>{projected>0?(executed/projected*100).toLocaleString('pt-BR',{maximumFractionDigits:1}):'0'}%</strong></div>
+  </div>
+  <div className="measurement-execution-overview__filters">
+   <label>Buscar serviço ou apartamento<input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Ex.: 1102 ou esgoto"/></label>
+   <label>Situação<select value={statusFilter} onChange={event=>setStatusFilter(event.target.value as 'all'|'pending'|'done')}><option value="all">Todos</option><option value="pending">Pendentes</option><option value="done">Concluídos</option></select></label>
+  </div>
+  {error&&<p role="alert">{error}</p>}
+  {loading?<p>Carregando execução…</p>:items.length===0?<p>Nenhum serviço lançado nesta medição.</p>:filtered.length===0?<p>Nenhum serviço corresponde aos filtros.</p>:<div className="measurement-execution-overview__items">{filtered.map(item=>{
+   const done=doneByLine.get(item.measurementLineId)??0;
+   return <button type="button" key={item.measurementLineId} onClick={()=>{setSelected(item.measurementLineId);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
+    <strong>{item.description}</strong><small>{item.reference||'Serviço geral'}</small>
+    <span>Projetado: {item.plannedQuantity.toLocaleString('pt-BR')} {item.unit} · {money.format(item.plannedValue)}</span>
+    <span>Executado: {done.toLocaleString('pt-BR')} · Pendente: {Math.max(0,item.plannedQuantity-done).toLocaleString('pt-BR')}</span>
+    <span>{done>=item.plannedQuantity?'Concluído':'Registrar execução ›'}</span>
+   </button>})}</div>}
+  {current&&<div className="measurement-execution-overview__entry" role="group" aria-label="Registrar execução">
+   <strong>{current.description}</strong><small>Saldo: {remaining.toLocaleString('pt-BR')} {current.unit}</small>
+   <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
+   <label>Quantidade executada<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
+   <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||remaining<=0}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
+  </div>}
+  <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>setPendingDelete(entry.id)}>Excluir</button></div>)}</details>
+  <Dialog open={Boolean(pendingDelete)} title="Excluir execução" description="Esta ação excluirá apenas o registro físico de execução, sem alterar a medição financeira." onClose={()=>{if(!saving)setPendingDelete(null)}}>
+   <div className="measurement-execution-overview__entry">
+    <p>Deseja realmente excluir este lançamento do histórico?</p>
+    <div>
+     <button type="button" disabled={saving} onClick={()=>setPendingDelete(null)}>Cancelar</button>
+     <button type="button" disabled={saving} onClick={()=>{if(!pendingDelete)return;setSaving(true);setError(null);void deleteLineExecution(pendingDelete).then(()=>loadLineExecutions(scope,ids)).then(rows=>{setEntries(rows);setPendingDelete(null)}).catch(cause=>setError(cause instanceof Error?cause.message:'Falha ao excluir')).finally(()=>setSaving(false))}}>{saving?'Excluindo…':'Confirmar exclusão'}</button>
+    </div>
+   </div>
+  </Dialog>
+ </section>;
+}
