@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
 import { chooseActiveExecutionMeasurement, deriveExecutionProjection } from '../domain/measurementExecutionProjection';
-import { loadLineExecutions, saveLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
+import { loadLineExecutions, saveLineExecution, updateLineExecution, deleteLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
 const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 interface Props {model:MeasurementParityModel;measurementId?:string;scope:{tenantId:string;companyId:string}}
 const today=()=>{const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')};
@@ -11,6 +11,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const items=useMemo(()=>activeId?deriveExecutionProjection(model,activeId):[],[model,activeId]);
  const [entries,setEntries]=useState<LineExecution[]>([]);
  const [selected,setSelected]=useState<string|null>(null);
+ const [editing,setEditing]=useState<string|null>(null);
  const [quantity,setQuantity]=useState('1');
  const [date,setDate]=useState(today);
  const [saving,setSaving]=useState(false);
@@ -26,15 +27,15 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const projected=items.reduce((sum,item)=>sum+item.plannedValue,0);
  const executed=items.reduce((sum,item)=>sum+Math.min(item.plannedQuantity,doneByLine.get(item.measurementLineId)??0)*(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0),0);
  const current=items.find(item=>item.measurementLineId===selected);
- const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)):0;
+ const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
   if(!current)return;
   const value=Number(quantity.replace(',','.'));
   if(!Number.isFinite(value)||value<=0||value>remaining){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
-  try{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value});
-   setEntries(await loadLineExecutions(scope,ids));setSelected(null);setQuantity('1')}
+  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
+   setEntries(await loadLineExecutions(scope,ids));setSelected(null);setEditing(null);setQuantity('1')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
  }
@@ -49,7 +50,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   {error&&<p role="alert">{error}</p>}
   {loading?<p>Carregando execução…</p>:items.length===0?<p>Nenhum serviço lançado nesta medição.</p>:<div className="measurement-execution-overview__items">{items.map(item=>{
    const done=doneByLine.get(item.measurementLineId)??0;
-   return <button type="button" key={item.measurementLineId} onClick={()=>{setSelected(item.measurementLineId);setError(null)}} disabled={saving}>
+   return <button type="button" key={item.measurementLineId} onClick={()=>{setSelected(item.measurementLineId);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
     <strong>{item.description}</strong><small>{item.reference||'Serviço geral'}</small>
     <span>Projetado: {item.plannedQuantity.toLocaleString('pt-BR')} {item.unit} · {money.format(item.plannedValue)}</span>
     <span>Executado: {done.toLocaleString('pt-BR')} · Pendente: {Math.max(0,item.plannedQuantity-done).toLocaleString('pt-BR')}</span>
@@ -59,8 +60,8 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    <strong>{current.description}</strong><small>Saldo: {remaining.toLocaleString('pt-BR')} {current.unit}</small>
    <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
    <label>Quantidade executada<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
-   <div><button type="button" onClick={()=>setSelected(null)} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||remaining<=0}>{saving?'Salvando…':'Salvar execução'}</button></div>
+   <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||remaining<=0}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
   </div>}
-  <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><p key={entry.id}>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {entry.executedQuantity.toLocaleString('pt-BR')}</p>)}</details>
+  <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>{if(!window.confirm('Excluir este lançamento de execução?'))return;setSaving(true);setError(null);void deleteLineExecution(entry.id).then(()=>loadLineExecutions(scope,ids)).then(setEntries).catch(cause=>setError(cause instanceof Error?cause.message:'Falha ao excluir')).finally(()=>setSaving(false))}}>Excluir</button></div>)}</details>
  </section>;
 }
