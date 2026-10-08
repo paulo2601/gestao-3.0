@@ -44,7 +44,7 @@ export function MeasurementExecutionEntryForm({
       await onSave({
         quantity: amount,
         executionDate,
-        unitReference: usesUnitPicker ? selectedUnit : unitReference.trim() || undefined
+        ...(usesUnitPicker || unitReference.trim() ? { unitReference: usesUnitPicker ? selectedUnit : unitReference.trim() } : {})
       });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível registrar a execução.');
