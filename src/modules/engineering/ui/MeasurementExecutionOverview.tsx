@@ -48,7 +48,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const current=items.find(item=>item.measurementLineId===selected)??activeGroup?.lines[0];
  const groupCandidates=activeGroup?.lines.filter(item=>(doneByLine.get(item.measurementLineId)??0)<item.plannedQuantity)??[];
  const floorOf=(reference:string|null)=>{const match=reference?.match(/^(\d+)$/);return match&&match[1]!.length>=3?match[1]!.slice(0,-2)+'º pavimento':'Outros'};
- const floorGroups=[...new Set(groupCandidates.map(item=>floorOf(item.reference)))].map(floor=>({floor,lines:groupCandidates.filter(item=>floorOf(item.reference)===floor)}));
+ const floorGroups=[...new Set(groupCandidates.map(item=>floorOf(item.reference)))].sort((a,b)=>{const n=(x:string)=>x==='Outros'?-1:parseInt(x,10);return n(a)-n(b)}).map(floor=>({floor,lines:groupCandidates.filter(item=>floorOf(item.reference)===floor).sort((a,b)=>(a.reference??'').localeCompare(b.reference??'','pt-BR',{numeric:true}))}));
  const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
   if(!current)return;
@@ -97,7 +97,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
      <div className="measurement-execution-overview__unit-grid">{group.lines.map(item=><label key={item.measurementLineId}><input type="checkbox" checked={selectedReferences.includes(item.measurementLineId)} onChange={event=>setSelectedReferences(old=>event.target.checked?[...old,item.measurementLineId]:old.filter(id=>id!==item.measurementLineId))}/>{item.reference??'Serviço geral'}</label>)}</div>
     </fieldset>)}
    </div>}
-   <strong>{current.description}</strong><small>Saldo: {remaining.toLocaleString('pt-BR')} {current.unit}</small>
+   <strong>{current.description}</strong><small>Saldo: {(activeGroup&&!editing?activeGroup.lines.reduce((sum,line)=>sum+Math.max(0,line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)),0):remaining).toLocaleString('pt-BR')} {current.unit}</small>
    <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
    <label>Quantidade por unidade<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
    <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||(activeGroup&&!editing?selectedReferences.length===0:remaining<=0)}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
