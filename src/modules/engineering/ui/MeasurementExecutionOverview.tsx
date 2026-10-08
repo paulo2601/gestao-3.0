@@ -1,3 +1,4 @@
+import { Dialog } from '../../../shared/ui/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
 import { chooseActiveExecutionMeasurement, deriveExecutionProjection } from '../domain/measurementExecutionProjection';
@@ -12,6 +13,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const [entries,setEntries]=useState<LineExecution[]>([]);
  const [selected,setSelected]=useState<string|null>(null);
  const [editing,setEditing]=useState<string|null>(null);
+ const [pendingDelete,setPendingDelete]=useState<string|null>(null);
  const [quantity,setQuantity]=useState('1');
  const [date,setDate]=useState(today);
  const [saving,setSaving]=useState(false);
@@ -62,6 +64,15 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    <label>Quantidade executada<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
    <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||remaining<=0}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
   </div>}
-  <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>{if(!window.confirm('Excluir este lançamento de execução?'))return;setSaving(true);setError(null);void deleteLineExecution(entry.id).then(()=>loadLineExecutions(scope,ids)).then(setEntries).catch(cause=>setError(cause instanceof Error?cause.message:'Falha ao excluir')).finally(()=>setSaving(false))}}>Excluir</button></div>)}</details>
+  <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>setPendingDelete(entry.id)}>Excluir</button></div>)}</details>
+  <Dialog open={Boolean(pendingDelete)} title="Excluir execução" description="Esta ação excluirá apenas o registro físico de execução, sem alterar a medição financeira." onClose={()=>{if(!saving)setPendingDelete(null)}}>
+   <div className="measurement-execution-overview__entry">
+    <p>Deseja realmente excluir este lançamento do histórico?</p>
+    <div>
+     <button type="button" disabled={saving} onClick={()=>setPendingDelete(null)}>Cancelar</button>
+     <button type="button" disabled={saving} onClick={()=>{if(!pendingDelete)return;setSaving(true);setError(null);void deleteLineExecution(pendingDelete).then(()=>loadLineExecutions(scope,ids)).then(rows=>{setEntries(rows);setPendingDelete(null)}).catch(cause=>setError(cause instanceof Error?cause.message:'Falha ao excluir')).finally(()=>setSaving(false))}}>{saving?'Excluindo…':'Confirmar exclusão'}</button>
+    </div>
+   </div>
+  </Dialog>
  </section>;
 }
