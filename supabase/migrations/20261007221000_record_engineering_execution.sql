@@ -2,7 +2,7 @@
 create or replace function public.record_engineering_execution(
  p_plan_id uuid, p_execution_date date, p_quantity numeric,
  p_unit_reference text default null, p_notes text default null
-) returns uuid language plpgsql security invoker set search_path=public,pg_temp as $$
+) returns uuid language plpgsql security definer set search_path=public,pg_temp as $$
 declare
  v_plan public.engineering_measurement_plans%rowtype;
  v_total numeric;
@@ -42,14 +42,10 @@ revoke all on function public.record_engineering_execution(uuid,date,numeric,tex
 grant execute on function public.record_engineering_execution(uuid,date,numeric,text,text) to authenticated;
 create unique index if not exists engineering_execution_unique_unit_idx
 on public.engineering_execution_entries(plan_id,unit_reference) where unit_reference is not null;
--- Impedir que um cliente bypass o RPC para registrar quantidades sem validar saldo:
+-- Somente a RPC security definer pode gravar execuções.
+-- A função confere explicitamente o escopo e bloqueia a linha do plano.
 drop policy if exists engineering_execution_insert on public.engineering_execution_entries;
-create policy engineering_execution_insert on public.engineering_execution_entries
-for insert with check (
- app_private.can_edit_company(tenant_id,company_id)
- and exists(select 1 from public.engineering_measurement_plans p
- where p.id=plan_id and p.tenant_id=tenant_id and p.company_id=company_id)
-);
--- Atenção: INSERT direto ainda é possível com esta política.
--- Bloquear insert direto exigirá política/arquitetura específica de privilégios
--- antes de habilitar escrita no cliente.
+drop policy if exists engineering_execution_update on public.engineering_execution_entries;
+drop policy if exists engineering_execution_delete on public.engineering_execution_entries;
+revoke insert,update,delete on public.engineering_execution_entries from anon,authenticated;
+-- Os usuários continuam com leitura filtrada por RLS; a função grava sob o owner.
