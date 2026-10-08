@@ -47,7 +47,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const activeGroup=groups.find(group=>group.key===selected);
  const current=items.find(item=>item.measurementLineId===selected)??activeGroup?.lines[0];
  const groupCandidates=activeGroup?.lines.filter(item=>(doneByLine.get(item.measurementLineId)??0)<item.plannedQuantity)??[];
- const floorOf=(reference:string|null)=>{const match=reference?.match(/^(\\d+)$/);return match&&match[1]!.length>=3?match[1]!.slice(0,-2)+'º pavimento':'Outros'};
+ const floorOf=(reference:string|null)=>{const match=reference?.match(/^(\d+)$/);return match&&match[1]!.length>=3?match[1]!.slice(0,-2)+'º pavimento':'Outros'};
  const floorGroups=[...new Set(groupCandidates.map(item=>floorOf(item.reference)))].map(floor=>({floor,lines:groupCandidates.filter(item=>floorOf(item.reference)===floor)}));
  const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
