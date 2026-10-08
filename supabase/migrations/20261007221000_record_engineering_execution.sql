@@ -17,7 +17,7 @@ begin
  if not app_private.can_edit_company(v_plan.tenant_id,v_plan.company_id) then
    raise exception 'Sem permissão para registrar execução';
  end if;
- if p_execution_date < v_plan.competence or p_execution_date >= (v_plan.competence + interval '1 month')::date then
+ if date_trunc('month',p_execution_date::timestamp)::date <> date_trunc('month',v_plan.competence::timestamp)::date then
    raise exception 'Data fora da competência planejada';
  end if;
  select coalesce(sum(executed_quantity),0) into v_total
