@@ -58,7 +58,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   if(!Number.isFinite(value)||value<=0||(!activeGroup&&value>remaining)){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
-  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){for(const line of batch){await saveLineExecution({measurementLineId:line.measurementLineId,executionDate:date,quantity:Math.min(line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0),value))}}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
+  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){for(const line of batch){await saveLineExecution({measurementLineId:line.measurementLineId,executionDate:date,quantity:Math.min(line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0),value))}}}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
    setEntries(await loadLineExecutions(scope,ids));setSelected(null);setSelectedReferences([]);setEditing(null);setQuantity('1')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
