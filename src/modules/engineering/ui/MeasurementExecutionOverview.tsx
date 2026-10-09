@@ -2,7 +2,7 @@ import { Dialog } from '../../../shared/ui/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
 import { chooseActiveExecutionMeasurement, deriveExecutionProjection } from '../domain/measurementExecutionProjection';
-import { loadLineExecutions, saveLineExecution, updateLineExecution, deleteLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
+import { loadLineExecutions, saveLineExecution, saveLineExecutionsBatch, updateLineExecution, deleteLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
 const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 interface Props {model:MeasurementParityModel;measurementId?:string;scope:{tenantId:string;companyId:string}}
 const today=()=>{const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')};
@@ -59,7 +59,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   if(!Number.isFinite(value)||value<=0||(!activeGroup&&value>remaining)||(!editing&&activeGroup&&batch.some(line=>value>line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0))){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
-  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){for(const line of batch){await saveLineExecution({measurementLineId:line.measurementLineId,executionDate:date,quantity:value})}}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
+  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){await saveLineExecutionsBatch({measurementLineIds:batch.map(line=>line.measurementLineId),executionDate:date,quantity:value})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
    setEntries(await loadLineExecutions(scope,ids));setSelected(null);setSelectedReferences([]);setEditing(null);setQuantity('1')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
