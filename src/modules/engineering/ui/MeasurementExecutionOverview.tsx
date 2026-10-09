@@ -56,7 +56,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   const value=Number(quantity.replace(',','.'));
   const batch=activeGroup&&!editing?groupCandidates.filter(item=>selectedReferences.includes(item.measurementLineId)):[];
   if(activeGroup&&!editing&&batch.length===0){setError('Selecione ao menos uma unidade.');return}
-  if(!Number.isFinite(value)||value<=0||(!activeGroup&&value>remaining)||(!editing&&activeGroup&&batch.some(line=>value>line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0))){setError('Quantidade inválida ou acima do saldo projetado.');return}
+  if(!Number.isFinite(value)||value<=0||(!activeGroup&&value>remaining)||(!editing&&activeGroup&&batch.some(line=>value>line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)))){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
   try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){await saveLineExecutionsBatch({measurementLineIds:batch.map(line=>line.measurementLineId),executionDate:date,quantity:value})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
