@@ -39,3 +39,10 @@ export async function deleteLineExecution(id:string):Promise<void>{
  const response=await getSupabaseClient().rpc('delete_measurement_line_execution',{p_execution_id:id});
  if(response.error)throw response.error;
 }
+
+export async function saveLineExecutionsBatch(input:{measurementLineIds:string[];executionDate:string;quantity:number}):Promise<void>{
+ const response=await getSupabaseClient().rpc('record_measurement_line_executions_batch',{
+  p_line_ids:input.measurementLineIds,p_execution_date:input.executionDate,p_quantity:input.quantity
+ });
+ if(response.error)throw response.error;
+}
