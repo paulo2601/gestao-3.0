@@ -16,6 +16,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const [editing,setEditing]=useState<string|null>(null);
  const [pendingDelete,setPendingDelete]=useState<string|null>(null);
  const [quantity,setQuantity]=useState('1');
+ const [entryMode,setEntryMode]=useState<'quantity'|'value'|'percent'>('quantity');
  const [date,setDate]=useState(today);
  const [saving,setSaving]=useState(false);
  const [error,setError]=useState<string|null>(null);
@@ -53,13 +54,16 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
   if(!current)return;
-  const value=Number(quantity.replace(',','.'));
+  const entered=Number(quantity.replace(/\./g,'').replace(',','.'));
   const batch=activeGroup&&!editing?groupCandidates.filter(item=>selectedReferences.includes(item.measurementLineId)):[];
+  const selectedLines=activeGroup&&!editing?batch:[current];
+  const value=entryMode==='quantity'?Number(quantity.replace(',','.')):selectedLines.length?entered/(entryMode==='percent'?100: selectedLines.reduce((sum,line)=>sum+line.plannedValue,0))* (entryMode==='percent'?1:1):NaN;
+  const quantities=selectedLines.map(line=>entryMode==='quantity'?value:entryMode==='percent'?line.plannedQuantity*entered/100:line.plannedValue>0?entered*line.plannedQuantity/selectedLines.reduce((sum,item)=>sum+item.plannedValue,0):NaN);
   if(activeGroup&&!editing&&batch.length===0){setError('Selecione ao menos uma unidade.');return}
-  if(!Number.isFinite(value)||value<=0||(!activeGroup&&value>remaining)||(!editing&&activeGroup&&batch.some(line=>value>line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)))){setError('Quantidade inválida ou acima do saldo projetado.');return}
+  if(!Number.isFinite(entered)||entered<=0||quantities.some((q,i)=>!Number.isFinite(q)||q<=0||q>selectedLines[i]!.plannedQuantity-(doneByLine.get(selectedLines[i]!.measurementLineId)??0)+(editing?entries.find(e=>e.id===editing)?.executedQuantity??0:0)+0.0000001)){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
-  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){await saveLineExecutionsBatch({measurementLineIds:batch.map(line=>line.measurementLineId),executionDate:date,quantity:value})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
+  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:quantities[0]!})}else if(activeGroup){for(let i=0;i<batch.length;i++)await saveLineExecution({measurementLineId:batch[i]!.measurementLineId,executionDate:date,quantity:quantities[i]!})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:quantities[0]!})}
    setEntries(await loadLineExecutions(scope,ids));setSelected(null);setSelectedReferences([]);setEditing(null);setQuantity('1')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
@@ -101,7 +105,8 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    </div>}
    <strong>{current.description}</strong><small>Saldo: {(activeGroup&&!editing?groupRemaining:remaining).toLocaleString('pt-BR')} {current.unit}</small>{activeGroup&&!editing&&<small>Selecionadas: {selectedReferences.length} · Quantidade solicitada: {(selectedReferences.length*Number(quantity.replace(',','.'))||0).toLocaleString('pt-BR')}</small>}
    <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
-   <label>Quantidade por unidade<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
+   <div role="group" aria-label="Forma de lançamento" className="measurement-execution-overview__mode">{(['quantity','value','percent'] as const).map(mode=><button key={mode} type="button" aria-pressed={entryMode===mode} onClick={()=>{setEntryMode(mode);setQuantity('')}}>{mode==='quantity'?'Quantidade':mode==='value'?'Valor (R$)':'Porcentagem (%)'}</button>)}</div>
+   <label>{entryMode==='quantity'?'Quantidade por unidade':entryMode==='value'?'Valor total executado (R$)':'Percentual do contratado (%)'}<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
    <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||(activeGroup&&!editing?selectedReferences.length===0:remaining<=0)}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
   </div>}
   </Dialog>
