@@ -6,6 +6,9 @@ import type { MeasurementParityModel, MeasurementParityLine } from '../infrastru
  * quantidades de outras medições com a competência em acompanhamento.
  */
 export interface ExecutionProjectionItem {
+  originName: string;
+  originType: string;
+  unitKind: 'apartamento' | 'hall' | 'unidade';
   measurementLineId: string;
   measurementId: string;
   targetKind: MeasurementParityLine['targetKind'];
@@ -30,14 +33,20 @@ export function deriveExecutionProjection(
       const service = services.find(item =>
         item.targetKind === line.targetKind && item.targetId === line.targetId
       );
+      const origin = model.origins.find(origin => origin.services.some(item => item.targetKind === line.targetKind && item.targetId === line.targetId));
+      const description = line.manualDescription ?? service?.description ?? 'Serviço da medição';
+      const unitKind = /hall|escadaria|área comum/i.test(description) ? 'hall' : /^\d{3,4}$/.test(line.reference ?? '') ? 'apartamento' : 'unidade';
       const quantity = line.measuredQuantity;
       const unitPrice = line.unitPriceSnapshot;
       return {
+        originName: origin?.name ?? 'Origem não identificada',
+        originType: origin?.type ?? 'other',
+        unitKind,
         measurementLineId: line.id,
         measurementId: line.measurementId,
         targetKind: line.targetKind,
         targetId: line.targetId,
-        description: line.manualDescription ?? service?.description ?? 'Serviço da medição',
+        description,
         unit: line.manualUnit ?? service?.unit ?? '',
         reference: line.reference,
         plannedQuantity: quantity,
