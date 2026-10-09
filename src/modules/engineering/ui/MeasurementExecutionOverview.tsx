@@ -2,7 +2,7 @@ import { Dialog } from '../../../shared/ui/Dialog';
 import { useEffect, useMemo, useState } from 'react';
 import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
 import { chooseActiveExecutionMeasurement, deriveExecutionProjection } from '../domain/measurementExecutionProjection';
-import { loadLineExecutions, saveLineExecution, saveLineExecutionsBatch, updateLineExecution, deleteLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
+import { loadLineExecutions, saveLineExecution, updateLineExecution, deleteLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
 const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 interface Props {model:MeasurementParityModel;measurementId?:string;scope:{tenantId:string;companyId:string}}
 const today=()=>{const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')};
