@@ -40,25 +40,26 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  });
  const groups=useMemo(()=>{
   const map=new Map<string,typeof items>();
-  for(const item of items){const key=item.targetKind+':'+item.targetId;map.set(key,[...(map.get(key)??[]),item]);}
+  for(const item of items){const key=item.originName+':'+item.targetKind+':'+item.targetId;map.set(key,[...(map.get(key)??[]),item]);}
   return [...map.entries()].map(([key,lines])=>({key,lines}));
  },[items]);
  const filteredGroups=groups.filter(group=>group.lines.some(item=>filtered.includes(item)));
  const activeGroup=groups.find(group=>group.key===selected);
  const current=items.find(item=>item.measurementLineId===selected)??activeGroup?.lines[0];
  const groupCandidates=activeGroup?.lines.filter(item=>(doneByLine.get(item.measurementLineId)??0)<item.plannedQuantity)??[];
- const floorOf=(reference:string|null)=>{const match=reference?.match(/^(\d+)$/);return match&&match[1]!.length>=3?match[1]!.slice(0,-2)+'º pavimento':'Outros'};
+ const floorOf=(reference:string|null)=>{const value=(reference??'').trim();const match=value.match(/^(\d+)$/);return match&&match[1]!.length>=3?Number(match[1]!.slice(0,-2))+'º pavimento':/^0?[1-8]$/.test(value)?'Térreo':'Outros'};
  const floorGroups=[...new Set(groupCandidates.map(item=>floorOf(item.reference)))].sort((a,b)=>{const n=(x:string)=>x==='Outros'?-1:parseInt(x,10);return n(a)-n(b)}).map(floor=>({floor,lines:groupCandidates.filter(item=>floorOf(item.reference)===floor).sort((a,b)=>(a.reference??'').localeCompare(b.reference??'','pt-BR',{numeric:true}))}));
+ const groupRemaining=activeGroup?.lines.reduce((sum,line)=>sum+Math.max(0,line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)),0)??0;
  const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
   if(!current)return;
   const value=Number(quantity.replace(',','.'));
   const batch=activeGroup&&!editing?groupCandidates.filter(item=>selectedReferences.includes(item.measurementLineId)):[];
-  if(activeGroup&&!editing&&batch.length===0){setError('Selecione ao menos um apartamento.');return}
-  if(!Number.isFinite(value)||value<=0||(!activeGroup&&value>remaining)){setError('Quantidade inválida ou acima do saldo projetado.');return}
+  if(activeGroup&&!editing&&batch.length===0){setError('Selecione ao menos uma unidade.');return}
+  if(!Number.isFinite(value)||value<=0||(!activeGroup&&value>remaining)||(!editing&&activeGroup&&batch.some(line=>value>line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0))){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
-  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){for(const line of batch){await saveLineExecution({measurementLineId:line.measurementLineId,executionDate:date,quantity:Math.min(line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0),value)})}}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
+  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:value})}else if(activeGroup){for(const line of batch){await saveLineExecution({measurementLineId:line.measurementLineId,executionDate:date,quantity:value})}}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:value})}
    setEntries(await loadLineExecutions(scope,ids));setSelected(null);setSelectedReferences([]);setEditing(null);setQuantity('1')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
@@ -81,15 +82,16 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    const done=group.lines.reduce((sum,item)=>sum+(doneByLine.get(item.measurementLineId)??0),0);
    const value=group.lines.reduce((sum,item)=>sum+item.plannedValue,0);
    return <button type="button" key={group.key} className={`measurement-execution-overview__service ${done>=planned?'is-done':'is-pending'}`} onClick={()=>{setSelected(group.key);setSelectedReferences([]);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
+    <small>{group.lines[0]?.originName} · {group.lines[0]?.unitKind==='hall'?'Halls / área comum':group.lines[0]?.unitKind==='apartamento'?'Apartamentos':'Unidades'}</small>
     <strong>{group.lines[0]?.description}</strong>
-    <small>{group.lines.length} unidade(s) prevista(s)</small>
+    <small>{planned.toLocaleString('pt-BR')} {group.lines[0]?.unitKind==='hall'?'hall(s)': 'unidade(s)'} previsto(s)</small>
     <span>Projetado: {planned.toLocaleString('pt-BR')} · {money.format(value)}</span>
     <span>Executado: {done.toLocaleString('pt-BR')} · Pendente: {Math.max(0,planned-done).toLocaleString('pt-BR')}</span>
-    <span>{done>=planned?'Concluído · Consultar':'Selecionar apartamentos ›'}</span>
+    <span>{done>=planned?'Concluído · Consultar':'Selecionar unidades ›'}</span>
    </button>})}</div>}
-  <Dialog open={Boolean(current)} title={editing?"Editar execução":"Registrar execução"} description={current?`${current.reference||"Serviço geral"} · Medição ${measurement?.measurementNumber??"—"}`:undefined} onClose={()=>{if(!saving){setSelected(null);setEditing(null)}}}>
+  <Dialog open={Boolean(current)} title={editing?"Editar execução":"Registrar execução"} description={current?`${current.originName} · ${current.description} · Medição ${measurement?.measurementNumber??"—"}`:undefined} onClose={()=>{if(!saving){setSelected(null);setEditing(null)}}}>
   {current&&<div className="measurement-execution-overview__entry" role="group" aria-label="Registrar execução">
-   {activeGroup&&!editing&&<div className="measurement-execution-overview__units"><strong>Selecione as unidades executadas</strong>
+   {activeGroup&&!editing&&<div className="measurement-execution-overview__units"><strong>{current.originName} · Selecione {current.unitKind==='hall'?'os halls':current.unitKind==='apartamento'?'os apartamentos':'as unidades'} executados</strong>
     <button type="button" onClick={()=>setSelectedReferences(groupCandidates.map(item=>item.measurementLineId))}>Marcar todas as pendentes</button>
     <button type="button" onClick={()=>setSelectedReferences([])}>Limpar seleção</button>
     {floorGroups.map(group=><fieldset key={group.floor}><legend>{group.floor}</legend>
@@ -97,13 +99,13 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
      <div className="measurement-execution-overview__unit-grid">{group.lines.map(item=><label key={item.measurementLineId}><input type="checkbox" checked={selectedReferences.includes(item.measurementLineId)} onChange={event=>setSelectedReferences(old=>event.target.checked?[...old,item.measurementLineId]:old.filter(id=>id!==item.measurementLineId))}/>{item.reference??'Serviço geral'}</label>)}</div>
     </fieldset>)}
    </div>}
-   <strong>{current.description}</strong><small>Saldo: {(activeGroup&&!editing?activeGroup.lines.reduce((sum,line)=>sum+Math.max(0,line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)),0):remaining).toLocaleString('pt-BR')} {current.unit}</small>
+   <strong>{current.description}</strong><small>Saldo: {(activeGroup&&!editing?groupRemaining:remaining).toLocaleString('pt-BR')} {current.unit}</small>{activeGroup&&!editing&&<small>Selecionadas: {selectedReferences.length} · Quantidade solicitada: {(selectedReferences.length*Number(quantity.replace(',','.'))||0).toLocaleString('pt-BR')}</small>}
    <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
    <label>Quantidade por unidade<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
    <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||(activeGroup&&!editing?selectedReferences.length===0:remaining<=0)}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
   </div>}
   </Dialog>
-  <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>setPendingDelete(entry.id)}>Excluir</button></div>)}</details>
+  <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.originName??'Origem não identificada'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>setPendingDelete(entry.id)}>Excluir</button></div>)}</details>
   <Dialog open={Boolean(pendingDelete)} title="Excluir execução" description="Esta ação excluirá apenas o registro físico de execução, sem alterar a medição financeira." onClose={()=>{if(!saving)setPendingDelete(null)}}>
    <div className="measurement-execution-overview__entry">
     <p>Deseja realmente excluir este lançamento do histórico?</p>
