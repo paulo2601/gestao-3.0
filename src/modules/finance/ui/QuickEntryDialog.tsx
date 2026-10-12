@@ -604,7 +604,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
 
   return <Dialog open={open} title="Novo lançamento" description="Registre uma receita ou despesa" variant="quick-entry" onClose={exitQuickEntry} onBack={exitQuickEntry} loading={busy} footer={footer}>
     {!company ? <Feedback tone="danger" title="Empresa obrigatória" message="Selecione uma empresa para continuar." /> : !references && operations.state.busy ? <LoadingState label="Carregando dados do lançamento…" /> : <>
-      {(localError ?? operations.state.errorMessage) && <Feedback tone="danger" title="Não foi possível lançar" message={localError ?? operations.state.errorMessage ?? ''} />}
+      {(localError || (!localSuccess && operations.state.errorMessage)) && <Feedback tone="danger" title="Não foi possível lançar" message={localError || operations.state.errorMessage || ''} />}
       {(localSuccess ?? operations.state.successMessage) && <Feedback tone="success" title="Lançamento concluído" message={localSuccess ?? operations.state.successMessage ?? ''} />}
       <div className="quick-entry">
         <div className="quick-entry__hero">
