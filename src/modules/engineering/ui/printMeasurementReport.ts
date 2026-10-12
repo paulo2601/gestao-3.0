@@ -1,3 +1,4 @@
+import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 import type { MeasurementParityModel, MeasurementParityOrigin } from '../infrastructure/LegacyMeasurementParityRepository';
 
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -17,8 +18,27 @@ function compactReferences(values:string[]){
   return output.join(', ');
 }
 
-function printMeasurementGoal(input:PrintMeasurementInput){
+async function printMeasurementGoal(input:PrintMeasurementInput){
  const {model,activeMeasurementId,header,scope,originLabel,setError}=input;if(!model||!activeMeasurementId)return;
+ const physicalByAddendum=new Map<string,{quantity:number;unit:string}>();
+ try {
+  const addendumIds=[...new Set(model.origins.filter(origin=>origin.type==='addendum').flatMap(origin=>origin.services.filter(service=>service.targetKind==='addendum').map(service=>service.targetId)))];
+  if(addendumIds.length){
+   const db=getSupabaseClient();
+   const {data:links,error:linkError}=await db.from('engineering_goal_physical_service_links').select('addendum_line_id,control_item_id').in('addendum_line_id',addendumIds);
+   if(linkError)throw linkError;
+   const itemIds=[...new Set((links??[]).map(link=>String(link.control_item_id)))];
+   if(itemIds.length){
+    const {data:items,error:itemError}=await db.from('engineering_service_control_items').select('id,unit,contracted_quantity,control_id').in('id',itemIds);
+    if(itemError)throw itemError;
+    const {data:controls,error:controlError}=await db.from('engineering_service_controls').select('id,contract_id').in('id',[...new Set((items??[]).map(item=>String(item.control_id)))]);
+    if(controlError)throw controlError;
+    const validControlIds=new Set((controls??[]).filter(control=>control.contract_id===model.contractId).map(control=>String(control.id)));
+    const itemById=new Map((items??[]).filter(item=>validControlIds.has(String(item.control_id))).map(item=>[String(item.id),item]));
+    (links??[]).forEach(link=>{const item=itemById.get(String(link.control_item_id));if(item&&Number(item.contracted_quantity)>0)physicalByAddendum.set(String(link.addendum_line_id),{quantity:Number(item.contracted_quantity),unit:String(item.unit||'m')});});
+   }
+  }
+ }catch(error){console.error('Falha ao consultar vínculos físicos da meta',error);setError('Não foi possível consultar as metragens vinculadas ao Controle de Serviço.');return;}
  document.getElementById('measurement-goal-root')?.remove();document.getElementById('measurement-goal-style')?.remove();
  const esc=(value:unknown)=>safeText(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]??char));
  const orderedOrigins=[...model.origins].sort((a,b)=>{const al=originLabel(a),bl=originLabel(b);const at=/torre\s*(\d+)/i.exec(al),bt=/torre\s*(\d+)/i.exec(bl);if(at&&bt)return Number(at[1])-Number(bt[1]);if(at)return -1;if(bt)return 1;return al.localeCompare(bl,'pt-BR',{numeric:true,sensitivity:'base'});});
@@ -42,7 +62,8 @@ function printMeasurementGoal(input:PrintMeasurementInput){
    const isPhysicalGoal=isAddendum&&refs.length===0;
    const physicalPct=isPhysicalGoal?(pct===null?'Não informado':fmt(pct)+'%'):'';
    const hasPhysicalQuantity=contracted>0&&!(/^(un|und|unid|unidade|unidades)$/i.test(unit)&&contracted<=1);
-   const physicalQty=isPhysicalGoal?(hasPhysicalQuantity?fmt(measured)+' '+esc(unit||'un.'):'Metragem não cadastrada no aditivo'):'';
+   const physical=physicalByAddendum.get(service.targetId);
+   const physicalQty=isPhysicalGoal?(physical&&pct!==null?fmt(physical.quantity*pct/100)+' '+esc(physical.unit):hasPhysicalQuantity?fmt(measured)+' '+esc(unit||'un.'):'Serviço sem vínculo de metragem'):'';
    const floorRows=isPhysicalGoal?[]:floors.length?floors:([['Outros',['Local não especificado']]] as [string,string[]][]);
    const pairs:string[]=[];
    if(isPhysicalGoal){
