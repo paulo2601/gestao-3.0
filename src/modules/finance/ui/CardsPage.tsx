@@ -125,8 +125,9 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
       const [activityRows, closed] = await Promise.all([repositories.cards.listStatementActivities(scope, item.cardId), repositories.cards.listStatements(scope, item.cardId)]);
       setActivities(activityRows);
       setStatements(closed);
-      const months = [...new Set(activityRows.map((line) => line.statementMonth))].sort((a, b) => b.localeCompare(a));
-      setSelectedStatementMonth(preferredMonth && months.includes(preferredMonth) ? preferredMonth : months.includes(currentMonth) ? currentMonth : months[0] ?? '');
+      const activeMonth = shiftMonth(monthKey(), 1);
+      const months = [...new Set([...activityRows.map((line) => line.statementMonth), ...closed.map((line) => line.statementMonth), activeMonth])].sort((a, b) => b.localeCompare(a));
+      setSelectedStatementMonth(preferredMonth && months.includes(preferredMonth) ? preferredMonth : activeMonth);
     } catch { setError('Não foi possível carregar a fatura deste cartão.'); }
     finally { setDetailsLoading(false); }
   }
@@ -204,7 +205,7 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
   async function saveEdit() { if (!selected) return; const company = formCompanies.find((item) => item.id === cardForm.companyId); if (!company) return; setSaving(true); setError(null); try { await repositories.cards.updateCard({ tenantId: company.tenantId, companyId: company.id, sourceCompanyId: cardForm.sourceCompanyId, id: selected.cardId, name: cardForm.name, bankInstitution: cardForm.bankInstitution || null, lastFour: cardForm.lastFour || null, creditLimit: money(cardForm.creditLimit), closingDay: Number(cardForm.closingDay), dueDay: Number(cardForm.dueDay), defaultPaymentAccountId: cardForm.companyId === cardForm.sourceCompanyId ? cardForm.defaultPaymentAccountId || null : null, status: cardForm.status }); closeDialog(); await load(); } catch { setError('Não foi possível salvar as alterações do cartão.'); } finally { setSaving(false); } }
   async function confirmDelete() { if (!selected) return; setSaving(true); try { await repositories.cards.updateCard({ tenantId: selected.tenantId, companyId: selected.companyId, id: selected.cardId, name: selected.name, bankInstitution: selected.bankInstitution, lastFour: selected.lastFour, creditLimit: selected.creditLimit, closingDay: selected.closingDay, dueDay: selected.dueDay, defaultPaymentAccountId: selected.defaultPaymentAccountId, status: 'inactive' }); closeDialog(); await load(); } catch { setError('Não foi possível excluir o cartão.'); } finally { setSaving(false); } }
 
-  const selectableMonths = useMemo(() => [...new Set(activities.map((line) => line.statementMonth))].sort((a, b) => b.localeCompare(a)), [activities]);
+  const selectableMonths = useMemo(() => [...new Set([...activities.map((line) => line.statementMonth), ...statements.map((line) => line.statementMonth), shiftMonth(currentMonth, 1)])].sort((a, b) => b.localeCompare(a)), [activities, statements, currentMonth]);
   const monthActivities = useMemo(() => activities.filter((item) => item.statementMonth === selectedStatementMonth), [activities, selectedStatementMonth]);
   const filteredActivities = useMemo(() => monthActivities.filter((item) => activityFilter === 'all' || item.activityType === activityFilter), [monthActivities, activityFilter]);
   const selectedClosedStatement = statements.find((statement) => statement.statementMonth === selectedStatementMonth) ?? null;
