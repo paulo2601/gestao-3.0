@@ -85,12 +85,17 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    const planned=group.lines.reduce((sum,item)=>sum+item.plannedQuantity,0);
    const done=group.lines.reduce((sum,item)=>sum+(doneByLine.get(item.measurementLineId)??0),0);
    const value=group.lines.reduce((sum,item)=>sum+item.plannedValue,0);
+   const executedValue=group.lines.reduce((sum,item)=>sum+Math.min(item.plannedQuantity,Math.max(0,doneByLine.get(item.measurementLineId)??0))*(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0),0);
+   const pendingValue=Math.max(0,value-executedValue);
+   const progress=value>0?Math.min(100,Math.max(0,executedValue/value*100)):0;
    return <button type="button" key={group.key} className={`measurement-execution-overview__service ${done>=planned?'is-done':'is-pending'}`} onClick={()=>{setSelected(group.key);setSelectedReferences([]);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
     <small>{group.lines[0]?.originName} · {group.lines[0]?.unitKind==='hall'?'Halls / área comum':group.lines[0]?.unitKind==='apartamento'?'Apartamentos':'Unidades'}</small>
     <strong>{group.lines[0]?.description}</strong>
     <small>{planned.toLocaleString('pt-BR')} {group.lines[0]?.unitKind==='hall'?'hall(s)': 'unidade(s)'} previsto(s)</small>
     <span>Projetado: {planned.toLocaleString('pt-BR')} · {money.format(value)}</span>
-    <span>Executado: {done.toLocaleString('pt-BR')} · Pendente: {Math.max(0,planned-done).toLocaleString('pt-BR')}</span>
+    <span>Executado: {done.toLocaleString('pt-BR')} · {money.format(executedValue)}</span>
+    <span>Pendente: {Math.max(0,planned-done).toLocaleString('pt-BR')} · {money.format(pendingValue)}</span>
+    <span>{progress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% executado</span>
     <span>{done>=planned?'Concluído · Consultar':'Selecionar unidades ›'}</span>
    </button>})}</div>}
   <Dialog open={Boolean(current)} title={editing?"Editar execução":"Registrar execução"} description={current?`${current.originName} · ${current.description} · Medição ${measurement?.measurementNumber??"—"}`:undefined} onClose={()=>{if(!saving){setSelected(null);setEditing(null)}}}>
