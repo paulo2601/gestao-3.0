@@ -152,3 +152,27 @@
 .measurement-hub .measurement-hub__footer button{min-height:34px!important;padding:6px 10px!important;font-size:.74rem!important;white-space:normal!important}
 @media(max-width:900px){.measurement-hub .measurement-hub__financial{grid-template-columns:repeat(3,minmax(0,1fr))!important}.measurement-hub .measurement-hub__financial>div.is-net{grid-column:span 2!important}}
 @media(max-width:600px){.measurement-hub .measurement-hub__financial{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-hub .measurement-hub__financial>div.is-net{grid-column:1/-1!important}.measurement-hub .measurement-hub__origin-list{grid-template-columns:1fr!important}.measurement-hub .measurement-hub__header-card{padding:9px!important}.measurement-hub .measurement-hub__footer button{min-height:36px!important}}
+
+/* Medição: campos do cabeçalho com a mesma altura visual. */
+.measurement-hub .measurement-hub__header-grid--compact{align-items:stretch!important}
+.measurement-hub .measurement-hub__header-grid--compact> *{min-width:0!important;align-self:stretch!important}
+.measurement-hub .measurement-hub__header-grid--compact input,
+.measurement-hub .measurement-hub__header-grid--compact select{box-sizing:border-box!important;min-height:42px!important;height:42px!important;max-height:42px!important;width:100%!important}
+.measurement-hub .measurement-hub__header-grid--compact label{line-height:1.25!important}
+
+/* Serviços avulsos: uma única malha de colunas para cabeçalho e linhas. */
+.measurement-hub__manual-services .ams-table-wrap{width:100%!important;overflow-x:auto!important}
+.measurement-hub__manual-services .ams-table{width:100%!important;min-width:760px!important;table-layout:fixed!important;border-collapse:collapse!important}
+.measurement-hub__manual-services .ams-table th,
+.measurement-hub__manual-services .ams-table td{box-sizing:border-box!important;vertical-align:middle!important;padding:8px 10px!important}
+.measurement-hub__manual-services .ams-table th:nth-child(1){width:36%!important}
+.measurement-hub__manual-services .ams-table th:nth-child(2){width:8%!important}
+.measurement-hub__manual-services .ams-table th:nth-child(3){width:12%!important}
+.measurement-hub__manual-services .ams-table th:nth-child(4){width:17%!important}
+.measurement-hub__manual-services .ams-table th:nth-child(5){width:17%!important}
+.measurement-hub__manual-services .ams-table th:nth-child(6){width:10%!important}
+.measurement-hub__manual-services .ams-table th:nth-child(n+2),
+.measurement-hub__manual-services .ams-table td:nth-child(n+2){text-align:center!important;white-space:nowrap!important}
+.measurement-hub__manual-services .ams-table td:nth-child(1){overflow-wrap:anywhere!important;text-align:left!important}
+.measurement-hub__manual-services .ams-table td:nth-child(4),
+.measurement-hub__manual-services .ams-table td:nth-child(5){text-align:right!important;font-variant-numeric:tabular-nums!important}
