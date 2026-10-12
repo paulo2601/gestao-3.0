@@ -23,6 +23,8 @@ async function printMeasurementGoal(input:PrintMeasurementInput){
  let physicalByAddendum:Map<string,{quantity:number;unit:string}>;
  try {physicalByAddendum=await loadMeasurementGoalPhysicalQuantities(model);}
  catch(error){console.error('Falha ao consultar vínculos físicos da meta',error);setError('Não foi possível consultar as metragens vinculadas ao Controle de Serviço.');return;}
+ document.getElementById('contract-balance-print-root')?.remove();
+ document.getElementById('contract-balance-print-style')?.remove();
  document.getElementById('measurement-goal-root')?.remove();document.getElementById('measurement-goal-style')?.remove();
  const esc=(value:unknown)=>safeText(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]??char));
  const orderedOrigins=[...model.origins].sort((a,b)=>{const al=originLabel(a),bl=originLabel(b);const at=/torre\s*(\d+)/i.exec(al),bt=/torre\s*(\d+)/i.exec(bl);if(at&&bt)return Number(at[1])-Number(bt[1]);if(at)return -1;if(bt)return 1;return al.localeCompare(bl,'pt-BR',{numeric:true,sensitivity:'base'});});
