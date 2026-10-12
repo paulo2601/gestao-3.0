@@ -21,7 +21,7 @@ function printMeasurementGoal(input:PrintMeasurementInput){
  const {model,activeMeasurementId,header,scope,originLabel,setError}=input;if(!model||!activeMeasurementId)return;
  document.getElementById('measurement-goal-root')?.remove();document.getElementById('measurement-goal-style')?.remove();
  const esc=(value:unknown)=>safeText(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]??char));
- const orderedOrigins=[...model.origins].sort((a,b)=>{const al=originLabel(a),bl=originLabel(b);const at=/torre\\s*(\\d+)/i.exec(al),bt=/torre\\s*(\\d+)/i.exec(bl);if(at&&bt)return Number(at[1])-Number(bt[1]);if(at)return -1;if(bt)return 1;return al.localeCompare(bl,'pt-BR',{numeric:true,sensitivity:'base'});});
+ const orderedOrigins=[...model.origins].sort((a,b)=>{const al=originLabel(a),bl=originLabel(b);const at=/torre\s*(\d+)/i.exec(al),bt=/torre\s*(\d+)/i.exec(bl);if(at&&bt)return Number(at[1])-Number(bt[1]);if(at)return -1;if(bt)return 1;return al.localeCompare(bl,'pt-BR',{numeric:true,sensitivity:'base'});});
  const referenceSort=(a:string,b:string)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'});
  const groups=orderedOrigins.map(origin=>{
   const services=[...origin.services].sort((a,b)=>(a.code||'').localeCompare(b.code||'','pt-BR',{numeric:true}));
@@ -30,15 +30,15 @@ function printMeasurementGoal(input:PrintMeasurementInput){
    if(!lines.length)return [];
    const refs=[...new Set(lines.flatMap(line=>(line.reference||'').split(/[,;]+/).map(value=>value.trim()).filter(Boolean)))].sort(referenceSort);
    const byFloor=new Map<string,string[]>();
-   refs.forEach(ref=>{const match=/^(?:TR-)?(\\d{3,4})$/.exec(ref);const floor=match?String(Math.floor(Number(match[1])/100)):'Outros';byFloor.set(floor,[...(byFloor.get(floor)??[]),ref]);});
+   refs.forEach(ref=>{const match=/^(?:TR-)?(\d{3,4})$/.exec(ref);const floor=match?String(Math.floor(Number(match[1])/100)):'Outros';byFloor.set(floor,[...(byFloor.get(floor)??[]),ref]);});
    const floors=[...byFloor.entries()].sort((a,b)=>a[0]==='Outros'?1:b[0]==='Outros'?-1:Number(a[0])-Number(b[0]));
-   const floorRows=floors.length?floors:([['Outros',['Conferir execução']]] as [string,string[]][]);
+   const floorRows=floors.length?floors:([['Outros',['Local não especificado']]] as [string,string[]][]);
    const pairs:string[]=[];
    for(let i=0;i<floorRows.length;i+=2){
     const cell=(entry?:[string,string[]])=>entry?'<div class="goal-floor"><b>'+esc(entry[0]==='Outros'?'Local':entry[0]==='1'?'Térreo':(Number(entry[0])-1)+'º pav.')+'</b><span>'+entry[1].map(esc).join(', ')+'</span></div>':'<div class="goal-floor"></div>';
     pairs.push('<tr class="goal-detail"><td>'+cell(floorRows[i])+'</td><td>'+cell(floorRows[i+1])+'</td></tr>');
    }
-   return ['<tr class="goal-service"><td rowspan="'+(pairs.length+1)+'"><strong>'+esc(service.code||'—')+'</strong></td><td rowspan="'+(pairs.length+1)+'">'+esc(service.description)+'</td><td colspan="2" class="goal-location-heading">Pavimento / Unidades (Apartamentos)</td></tr>'+pairs.join('')];
+   return ['<tr class="goal-service"><td rowspan="'+pairs.length+'"><strong>'+esc(service.code||'—')+'</strong></td><td rowspan="'+pairs.length+'">'+esc(service.description)+'</td>'+pairs[0].replace('<tr class="goal-detail">','')+pairs.slice(1).join('')];
   });
   return rows.length?'<section class="goal-origin"><h2>'+esc(originLabel(origin))+'</h2><table><thead><tr><th class="goal-code">Item</th><th class="goal-description">Serviço</th><th colspan="2">Pavimento / Unidades (Apartamentos)</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>':'';
  }).join('');
@@ -66,7 +66,7 @@ function printMeasurementGoal(input:PrintMeasurementInput){
  #measurement-goal-root td,#measurement-goal-root th{border:1px solid #cbd7e1!important;padding:2px 4px!important;vertical-align:middle!important;overflow-wrap:anywhere!important}
  #measurement-goal-root th{background:#e2edf4!important;text-align:left!important;font-weight:700!important}
  #measurement-goal-root .goal-code{width:7%!important}
- #measurement-goal-root .goal-description{width:19%!important}
+ #measurement-goal-root .goal-description{width:19%!important}\n #measurement-goal-root th:nth-child(3){width:74%!important}
  #measurement-goal-root .goal-detail td{width:37%!important}
  #measurement-goal-root .goal-detail:nth-child(even){background:#f5f9fc!important}
  #measurement-goal-root .goal-floor{display:grid!important;grid-template-columns:37px minmax(0,1fr)!important;gap:3px!important;align-items:start!important}
