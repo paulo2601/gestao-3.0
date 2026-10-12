@@ -24,26 +24,58 @@ function printMeasurementGoal(input:PrintMeasurementInput){
  const orderedOrigins=[...model.origins].sort((a,b)=>{const al=originLabel(a),bl=originLabel(b);const at=/torre\\s*(\\d+)/i.exec(al),bt=/torre\\s*(\\d+)/i.exec(bl);if(at&&bt)return Number(at[1])-Number(bt[1]);if(at)return -1;if(bt)return 1;return al.localeCompare(bl,'pt-BR',{numeric:true,sensitivity:'base'});});
  const referenceSort=(a:string,b:string)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'});
  const groups=orderedOrigins.map(origin=>{
-  const rows=[...origin.services].sort((a,b)=>(a.code||'').localeCompare(b.code||'','pt-BR',{numeric:true})).flatMap(service=>{
+  const services=[...origin.services].sort((a,b)=>(a.code||'').localeCompare(b.code||'','pt-BR',{numeric:true}));
+  const rows=services.flatMap(service=>{
    const lines=model.lines.filter(line=>line.measurementId===activeMeasurementId&&line.targetKind===service.targetKind&&line.targetId===service.targetId);
    if(!lines.length)return [];
-   const qty=lines.reduce((total,line)=>total+line.measuredQuantity,0);
    const refs=[...new Set(lines.flatMap(line=>(line.reference||'').split(/[,;]+/).map(value=>value.trim()).filter(Boolean)))].sort(referenceSort);
-   const unit=(service.unit||'').trim(),isPercent=/%|percent/i.test(unit);
-   const displayQty=isPercent?(qty<=1?qty*100:qty).toLocaleString('pt-BR',{maximumFractionDigits:2})+'%':qty.toLocaleString('pt-BR',{maximumFractionDigits:3});
    const byFloor=new Map<string,string[]>();
-   refs.forEach(ref=>{const match=/^(?:TR-)?(\\d{3,4})$/.exec(ref);const floor=match?String(Math.floor(Number(match[1])/100)):'Outros';const values=byFloor.get(floor)??[];values.push(ref);byFloor.set(floor,values);});
-   const floorRows=[...byFloor.entries()].sort((a,b)=>a[0]==='Outros'?1:b[0]==='Outros'?-1:Number(a[0])-Number(b[0]));
-   const floorCells=floorRows.map(([floor,units])=>'<div class="goal-floor"><b>'+esc(floor==='Outros'?'Outros':floor+'º pav.')+'</b><span>'+units.map(ref=>'<span class="goal-unit"><span class="goal-check"></span>'+esc(ref)+'</span>').join('')+'</span></div>');
-   const locations=floorCells.length?'<div class="goal-floor-grid">'+floorCells.join('')+'</div>':'<span>Conferir execução</span>';
-   return ['<tr><td><strong>'+esc(service.code||'—')+'</strong></td><td>'+esc(service.description)+'</td><td>'+esc(unit||'—')+'</td><td class="num"><strong>'+esc(displayQty)+'</strong></td><td>'+locations+'</td></tr>'];
+   refs.forEach(ref=>{const match=/^(?:TR-)?(\\d{3,4})$/.exec(ref);const floor=match?String(Math.floor(Number(match[1])/100)):'Outros';byFloor.set(floor,[...(byFloor.get(floor)??[]),ref]);});
+   const floors=[...byFloor.entries()].sort((a,b)=>a[0]==='Outros'?1:b[0]==='Outros'?-1:Number(a[0])-Number(b[0]));
+   const floorRows=floors.length?floors:([['Outros',['Conferir execução']]] as [string,string[]][]);
+   const pairs:string[]=[];
+   for(let i=0;i<floorRows.length;i+=2){
+    const cell=(entry?:[string,string[]])=>entry?'<div class="goal-floor"><b>'+esc(entry[0]==='Outros'?'Local':entry[0]==='1'?'Térreo':(Number(entry[0])-1)+'º pav.')+'</b><span>'+entry[1].map(esc).join(', ')+'</span></div>':'<div class="goal-floor"></div>';
+    pairs.push('<tr class="goal-detail"><td>'+cell(floorRows[i])+'</td><td>'+cell(floorRows[i+1])+'</td></tr>');
+   }
+   return ['<tr class="goal-service"><td rowspan="'+(pairs.length+1)+'"><strong>'+esc(service.code||'—')+'</strong></td><td rowspan="'+(pairs.length+1)+'">'+esc(service.description)+'</td><td colspan="2" class="goal-location-heading">Pavimento / Unidades (Apartamentos)</td></tr>'+pairs.join('')];
   });
-  return rows.length?'<section><h2>'+esc(originLabel(origin))+'</h2><table><thead><tr><th>Código</th><th>Serviço</th><th>Un.</th><th>Meta</th><th>Pavimentos / apartamentos</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>':'';
+  return rows.length?'<section class="goal-origin"><h2>'+esc(originLabel(origin))+'</h2><table><thead><tr><th class="goal-code">Item</th><th class="goal-description">Serviço</th><th colspan="2">Pavimento / Unidades (Apartamentos)</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>':'';
  }).join('');
  const logos:Record<string,string>={'1ac1cde3-30fa-4fab-9ea0-8afbb34732e5':'/company-cr.webp','68e55f19-6d77-45cf-a86b-6a661f4c285a':'/company-pr.webp'};const logo=logos[scope.companyId]??'/gestao-brand.svg';
  const competence=header.competence?new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(new Date(`${header.competence}-01T12:00:00`)):'—';
- const root=document.createElement('div');root.id='measurement-goal-root';root.innerHTML=`<div class="wm"><img src="${logo}" alt=""></div><header><img id="measurement-goal-logo" src="${logo}" alt="Logo"><div><h1>Meta de produção</h1><p>Competência: ${esc(competence)} · Medição ${esc(header.measurementNumber||'—')}</p></div></header><main>${groups}<div class="sign"><div>Responsável</div><div>Data</div><div>Assinatura</div></div></main>`;
- const style=document.createElement('style');style.id='measurement-goal-style';style.textContent=`#measurement-goal-root{position:fixed;left:-100000px;top:0;width:794px;visibility:hidden;background:#fff;color:#111827}@media print{@page{size:A4 landscape;margin:10mm 9mm 9mm}body>*{display:none!important}#measurement-goal-root{display:block!important;position:static!important;left:auto!important;width:auto!important;visibility:visible!important;font:10px Arial,sans-serif!important}#measurement-goal-root *{visibility:visible!important;box-sizing:border-box!important}#measurement-goal-root header{display:flex!important;align-items:center!important;justify-content:space-between!important;border-bottom:2px solid #1d4ed8!important;padding-bottom:6px!important;margin-bottom:10px!important}#measurement-goal-root header img{height:14mm!important;max-width:48mm!important;object-fit:contain!important}#measurement-goal-root h1{font-size:17px!important;margin:0!important;text-align:right!important}#measurement-goal-root header p{margin:3px 0 0!important;text-align:right!important}#measurement-goal-root section{border:1px solid #dbe3ef!important;border-radius:7px!important;overflow:hidden!important;margin:0 0 9px!important;break-inside:auto!important}#measurement-goal-root h2{font-size:11px!important;margin:0!important;padding:6px 8px!important;background:#eef4ff!important}#measurement-goal-root table{width:100%!important;border-collapse:collapse!important;table-layout:fixed!important}#measurement-goal-root thead{display:table-header-group!important}#measurement-goal-root tr{break-inside:avoid!important}#measurement-goal-root th,#measurement-goal-root td{padding:5px!important;border-bottom:1px solid #e5e7eb!important;vertical-align:top!important}#measurement-goal-root th{font-size:8px!important;text-transform:uppercase!important;color:#64748b!important;text-align:left!important}#measurement-goal-root th:nth-child(1){width:9%!important}#measurement-goal-root th:nth-child(2){width:36%!important}#measurement-goal-root th:nth-child(3){width:7%!important}#measurement-goal-root th:nth-child(4){width:10%!important}#measurement-goal-root th:nth-child(5){width:38%!important}.num{text-align:right!important}.sign{display:grid!important;grid-template-columns:1fr .6fr 1fr!important;gap:18px!important;margin-top:22px!important}.sign div{border-top:1px solid #64748b!important;padding-top:4px!important;text-align:center!important}.wm{display:flex!important;position:fixed!important;inset:0!important;align-items:center!important;justify-content:center!important;opacity:.045!important;z-index:0!important}.wm img{width:105mm!important;max-height:105mm!important;object-fit:contain!important}main,header{position:relative!important;z-index:1!important}}`;style.textContent+=`@media print{#measurement-goal-root .goal-floor-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:3px 8px!important;align-items:start!important}#measurement-goal-root .goal-floor{display:flex!important;align-items:flex-start!important;gap:4px!important;font-size:9px!important;line-height:1.25!important;break-inside:avoid!important}#measurement-goal-root .goal-floor>b{min-width:48px!important;white-space:nowrap!important}#measurement-goal-root .goal-unit{display:inline-flex!important;align-items:center!important;gap:2px!important;margin-right:4px!important;white-space:nowrap!important;font-size:9px!important}#measurement-goal-root .goal-check{display:inline-block!important;width:7px!important;height:7px!important;border:1px solid #64748b!important}#measurement-goal-root th,#measurement-goal-root td{padding:4px 5px!important}#measurement-goal-root th:nth-child(1){width:8%!important}#measurement-goal-root th:nth-child(2){width:24%!important}#measurement-goal-root th:nth-child(3){width:6%!important}#measurement-goal-root th:nth-child(4){width:9%!important}#measurement-goal-root th:nth-child(5){width:53%!important}#measurement-goal-root section{overflow:visible!important;margin-bottom:4px!important}#measurement-goal-root h2{padding:3px 6px!important;break-after:avoid!important}#measurement-goal-root header{margin-bottom:5px!important}#measurement-goal-root section{break-before:auto!important}#measurement-goal-root .goal-floor>span{display:flex!important;flex-wrap:wrap!important;gap:1px 3px!important;min-width:0!important}}`; document.head.appendChild(style);document.body.appendChild(root);
+ const root=document.createElement('div');root.id='measurement-goal-root';root.innerHTML=`<header class="goal-header"><img id="measurement-goal-logo" src="${logo}" alt="CR Engenharia"><div><h1>META DE PRODUÇÃO</h1><strong>OBRA: SARTORI</strong><p>Torre 4, Torre 6 e Aditivos</p></div><div class="goal-dates">Competência: ${esc(competence)}<br>Emissão: ${esc(new Date().toLocaleDateString('pt-BR'))}</div></header><main>${groups}</main>`;
+ const style=document.createElement('style');style.id='measurement-goal-style';
+ style.textContent=`#measurement-goal-root{position:fixed;left:-100000px;top:0;visibility:hidden;width:190mm;background:white;color:#12243a}
+ @media print{
+ @page{size:A4 portrait;margin:9mm 8mm 10mm}
+ body>*:not(#measurement-goal-root){display:none!important}
+ #measurement-goal-root{display:block!important;position:static!important;left:auto!important;visibility:visible!important;width:100%!important;font:8.3px/1.2 Arial,sans-serif!important;color:#12243a!important}
+ #measurement-goal-root *{box-sizing:border-box!important;visibility:visible!important}
+ #measurement-goal-root .goal-header{display:grid!important;grid-template-columns:30% 45% 25%!important;align-items:center!important;border-bottom:2px solid #174c73!important;padding-bottom:5px!important;margin-bottom:5px!important}
+ #measurement-goal-root .goal-header img{width:38mm!important;max-height:15mm!important;object-fit:contain!important}
+ #measurement-goal-root .goal-header>div:nth-child(2){text-align:center!important}
+ #measurement-goal-root h1{font-size:15px!important;margin:0 0 2px!important;color:#102c4d!important}
+ #measurement-goal-root .goal-header p{margin:2px 0 0!important}
+ #measurement-goal-root .goal-dates{text-align:right!important;font-size:8px!important}
+ #measurement-goal-root .goal-origin{margin:0 0 5px!important;border:0!important;overflow:visible!important;break-inside:auto!important}
+ #measurement-goal-root h2{background:#0e4e76!important;color:#fff!important;font-size:11px!important;padding:4px 7px!important;margin:0!important;break-after:avoid!important}
+ #measurement-goal-root table{border-collapse:collapse!important;table-layout:fixed!important;width:100%!important}
+ #measurement-goal-root thead{display:table-header-group!important}
+ #measurement-goal-root tr{break-inside:avoid!important}
+ #measurement-goal-root td,#measurement-goal-root th{border:1px solid #cbd7e1!important;padding:2px 4px!important;vertical-align:middle!important;overflow-wrap:anywhere!important}
+ #measurement-goal-root th{background:#e2edf4!important;text-align:left!important;font-weight:700!important}
+ #measurement-goal-root .goal-code{width:7%!important}
+ #measurement-goal-root .goal-description{width:19%!important}
+ #measurement-goal-root .goal-detail td{width:37%!important}
+ #measurement-goal-root .goal-detail:nth-child(even){background:#f5f9fc!important}
+ #measurement-goal-root .goal-floor{display:grid!important;grid-template-columns:37px minmax(0,1fr)!important;gap:3px!important;align-items:start!important}
+ #measurement-goal-root .goal-floor b{white-space:nowrap!important}
+ #measurement-goal-root .goal-location-heading{display:none!important}
+ #measurement-goal-root .goal-service td{vertical-align:middle!important}
+ #measurement-goal-root main{position:relative!important}
+ }`;
+ document.head.appendChild(style);document.body.appendChild(root);
  const logoEl=root.querySelector<HTMLImageElement>('#measurement-goal-logo');const run=()=>requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));const fail=()=>{root.remove();style.remove();setError('O logo da empresa não pôde ser renderizado.');};if(!logoEl){fail();return;}if(logoEl.complete){if(logoEl.naturalWidth>0){run();}else{fail();}}else{logoEl.addEventListener('load',run,{once:true});logoEl.addEventListener('error',fail,{once:true});}
 }
 
