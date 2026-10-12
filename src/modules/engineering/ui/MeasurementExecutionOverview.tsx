@@ -54,11 +54,12 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
   if(!current)return;
-  const entered=Number(quantity.replace(/\./g,'').replace(',','.'));
+  const entered=Number(quantity.trim().replace(/\s/g,'').includes(',')?quantity.trim().replace(/\s/g,'').replace(/\./g,'').replace(',','.'):quantity.trim().replace(/\s/g,''));
   const batch=activeGroup&&!editing?groupCandidates.filter(item=>selectedReferences.includes(item.measurementLineId)):[];
   const selectedLines=activeGroup&&!editing?batch:[current];
-  const value=entryMode==='quantity'?Number(quantity.replace(',','.')):selectedLines.length?entered/(entryMode==='percent'?100: selectedLines.reduce((sum,line)=>sum+line.plannedValue,0))* (entryMode==='percent'?1:1):NaN;
-  const quantities=selectedLines.map(line=>entryMode==='quantity'?value:entryMode==='percent'?line.plannedQuantity*entered/100:line.plannedValue>0?entered*line.plannedQuantity/selectedLines.reduce((sum,item)=>sum+item.plannedValue,0):NaN);
+  const value=entered;
+  const totalSelectedValue=selectedLines.reduce((sum,line)=>sum+line.plannedValue,0);
+  const quantities=selectedLines.map(line=>entryMode==='quantity'?value:entryMode==='percent'?line.plannedQuantity*entered/100:totalSelectedValue>0?entered*line.plannedQuantity/totalSelectedValue:NaN);
   if(activeGroup&&!editing&&batch.length===0){setError('Selecione ao menos uma unidade.');return}
   if(!Number.isFinite(entered)||entered<=0||quantities.some((q,i)=>!Number.isFinite(q)||q<=0||q>selectedLines[i]!.plannedQuantity-(doneByLine.get(selectedLines[i]!.measurementLineId)??0)+(editing?entries.find(e=>e.id===editing)?.executedQuantity??0:0)+0.0000001)){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
