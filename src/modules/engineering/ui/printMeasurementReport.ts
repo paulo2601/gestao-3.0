@@ -106,7 +106,7 @@ export interface PrintMeasurementInput{mode?:'print'|'share'|'goal';model:Measur
 
 export function printMeasurement(input:PrintMeasurementInput){
     const {mode='print',model,activeMeasurementId,measurementGross,header,scope,inssValue,issValue,rtValue,measurementNet,originLabel,setError}=input;
-    if(mode==='goal'){printMeasurementGoal(input);return;}
+    if(mode==='goal'){void printMeasurementGoal(input);return;}
     if(!model||!activeMeasurementId||measurementGross<=0)return;
     document.getElementById('measurement-print-root')?.remove();
     document.getElementById('measurement-print-style')?.remove();
