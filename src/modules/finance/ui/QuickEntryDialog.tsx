@@ -577,10 +577,17 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
         ...current.filter((item) => !(normalized(item.description) === normalized(learnedTemplate.description) && item.companyId === learnedTemplate.companyId)),
       ]);
 
-      await operations.loadReferences();
-      onSaved?.();
+      // A gravação já foi confirmada. Falhas de atualização visual não podem
+      // transformar um lançamento concluído em erro nem incentivar duplicação.
       resetAfterSave(keepData);
       setLocalSuccess(keepData ? 'Lançamento concluído. Todos os dados foram mantidos.' : 'Lançamento concluído. Pronto para o próximo lançamento.');
+      try {
+        await operations.loadReferences();
+        onSaved?.();
+      } catch {
+        // A operação financeira permanece concluída; os dados serão recarregados
+        // na próxima abertura sem solicitar um segundo lançamento.
+      }
     } catch (error) {
       setLocalError(error instanceof Error && error.message ? error.message : 'Não foi possível concluir o lançamento.');
     } finally {
