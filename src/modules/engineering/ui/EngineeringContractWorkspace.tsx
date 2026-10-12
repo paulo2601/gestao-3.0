@@ -99,7 +99,6 @@ export function EngineeringContractWorkspace({section,scope,contract,onChanged}:
   const progress=Math.max(0,Math.min(100,contract.measuredPercent));
   const measurementValue=(measurementId:string)=>parityMeasurementValues[measurementId]??(data?.measurementLines??[]).filter(line=>line.measurementId===measurementId).reduce((sum,line)=>sum+line.grossValue,0);
   const measuredGrossIncludingDrafts=measurements.reduce((sum,item)=>sum+measurementValue(item.id),0);
-  const measurementProgress=contract.updatedContractValue>0?Math.max(0,Math.min(100,(measuredGrossIncludingDrafts/contract.updatedContractValue)*100)):0;
   const measurementCumulativeProgress=new Map<string,number>();
   let cumulativeMeasuredGross=0;
   [...measurements].sort((a,b)=>{
