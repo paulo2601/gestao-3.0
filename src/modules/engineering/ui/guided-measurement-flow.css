@@ -553,3 +553,24 @@
 .measurement-hub .measurement-hub__footer{background:#fff!important;border-top:1px solid #dbe5f0!important;padding:9px 12px!important}
 @media(max-width:950px){.measurement-hub .measurement-hub__origin-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-hub .measurement-hub__header-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:600px){.measurement-hub .measurement-hub__summary{padding:9px!important}.measurement-hub .measurement-hub__summary .measurement-hub__financial{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}.measurement-hub .measurement-hub__summary .measurement-hub__financial>div{min-height:60px!important;padding:8px!important}.measurement-hub .measurement-hub__summary .measurement-hub__financial>div strong{font-size:.95rem!important}.measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button{min-height:98px!important;padding:9px!important}.measurement-hub .measurement-hub__header-grid{grid-template-columns:1fr 1fr!important}.measurement-hub .measurement-hub__header-grid>*{min-width:0!important}.measurement-hub .measurement-hub__footer{position:static!important}}
+
+/* Refinamento final: campos iguais, ações na mesma faixa e serviços avulsos legíveis. */
+.measurement-hub .measurement-hub__header-grid.measurement-hub__header-grid--compact{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:9px!important;align-items:end!important}
+.measurement-hub .measurement-hub__header-grid--compact>*{grid-column:auto!important;min-width:0!important;width:100%!important}
+.measurement-hub .measurement-hub__header-grid--compact input,.measurement-hub .measurement-hub__header-grid--compact select{width:100%!important;min-height:38px!important;height:38px!important}
+.measurement-hub .measurement-hub__footer{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;gap:7px!important}
+.measurement-hub .measurement-hub__footer>button{flex:0 0 auto!important;margin:0!important;min-height:36px!important}
+.measurement-hub .measurement-hub__footer>div{display:flex!important;flex:1 1 auto!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;width:auto!important}
+.measurement-hub .measurement-hub__footer>div>button{width:auto!important;min-width:0!important;min-height:36px!important;grid-column:auto!important;margin:0!important}
+.measurement-hub .measurement-hub__manual-services .ams-table-wrap{display:block!important;overflow-x:auto!important;max-height:none!important}
+.measurement-hub .measurement-hub__manual-services .ams-table{display:table!important;width:100%!important;min-width:660px!important;border-collapse:separate!important;border-spacing:0!important}
+.measurement-hub .measurement-hub__manual-services .ams-table thead{display:table-header-group!important;background:#edf4fc!important}
+.measurement-hub .measurement-hub__manual-services .ams-table tbody{display:table-row-group!important}
+.measurement-hub .measurement-hub__manual-services .ams-table tr{display:table-row!important;background:#fff!important}
+.measurement-hub .measurement-hub__manual-services .ams-table tbody tr:nth-child(even){background:#f6f9fd!important}
+.measurement-hub .measurement-hub__manual-services .ams-table td,.measurement-hub .measurement-hub__manual-services .ams-table th{display:table-cell!important;width:auto!important;min-width:0!important;padding:9px 11px!important;border-bottom:1px solid #e2eaf4!important;vertical-align:middle!important;white-space:normal!important}
+.measurement-hub .measurement-hub__manual-services .ams-table td:first-child{font-weight:600!important;min-width:220px!important}
+.measurement-hub .measurement-hub__manual-services .ams-table td:last-child .ui-button{width:auto!important;min-height:30px!important}
+.measurement-hub .measurement-hub__manual-services .ams-table td::before{content:none!important}
+@media(max-width:900px){.measurement-hub .measurement-hub__header-grid.measurement-hub__header-grid--compact{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-hub .measurement-hub__footer>div{justify-content:flex-start!important}}
+@media(max-width:600px){.measurement-hub .measurement-hub__header-grid.measurement-hub__header-grid--compact{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-hub .measurement-hub__header-grid--compact>*:last-child{grid-column:1/-1!important}.measurement-hub .measurement-hub__footer{position:static!important}.measurement-hub .measurement-hub__footer>div{display:flex!important;flex-wrap:wrap!important}.measurement-hub .measurement-hub__footer>div>button{flex:1 1 45%!important}}
