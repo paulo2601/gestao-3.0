@@ -110,6 +110,11 @@ export function printMeasurement(input:PrintMeasurementInput){
     const {mode='print',model,activeMeasurementId,measurementGross,header,scope,inssValue,issValue,rtValue,measurementNet,originLabel,setError}=input;
     if(mode==='goal'){void printMeasurementGoal(input);return;}
     if(!model||!activeMeasurementId||measurementGross<=0)return;
+    // Isolar a impressão normal dos estilos globais deixados pelos outros relatórios.
+    document.getElementById('measurement-goal-root')?.remove();
+    document.getElementById('measurement-goal-style')?.remove();
+    document.getElementById('contract-balance-print-root')?.remove();
+    document.getElementById('contract-balance-print-style')?.remove();
     document.getElementById('measurement-print-root')?.remove();
     document.getElementById('measurement-print-style')?.remove();
     const esc=(value:unknown)=>safeText(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]??char));
