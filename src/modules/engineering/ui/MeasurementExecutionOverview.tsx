@@ -34,7 +34,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const contractUnitPrice=(item:typeof items[number])=>contractStages.get(item.targetKind+':'+item.targetId)?.unitPrice??item.unitPrice;
  const contractValue=(item:typeof items[number])=>{const stage=contractStages.get(item.targetKind+':'+item.targetId);return stage?stage.contractedQuantity*stage.unitPrice:item.plannedValue;};
  const groupContractValue=(lines:typeof items)=>[...new Map(lines.map(line=>[line.targetKind+':'+line.targetId,contractValue(line)])).values()].reduce((sum,value)=>sum+value,0);
- const financialExecuted=(item:typeof items[number])=>Math.max(0,doneByLine.get(item.measurementLineId)??0)*contractUnitPrice(item);
+ const financialExecuted=(item:typeof items[number])=>Math.max(0,doneByLine.get(item.measurementLineId)??0)*(item.targetKind==='addendum'?contractUnitPrice(item):(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0));
  const projected=items.reduce((sum,item)=>sum+item.plannedValue,0);
  const executed=items.reduce((sum,item)=>sum+financialExecuted(item),0);
  const filtered=items.filter(item=>{
@@ -52,11 +52,11 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const filteredGroups=groups.filter(group=>group.lines.some(item=>filtered.includes(item)));
  const activeGroup=groups.find(group=>group.key===selected);
  const current=items.find(item=>item.measurementLineId===selected)??activeGroup?.lines[0];
- const groupCandidates=activeGroup?.lines.filter(item=>(doneByLine.get(item.measurementLineId)??0)<item.plannedQuantity)??[];
+ const groupCandidates=activeGroup?.lines.filter(item=>(doneByLine.get(item.measurementLineId)??0)<(item.targetKind==='addendum'?(contractStages.get(item.targetKind+':'+item.targetId)?.contractedQuantity??item.plannedQuantity):item.plannedQuantity))??[];
  const floorOf=(reference:string|null)=>{const value=(reference??'').trim();const match=value.match(/^(\d+)$/);return match&&match[1]!.length>=3?Number(match[1]!.slice(0,-2))+'º pavimento':/^0?[1-8]$/.test(value)?'Térreo':'Outros'};
  const floorGroups=[...new Set(groupCandidates.map(item=>floorOf(item.reference)))].sort((a,b)=>{const n=(x:string)=>x==='Outros'?-1:parseInt(x,10);return n(a)-n(b)}).map(floor=>({floor,lines:groupCandidates.filter(item=>floorOf(item.reference)===floor).sort((a,b)=>(a.reference??'').localeCompare(b.reference??'','pt-BR',{numeric:true}))}));
  const groupRemaining=activeGroup?.lines.reduce((sum,line)=>sum+Math.max(0,line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)),0)??0;
- const remaining=current?Math.max(0,current.plannedQuantity-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
+ const remaining=current?Math.max(0,(current.targetKind==='addendum'?(contractStages.get(current.targetKind+':'+current.targetId)?.contractedQuantity??current.plannedQuantity):current.plannedQuantity)-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
   if(!current)return;
   const entered=Number(quantity.trim().replace(/\s/g,'').includes(',')?quantity.trim().replace(/\s/g,'').replace(/\./g,'').replace(',','.'):quantity.trim().replace(/\s/g,''));
@@ -65,10 +65,10 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   const value=entered;
   const totalSelectedValue=selectedLines.reduce((sum,line)=>sum+line.plannedValue,0);
   const contractBase=groupContractValue(activeGroup?.lines??[current]);
-  const financialAmount=entryMode==='percent'?contractBase*entered/100:entered;
-  const quantities=selectedLines.map(line=>entryMode==='quantity'?value:totalSelectedValue>0&&contractUnitPrice(line)>0?financialAmount*(line.plannedValue/totalSelectedValue)/contractUnitPrice(line):NaN);
+  const financialAmount=entryMode==='percent'&&current.targetKind==='addendum'?contractBase*entered/100:entryMode==='percent'?totalSelectedValue*entered/100:entered;
+  const quantities=selectedLines.map(line=>entryMode==='quantity'?value:entryMode==='percent'&&line.targetKind==='addendum'?((contractStages.get(line.targetKind+':'+line.targetId)?.contractedQuantity??0)*entered/100)*(selectedLines.length===1?1:line.plannedValue/totalSelectedValue):totalSelectedValue>0&&(line.targetKind==='addendum'?contractUnitPrice(line):line.plannedValue/line.plannedQuantity)>0?financialAmount*(line.plannedValue/totalSelectedValue)/(line.targetKind==='addendum'?contractUnitPrice(line):line.plannedValue/line.plannedQuantity):NaN);
   if(activeGroup&&!editing&&batch.length===0){setError('Selecione ao menos uma unidade.');return}
-  if(!Number.isFinite(entered)||entered<=0||quantities.some((q,i)=>!Number.isFinite(q)||q<=0||q>selectedLines[i]!.plannedQuantity-(doneByLine.get(selectedLines[i]!.measurementLineId)??0)+(editing?entries.find(e=>e.id===editing)?.executedQuantity??0:0)+0.0000001)){setError('Quantidade inválida ou acima do saldo projetado.');return}
+  if(!Number.isFinite(entered)||entered<=0||quantities.some((q,i)=>!Number.isFinite(q)||q<=0||q>(selectedLines[i]!.targetKind==='addendum'?(contractStages.get(selectedLines[i]!.targetKind+':'+selectedLines[i]!.targetId)?.contractedQuantity??selectedLines[i]!.plannedQuantity):selectedLines[i]!.plannedQuantity)-(doneByLine.get(selectedLines[i]!.measurementLineId)??0)+(editing?entries.find(e=>e.id===editing)?.executedQuantity??0:0)+0.0000001)){setError('Quantidade inválida ou acima do saldo projetado.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
   try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:quantities[0]!})}else if(activeGroup){for(let i=0;i<batch.length;i++)await saveLineExecution({measurementLineId:batch[i]!.measurementLineId,executionDate:date,quantity:quantities[i]!})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:quantities[0]!})}
@@ -105,7 +105,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
     <span className="ex-card-metrics">
      <span><small>Projetado</small><strong>{planned.toLocaleString('pt-BR')}</strong><small>{money.format(value)}</small></span>
      <span className="ex-card-done"><small>Executado</small><strong>{done.toLocaleString('pt-BR')}</strong><small>{money.format(executedValue)}</small></span>
-     <span className="ex-card-pending"><small>Pendente</small><strong>{Math.max(0,planned-done).toLocaleString('pt-BR')}</strong><small>{money.format(pendingValue)}</small></span>
+     <span className="ex-card-pending"><small>Pendente</small><strong>{(planned-done).toLocaleString('pt-BR')}</strong><small>{money.format(pendingValue)}</small></span>
     </span>
     <progress className="ex-card-progress" max={100} value={Math.min(100,progress)}/>
     <small>{progress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do projetado · {contractProgress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do contrato</small>
@@ -124,9 +124,9 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    <strong>{current.description}</strong><small>Saldo: {(activeGroup&&!editing?groupRemaining:remaining).toLocaleString('pt-BR')} {current.unit}</small>{activeGroup&&!editing&&<small>Selecionadas: {selectedReferences.length} · Quantidade solicitada: {(selectedReferences.length*Number(quantity.replace(',','.'))||0).toLocaleString('pt-BR')}</small>}
    <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
    <div role="group" aria-label="Forma de lançamento" className="measurement-execution-overview__mode">{(['quantity','value','percent'] as const).map(mode=><button key={mode} type="button" aria-pressed={entryMode===mode} onClick={()=>{setEntryMode(mode);setQuantity('')}}>{mode==='quantity'?'Quantidade':mode==='value'?'Valor (R$)':'Porcentagem (%)'}</button>)}</div>
-   {entryMode==='percent'&&<small>Base: {money.format(groupContractValue(activeGroup?.lines??[current]))} do contrato do serviço. O avanço exibido compara o valor executado com o projetado.</small>}
-   {entryMode==='percent'&&<small>O percentual é aplicado ao contrato completo deste serviço; selecione as unidades que receberão o valor. Não é percentual do projetado.</small>}
-   <label>{entryMode==='quantity'?'Quantidade por unidade':entryMode==='value'?'Valor total executado (R$)':'Percentual do contratado (%)'}<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
+   {entryMode==='percent'&&current.targetKind==='addendum'&&<small>Base: {money.format(groupContractValue(activeGroup?.lines??[current]))} do contrato do serviço. O avanço exibido compara o valor executado com o projetado.</small>}
+   {entryMode==='percent'&&current.targetKind==='addendum'&&<small>O percentual é aplicado ao contrato completo deste serviço; selecione as unidades que receberão o valor. Não é percentual do projetado.</small>}
+   <label>{entryMode==='quantity'?'Quantidade por unidade':entryMode==='value'?'Valor total executado (R$)' :current.targetKind==='addendum'?'Percentual do contratado (%)':'Percentual do projetado (%)'}<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
    <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||(activeGroup&&!editing?selectedReferences.length===0:remaining<=0)}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
   </div>}
   </Dialog>
