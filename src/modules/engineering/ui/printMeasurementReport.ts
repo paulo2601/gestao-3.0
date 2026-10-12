@@ -47,7 +47,7 @@ async function printMeasurementGoal(input:PrintMeasurementInput){
    const physicalPct=isPhysicalGoal?(pct===null?'Não informado':fmt(pct)+'%'):'';
    const hasPhysicalQuantity=contracted>0&&!(/^(un|und|unid|unidade|unidades)$/i.test(unit)&&contracted<=1);
    const physical=physicalByAddendum.get(service.targetId);
-   const physicalQty=isPhysicalGoal?(physical&&pct!==null?fmt(physical.quantity*pct/100)+' '+esc(physical.unit):hasPhysicalQuantity?fmt(measured)+' '+esc(unit||'un.'):'Serviço sem vínculo de metragem'):'';
+   const physicalQty=isPhysicalGoal?(physical&&pct!==null?fmt(Math.abs(physical.quantity*measured/contracted-Math.round(physical.quantity*measured/contracted))<0.0001?Math.round(physical.quantity*measured/contracted):physical.quantity*measured/contracted)+' '+esc(physical.unit):hasPhysicalQuantity?fmt(measured)+' '+esc(unit||'un.'):'Serviço sem vínculo de metragem'):'';
    const floorRows=isPhysicalGoal?[]:floors.length?floors:([['Outros',['Local não especificado']]] as [string,string[]][]);
    const pairs:string[]=[];
    if(isPhysicalGoal){
