@@ -25,6 +25,7 @@ function printMeasurementGoal(input:PrintMeasurementInput){
  const referenceSort=(a:string,b:string)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'});
  const groups=orderedOrigins.map(origin=>{
   const services=[...origin.services].sort((a,b)=>(a.code||'').localeCompare(b.code||'','pt-BR',{numeric:true}));
+  let printedServiceIndex=0;
   const rows=services.flatMap(service=>{
    const lines=model.lines.filter(line=>line.measurementId===activeMeasurementId&&line.targetKind===service.targetKind&&line.targetId===service.targetId);
    if(!lines.length)return [];
@@ -38,17 +39,22 @@ function printMeasurementGoal(input:PrintMeasurementInput){
    const measured=lines.reduce((sum,line)=>sum+line.measuredQuantity,0);
    const pct=contracted>0?measured/contracted*100:null;
    const fmt=(value:number)=>value.toLocaleString('pt-BR',{maximumFractionDigits:2});
-   const physicalGoal=isAddendum&&contracted>0
-    ?'<div class="goal-physical"><b>Meta: '+(pct===null?'—':fmt(pct)+'%')+'</b><span>'+fmt(measured)+' '+esc(unit)+' de '+fmt(contracted)+' '+esc(unit)+'</span></div>'
-    :'';
-   const floorRows=floors.length?floors:([['Outros',[isAddendum?'Meta física / local':'Local não especificado']]] as [string,string[]][]);
+   const isPhysicalGoal=isAddendum&&refs.length===0;
+   const physicalPct=isPhysicalGoal?(pct===null?'Não informado':fmt(pct)+'%'):'';
+   const physicalQty=isPhysicalGoal?(contracted>0?fmt(measured)+' '+esc(unit||'un.'):'Não informado'):'';
+   const floorRows=isPhysicalGoal?[]:floors.length?floors:([['Outros',['Local não especificado']]] as [string,string[]][]);
    const pairs:string[]=[];
-   for(let i=0;i<floorRows.length;i+=2){
-    const cell=(entry?:[string,string[]])=>entry?'<div class="goal-floor"><b>'+esc(entry[0]==='Outros'?'Local':entry[0]==='1'?'Térreo':(Number(entry[0])-1)+'º pav.')+'</b><span>'+entry[1].map(esc).join(', ')+'</span></div>':'<div class="goal-floor"></div>';
-    pairs.push('<tr class="goal-detail"><td>'+cell(floorRows[i])+(i===0?physicalGoal:'')+'</td><td>'+cell(floorRows[i+1])+'</td></tr>');
+   if(isPhysicalGoal){
+    pairs.push('<tr class="goal-detail"><td><b>Meta prevista: '+physicalPct+'</b></td><td><b>Quantidade prevista: '+physicalQty+'</b></td></tr>');
+   }else{
+    for(let i=0;i<floorRows.length;i+=2){
+     const cell=(entry?:[string,string[]])=>entry?'<div class="goal-floor"><b>'+esc(entry[0]==='Outros'?'Local':entry[0]==='1'?'Térreo':(Number(entry[0])-1)+'º pav.')+'</b><span>'+entry[1].map(esc).join(', ')+'</span></div>':'<div class="goal-floor"></div>';
+     pairs.push('<tr class="goal-detail"><td>'+cell(floorRows[i])+'</td><td>'+cell(floorRows[i+1])+'</td></tr>');
+    }
    }
-   const groupClass='goal-service-'+(services.indexOf(service)%2===0?'a':'b');
+   const groupClass='goal-service-'+(printedServiceIndex++%2===0?'a':'b');
    return ['<tr class="goal-service goal-detail '+groupClass+'"><td rowspan="'+pairs.length+'"><strong>'+esc(service.code||'—')+'</strong></td><td rowspan="'+pairs.length+'">'+esc(service.description)+'</td>'+(pairs[0]??'').replace('<tr class="goal-detail">','')+pairs.slice(1).map(pair=>pair.replace('<tr class="goal-detail">','<tr class="goal-detail '+groupClass+'">')).join('')];
+
   });
   return rows.length?'<section class="goal-origin"><h2>'+esc(originLabel(origin))+'</h2><table><thead><tr><th class="goal-code">Item</th><th class="goal-description">Serviço</th><th colspan="2">Pavimento / Unidades (Apartamentos)</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>':'';
  }).join('');
@@ -78,7 +84,7 @@ function printMeasurementGoal(input:PrintMeasurementInput){
  #measurement-goal-root .goal-code{width:7%!important}
  #measurement-goal-root .goal-description{width:19%!important}\n #measurement-goal-root th:nth-child(3){width:74%!important}
  #measurement-goal-root .goal-detail td{width:37%!important}
- #measurement-goal-root tr.goal-service-a>td{background:#ffffff!important}\n #measurement-goal-root tr.goal-service-b>td{background:#eef5fa!important}\n #measurement-goal-root .goal-physical{display:flex!important;flex-wrap:wrap!important;gap:3px 9px!important;margin-top:3px!important;padding:3px 5px!important;border:1px solid #d4e2ed!important;border-radius:3px!important;background:#f7fafc!important;color:#204664!important}\n #measurement-goal-root .goal-physical b{white-space:nowrap!important}\n #measurement-goal-root .goal-physical span{white-space:nowrap!important}
+ #measurement-goal-root tr.goal-service-a>td{background:#ffffff!important}\n #measurement-goal-root tr.goal-service-b>td{background:#eaf3fa!important}\n #measurement-goal-root .goal-physical{display:flex!important;flex-wrap:wrap!important;gap:3px 9px!important;margin-top:3px!important;padding:3px 5px!important;border:1px solid #d4e2ed!important;border-radius:3px!important;background:#f7fafc!important;color:#204664!important}\n #measurement-goal-root .goal-physical b{white-space:nowrap!important}\n #measurement-goal-root .goal-physical span{white-space:nowrap!important}
  #measurement-goal-root .goal-floor{display:grid!important;grid-template-columns:37px minmax(0,1fr)!important;gap:3px!important;align-items:start!important}
  #measurement-goal-root .goal-floor b{white-space:nowrap!important}
  #measurement-goal-root .goal-location-heading{display:none!important}
