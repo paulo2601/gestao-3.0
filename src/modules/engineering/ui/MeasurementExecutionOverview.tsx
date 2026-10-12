@@ -33,6 +33,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const contractStages=useMemo(()=>new Map(model.origins.flatMap(origin=>origin.services.map(service=>[service.targetKind+':'+service.targetId,service] as const))),[model]);
  const contractUnitPrice=(item:typeof items[number])=>contractStages.get(item.targetKind+':'+item.targetId)?.unitPrice??item.unitPrice;
  const contractValue=(item:typeof items[number])=>{const stage=contractStages.get(item.targetKind+':'+item.targetId);return stage?stage.contractedQuantity*stage.unitPrice:item.plannedValue;};
+ const groupContractValue=(lines:typeof items)=>[...new Map(lines.map(line=>[line.targetKind+':'+line.targetId,contractValue(line)])).values()].reduce((sum,value)=>sum+value,0);
  const financialExecuted=(item:typeof items[number])=>Math.max(0,doneByLine.get(item.measurementLineId)??0)*contractUnitPrice(item);
  const projected=items.reduce((sum,item)=>sum+item.plannedValue,0);
  const executed=items.reduce((sum,item)=>sum+financialExecuted(item),0);
@@ -63,7 +64,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   const selectedLines=activeGroup&&!editing?batch:[current];
   const value=entered;
   const totalSelectedValue=selectedLines.reduce((sum,line)=>sum+line.plannedValue,0);
-  const contractBase=current?contractValue(current):0;
+  const contractBase=groupContractValue(activeGroup?.lines??[current]);
   const financialAmount=entryMode==='percent'?contractBase*entered/100:entered;
   const quantities=selectedLines.map(line=>entryMode==='quantity'?value:totalSelectedValue>0&&contractUnitPrice(line)>0?financialAmount*(line.plannedValue/totalSelectedValue)/contractUnitPrice(line):NaN);
   if(activeGroup&&!editing&&batch.length===0){setError('Selecione ao menos uma unidade.');return}
@@ -94,8 +95,10 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    const done=group.lines.reduce((sum,item)=>sum+(doneByLine.get(item.measurementLineId)??0),0);
    const value=group.lines.reduce((sum,item)=>sum+item.plannedValue,0);
    const executedValue=group.lines.reduce((sum,item)=>sum+financialExecuted(item),0);
-   const pendingValue=Math.max(0,value-executedValue);
-   const progress=value>0?Math.min(100,Math.max(0,executedValue/value*100)):0;
+   const pendingValue=value-executedValue;
+   const progress=value>0?Math.max(0,executedValue/value*100):0;
+   const contractTotal=groupContractValue(group.lines);
+   const contractProgress=contractTotal>0?executedValue/contractTotal*100:0;
    return <button type="button" key={group.key} className={`measurement-execution-overview__service ${done>=planned?'is-done':'is-pending'}`} onClick={()=>{setSelected(group.key);setSelectedReferences([]);setEditing(null);setQuantity('1');setError(null)}} disabled={saving}>
     <small>{group.lines[0]?.originName} · {group.lines[0]?.unitKind==='hall'?'Halls / área comum':group.lines[0]?.unitKind==='apartamento'?'Apartamentos':'Unidades'}</small>
     <strong>{group.lines[0]?.description}</strong>
@@ -104,8 +107,8 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
      <span className="ex-card-done"><small>Executado</small><strong>{done.toLocaleString('pt-BR')}</strong><small>{money.format(executedValue)}</small></span>
      <span className="ex-card-pending"><small>Pendente</small><strong>{Math.max(0,planned-done).toLocaleString('pt-BR')}</strong><small>{money.format(pendingValue)}</small></span>
     </span>
-    <progress className="ex-card-progress" max={100} value={progress}/>
-    <small>{progress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do projetado · {contractValue(group.lines[0]!)>0?(executedValue/contractValue(group.lines[0]!)*100).toLocaleString('pt-BR',{maximumFractionDigits:1}):'0'}% do contrato</small>
+    <progress className="ex-card-progress" max={100} value={Math.min(100,progress)}/>
+    <small>{progress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do projetado · {contractProgress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do contrato</small>
     <span>{done>=planned?'Concluído · Consultar':'Selecionar unidades ›'}</span>
    </button>})}</div>}
   <Dialog open={Boolean(current)} title={editing?"Editar execução":"Registrar execução"} description={current?`${current.originName} · ${current.description} · Medição ${measurement?.measurementNumber??"—"}`:undefined} onClose={()=>{if(!saving){setSelected(null);setEditing(null)}}}>
@@ -121,7 +124,8 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    <strong>{current.description}</strong><small>Saldo: {(activeGroup&&!editing?groupRemaining:remaining).toLocaleString('pt-BR')} {current.unit}</small>{activeGroup&&!editing&&<small>Selecionadas: {selectedReferences.length} · Quantidade solicitada: {(selectedReferences.length*Number(quantity.replace(',','.'))||0).toLocaleString('pt-BR')}</small>}
    <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
    <div role="group" aria-label="Forma de lançamento" className="measurement-execution-overview__mode">{(['quantity','value','percent'] as const).map(mode=><button key={mode} type="button" aria-pressed={entryMode===mode} onClick={()=>{setEntryMode(mode);setQuantity('')}}>{mode==='quantity'?'Quantidade':mode==='value'?'Valor (R$)':'Porcentagem (%)'}</button>)}</div>
-   {entryMode==='percent'&&<small>Base: {money.format(contractValue(current))} do contrato do serviço. O avanço exibido compara o valor executado com o projetado.</small>}
+   {entryMode==='percent'&&<small>Base: {money.format(contractBase)} do contrato do serviço. O avanço exibido compara o valor executado com o projetado.</small>}
+   {entryMode==='percent'&&<small>O percentual é aplicado ao contrato completo deste serviço; selecione as unidades que receberão o valor. Não é percentual do projetado.</small>}
    <label>{entryMode==='quantity'?'Quantidade por unidade':entryMode==='value'?'Valor total executado (R$)':'Percentual do contratado (%)'}<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
    <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||(activeGroup&&!editing?selectedReferences.length===0:remaining<=0)}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
   </div>}
