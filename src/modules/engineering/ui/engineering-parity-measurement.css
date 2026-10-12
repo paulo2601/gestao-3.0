@@ -176,3 +176,11 @@
 .measurement-hub__manual-services .ams-table td:nth-child(1){overflow-wrap:anywhere!important;text-align:left!important}
 .measurement-hub__manual-services .ams-table td:nth-child(4),
 .measurement-hub__manual-services .ams-table td:nth-child(5){text-align:right!important;font-variant-numeric:tabular-nums!important}
+
+/* Corrige a causa da altura desigual: os campos com ícone recebem
+   uma moldura de 56px no componente compartilhado, além da altura do input. */
+.measurement-hub .measurement-hub__header-grid--compact .ui-field{grid-template-rows:auto 42px!important;align-content:end!important;gap:7px!important}
+.measurement-hub .measurement-hub__header-grid--compact .ui-field__label-row{min-height:20px!important;align-items:center!important}
+.measurement-hub .measurement-hub__header-grid--compact .ui-field__control{box-sizing:border-box!important;min-height:42px!important;height:42px!important;max-height:42px!important;overflow:hidden!important}
+.measurement-hub .measurement-hub__header-grid--compact .ui-field--adorned .ui-input{box-sizing:border-box!important;min-height:0!important;height:100%!important;max-height:100%!important;padding-top:0!important;padding-bottom:0!important}
+.measurement-hub .measurement-hub__header-grid--compact .ui-field__control-icon{height:100%!important;box-sizing:border-box!important}
