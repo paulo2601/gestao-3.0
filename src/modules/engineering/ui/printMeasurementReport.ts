@@ -41,7 +41,8 @@ function printMeasurementGoal(input:PrintMeasurementInput){
    const fmt=(value:number)=>value.toLocaleString('pt-BR',{maximumFractionDigits:2});
    const isPhysicalGoal=isAddendum&&refs.length===0;
    const physicalPct=isPhysicalGoal?(pct===null?'Não informado':fmt(pct)+'%'):'';
-   const physicalQty=isPhysicalGoal?(contracted>0?fmt(measured)+' '+esc(unit||'un.'):'Não informado'):'';
+   const hasPhysicalQuantity=contracted>0&&!(/^(un|und|unid|unidade|unidades)$/i.test(unit)&&contracted<=1);
+   const physicalQty=isPhysicalGoal?(hasPhysicalQuantity?fmt(measured)+' '+esc(unit||'un.'):'Metragem não cadastrada no aditivo'):'';
    const floorRows=isPhysicalGoal?[]:floors.length?floors:([['Outros',['Local não especificado']]] as [string,string[]][]);
    const pairs:string[]=[];
    if(isPhysicalGoal){
