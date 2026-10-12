@@ -510,3 +510,19 @@
 @media(min-width:721px) and (max-width:1050px){
 .measurement-hub__financial strong{font-size:.88rem!important}
 }
+
+/* Revisão visual da medição: hierarquia compacta e unidades em grade. */
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__header-card{box-shadow:none!important;border-radius:10px!important;padding:9px 12px!important}
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__financial{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;background:transparent!important;border:0!important;padding:0!important;gap:5px!important}
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__financial>div{border-left:3px solid #93c5fd!important;min-height:54px!important;padding:7px 8px!important}
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__origin-picker,
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__origins{box-shadow:none!important;border-radius:10px!important;padding:9px 11px!important}
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__origin-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+@media(max-width:720px){
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__financial{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__financial>div:last-child{grid-column:auto!important}
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__financial strong{font-size:.86rem!important}
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__origin-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__origin-list>button{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:3px!important;min-height:0!important;padding:8px!important}
+}
+@media(max-width:390px){.measurement-hub:not(.measurement-hub--execution-tab) .measurement-hub__financial{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
