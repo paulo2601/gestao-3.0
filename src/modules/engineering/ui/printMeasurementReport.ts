@@ -38,7 +38,7 @@ function printMeasurementGoal(input:PrintMeasurementInput){
     const cell=(entry?:[string,string[]])=>entry?'<div class="goal-floor"><b>'+esc(entry[0]==='Outros'?'Local':entry[0]==='1'?'Térreo':(Number(entry[0])-1)+'º pav.')+'</b><span>'+entry[1].map(esc).join(', ')+'</span></div>':'<div class="goal-floor"></div>';
     pairs.push('<tr class="goal-detail"><td>'+cell(floorRows[i])+'</td><td>'+cell(floorRows[i+1])+'</td></tr>');
    }
-   return ['<tr class="goal-service goal-detail"><td rowspan="'+pairs.length+'"><strong>'+esc(service.code||'—')+'</strong></td><td rowspan="'+pairs.length+'">'+esc(service.description)+'</td>'+pairs[0].replace('<tr class="goal-detail">','')+pairs.slice(1).join('')];
+   return ['<tr class="goal-service goal-detail"><td rowspan="'+pairs.length+'"><strong>'+esc(service.code||'—')+'</strong></td><td rowspan="'+pairs.length+'">'+esc(service.description)+'</td>'+(pairs[0]??'').replace('<tr class="goal-detail">','')+pairs.slice(1).join('')];
   });
   return rows.length?'<section class="goal-origin"><h2>'+esc(originLabel(origin))+'</h2><table><thead><tr><th class="goal-code">Item</th><th class="goal-description">Serviço</th><th colspan="2">Pavimento / Unidades (Apartamentos)</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>':'';
  }).join('');
