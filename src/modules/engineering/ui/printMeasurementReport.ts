@@ -32,13 +32,23 @@ function printMeasurementGoal(input:PrintMeasurementInput){
    const byFloor=new Map<string,string[]>();
    refs.forEach(ref=>{const match=/^(?:TR-)?(\d{3,4})$/.exec(ref);const floor=match?String(Math.floor(Number(match[1])/100)):'Outros';byFloor.set(floor,[...(byFloor.get(floor)??[]),ref]);});
    const floors=[...byFloor.entries()].sort((a,b)=>a[0]==='Outros'?1:b[0]==='Outros'?-1:Number(a[0])-Number(b[0]));
-   const floorRows=floors.length?floors:([['Outros',['Local não especificado']]] as [string,string[]][]);
+   const isAddendum=origin.type==='addendum';
+   const unit=service.unit.trim();
+   const contracted=service.contractedQuantity;
+   const measured=lines.reduce((sum,line)=>sum+line.measuredQuantity,0);
+   const pct=contracted>0?measured/contracted*100:null;
+   const fmt=(value:number)=>value.toLocaleString('pt-BR',{maximumFractionDigits:2});
+   const physicalGoal=isAddendum&&contracted>0
+    ?'<div class="goal-physical"><b>Meta: '+(pct===null?'—':fmt(pct)+'%')+'</b><span>'+fmt(measured)+' '+esc(unit)+' de '+fmt(contracted)+' '+esc(unit)+'</span></div>'
+    :'';
+   const floorRows=floors.length?floors:([['Outros',[isAddendum?'Meta física / local':'Local não especificado']]] as [string,string[]][]);
    const pairs:string[]=[];
    for(let i=0;i<floorRows.length;i+=2){
     const cell=(entry?:[string,string[]])=>entry?'<div class="goal-floor"><b>'+esc(entry[0]==='Outros'?'Local':entry[0]==='1'?'Térreo':(Number(entry[0])-1)+'º pav.')+'</b><span>'+entry[1].map(esc).join(', ')+'</span></div>':'<div class="goal-floor"></div>';
-    pairs.push('<tr class="goal-detail"><td>'+cell(floorRows[i])+'</td><td>'+cell(floorRows[i+1])+'</td></tr>');
+    pairs.push('<tr class="goal-detail"><td>'+cell(floorRows[i])+(i===0?physicalGoal:'')+'</td><td>'+cell(floorRows[i+1])+'</td></tr>');
    }
-   return ['<tr class="goal-service goal-detail"><td rowspan="'+pairs.length+'"><strong>'+esc(service.code||'—')+'</strong></td><td rowspan="'+pairs.length+'">'+esc(service.description)+'</td>'+(pairs[0]??'').replace('<tr class="goal-detail">','')+pairs.slice(1).join('')];
+   const groupClass='goal-service-'+(services.indexOf(service)%2===0?'a':'b');
+   return ['<tr class="goal-service goal-detail '+groupClass+'"><td rowspan="'+pairs.length+'"><strong>'+esc(service.code||'—')+'</strong></td><td rowspan="'+pairs.length+'">'+esc(service.description)+'</td>'+(pairs[0]??'').replace('<tr class="goal-detail">','')+pairs.slice(1).map(pair=>pair.replace('<tr class="goal-detail">','<tr class="goal-detail '+groupClass+'">')).join('')];
   });
   return rows.length?'<section class="goal-origin"><h2>'+esc(originLabel(origin))+'</h2><table><thead><tr><th class="goal-code">Item</th><th class="goal-description">Serviço</th><th colspan="2">Pavimento / Unidades (Apartamentos)</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></section>':'';
  }).join('');
@@ -52,14 +62,14 @@ function printMeasurementGoal(input:PrintMeasurementInput){
  body>*:not(#measurement-goal-root){display:none!important}
  #measurement-goal-root{display:block!important;position:static!important;left:auto!important;visibility:visible!important;width:100%!important;font:8.3px/1.2 Arial,sans-serif!important;color:#12243a!important}
  #measurement-goal-root *{box-sizing:border-box!important;visibility:visible!important}
- #measurement-goal-root .goal-header{display:grid!important;grid-template-columns:30% 45% 25%!important;align-items:center!important;border-bottom:2px solid #174c73!important;padding-bottom:5px!important;margin-bottom:5px!important}
+ #measurement-goal-root .goal-header{display:grid!important;grid-template-columns:30% 45% 25%!important;align-items:center!important;border-top:3px solid #174c73!important;border-bottom:1px solid #a9bfce!important;padding:5px 0 6px!important;margin-bottom:6px!important;background:#f9fbfd!important}\n #measurement-goal-root .goal-header:after{content:'CR ENGENHARIA • INSTALAÇÕES';grid-column:1/-1;text-align:right;font-size:7px;letter-spacing:.08em;color:#5d7385;border-top:1px solid #d9e3eb;padding-top:2px;margin-top:3px}
  #measurement-goal-root .goal-header img{width:38mm!important;max-height:15mm!important;object-fit:contain!important}
  #measurement-goal-root .goal-header>div:nth-child(2){text-align:center!important}
  #measurement-goal-root h1{font-size:15px!important;margin:0 0 2px!important;color:#102c4d!important}
  #measurement-goal-root .goal-header p{margin:2px 0 0!important}
  #measurement-goal-root .goal-dates{text-align:right!important;font-size:8px!important}
  #measurement-goal-root .goal-origin{margin:0 0 5px!important;border:0!important;overflow:visible!important;break-inside:auto!important}
- #measurement-goal-root h2{background:#0e4e76!important;color:#fff!important;font-size:11px!important;padding:4px 7px!important;margin:0!important;break-after:avoid!important}
+ #measurement-goal-root h2{background:#dcebf4!important;color:#153e5d!important;font-size:11px!important;padding:4px 7px!important;margin:0!important;break-after:avoid!important}
  #measurement-goal-root table{border-collapse:collapse!important;table-layout:fixed!important;width:100%!important}
  #measurement-goal-root thead{display:table-header-group!important}
  #measurement-goal-root tr{break-inside:avoid!important}
@@ -68,7 +78,7 @@ function printMeasurementGoal(input:PrintMeasurementInput){
  #measurement-goal-root .goal-code{width:7%!important}
  #measurement-goal-root .goal-description{width:19%!important}\n #measurement-goal-root th:nth-child(3){width:74%!important}
  #measurement-goal-root .goal-detail td{width:37%!important}
- #measurement-goal-root .goal-detail:nth-child(even){background:#f5f9fc!important}
+ #measurement-goal-root tr.goal-service-a>td{background:#ffffff!important}\n #measurement-goal-root tr.goal-service-b>td{background:#eef5fa!important}\n #measurement-goal-root .goal-physical{display:flex!important;flex-wrap:wrap!important;gap:3px 9px!important;margin-top:3px!important;padding:3px 5px!important;border:1px solid #d4e2ed!important;border-radius:3px!important;background:#f7fafc!important;color:#204664!important}\n #measurement-goal-root .goal-physical b{white-space:nowrap!important}\n #measurement-goal-root .goal-physical span{white-space:nowrap!important}
  #measurement-goal-root .goal-floor{display:grid!important;grid-template-columns:37px minmax(0,1fr)!important;gap:3px!important;align-items:start!important}
  #measurement-goal-root .goal-floor b{white-space:nowrap!important}
  #measurement-goal-root .goal-location-heading{display:none!important}
