@@ -126,3 +126,29 @@
 .measurement-execution-entry input{min-height:42px;width:100%;padding:8px 10px;border:1px solid var(--border,#cbd5e1);border-radius:9px;background:var(--surface,#fff);color:inherit}
 .measurement-execution-entry footer{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .measurement-execution-entry [role=alert]{font-size:.75rem;color:var(--danger,#b91c1c)}
+
+/* Medição 009 — acabamento aprovado: hierarquia, densidade e leitura responsiva. */
+.measurement-hub .measurement-hub__header-card{border:1px solid var(--border,#dbe2ea)!important;border-radius:14px!important;padding:12px 14px!important;background:var(--surface,#fff)!important;box-shadow:0 3px 16px rgba(15,23,42,.04)!important}
+.measurement-hub .measurement-hub__header-title{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:10px!important;margin-bottom:8px!important}
+.measurement-hub .measurement-hub__header-title h3{margin:2px 0 0!important;font-size:1.02rem!important;letter-spacing:-.02em!important}
+.measurement-hub .measurement-hub__header-title>span{padding:5px 9px!important;border-radius:8px!important;background:var(--surface-subtle,#eef4ff)!important;color:var(--primary,#1d4ed8)!important;font-weight:750!important}
+.measurement-hub .measurement-hub__header-grid{gap:8px!important;align-items:end!important}
+.measurement-hub .measurement-hub__financial{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:7px!important}
+.measurement-hub .measurement-hub__financial>div{min-width:0!important;min-height:62px!important;padding:10px!important;border:1px solid var(--border,#dbe2ea)!important;border-radius:11px!important;background:var(--surface-subtle,#f8fafc)!important}
+.measurement-hub .measurement-hub__financial>div:nth-child(1){border-top:3px solid #2563eb!important}
+.measurement-hub .measurement-hub__financial>div:nth-child(2){border-top:3px solid #d97706!important}
+.measurement-hub .measurement-hub__financial>div:nth-child(3){border-top:3px solid #d97706!important}
+.measurement-hub .measurement-hub__financial>div:nth-child(4){border-top:3px solid #64748b!important}
+.measurement-hub .measurement-hub__financial>div.is-net{grid-column:auto!important;border-top:3px solid #059669!important}
+.measurement-hub .measurement-hub__financial strong{font-size:clamp(.73rem,1.15vw,.97rem)!important;font-variant-numeric:tabular-nums!important}
+.measurement-hub .measurement-hub__origin-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+.measurement-hub .measurement-origin-expandable{border-radius:10px!important;box-shadow:none!important}
+.measurement-hub .measurement-origin-expandable>button{min-height:51px!important;padding:8px 10px!important;gap:7px!important}
+.measurement-hub .measurement-origin-expandable>button b{font-variant-numeric:tabular-nums!important}
+.measurement-hub .measurement-origin-expandable__services{gap:3px!important;padding:6px!important}
+.measurement-hub .measurement-origin-expandable__services>button{padding:7px 8px!important}
+.measurement-hub .measurement-hub__origin-picker,.measurement-hub .measurement-hub__origins{border:1px solid var(--border,#dbe2ea)!important;background:var(--surface,#fff)!important}
+.measurement-hub .measurement-hub__footer{gap:6px!important}
+.measurement-hub .measurement-hub__footer button{min-height:34px!important;padding:6px 10px!important;font-size:.74rem!important;white-space:normal!important}
+@media(max-width:900px){.measurement-hub .measurement-hub__financial{grid-template-columns:repeat(3,minmax(0,1fr))!important}.measurement-hub .measurement-hub__financial>div.is-net{grid-column:span 2!important}}
+@media(max-width:600px){.measurement-hub .measurement-hub__financial{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-hub .measurement-hub__financial>div.is-net{grid-column:1/-1!important}.measurement-hub .measurement-hub__origin-list{grid-template-columns:1fr!important}.measurement-hub .measurement-hub__header-card{padding:9px!important}.measurement-hub .measurement-hub__footer button{min-height:36px!important}}
