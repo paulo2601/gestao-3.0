@@ -6,9 +6,10 @@ export async function loadMeasurementGoalPhysicalQuantities(model:MeasurementPar
  const addendumIds=[...new Set(model.origins.filter(origin=>origin.type==='addendum').flatMap(origin=>origin.services.filter(service=>service.targetKind==='addendum').map(service=>service.targetId)))];
  if(!addendumIds.length)return physicalByAddendum;
  const db=getSupabaseClient();
- const {data:links,error:linkError}=await db.from('engineering_goal_physical_service_links').select('addendum_line_id,control_item_id').in('addendum_line_id',addendumIds);
+ const {data:links,error:linkError}=await db.from('engineering_goal_physical_service_links').select('addendum_line_id,control_item_id,physical_quantity,physical_unit').in('addendum_line_id',addendumIds);
  if(linkError)throw linkError;
- const itemIds=[...new Set((links??[]).map(link=>String(link.control_item_id)))];
+ const itemIds=[...new Set((links??[]).filter(link=>link.control_item_id).map(link=>String(link.control_item_id)))];
+ (links??[]).forEach(link=>{if(!link.control_item_id&&Number(link.physical_quantity)>0&&link.physical_unit)physicalByAddendum.set(String(link.addendum_line_id),{quantity:Number(link.physical_quantity),unit:String(link.physical_unit)});});
  if(!itemIds.length)return physicalByAddendum;
  const {data:items,error:itemError}=await db.from('engineering_service_control_items').select('id,unit,contracted_quantity,control_id').in('id',itemIds);
  if(itemError)throw itemError;
