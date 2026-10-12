@@ -574,3 +574,67 @@
 .measurement-hub .measurement-hub__manual-services .ams-table td::before{content:none!important}
 @media(max-width:900px){.measurement-hub .measurement-hub__header-grid.measurement-hub__header-grid--compact{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-hub .measurement-hub__footer>div{justify-content:flex-start!important}}
 @media(max-width:600px){.measurement-hub .measurement-hub__header-grid.measurement-hub__header-grid--compact{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-hub .measurement-hub__header-grid--compact>*:last-child{grid-column:1/-1!important}.measurement-hub .measurement-hub__footer{position:static!important}.measurement-hub .measurement-hub__footer>div{display:flex!important;flex-wrap:wrap!important}.measurement-hub .measurement-hub__footer>div>button{flex:1 1 45%!important}}
+
+/* Refinamento aprovado 12/10: somente formulário e cartões de origens da medição. */
+@media(min-width:901px){
+ .measurement-hub .measurement-hub__header-grid.measurement-hub__header-grid--compact{
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important;align-items:stretch!important
+ }
+ .measurement-hub .measurement-hub__header-grid--compact>*{
+  grid-column:auto!important;grid-row:auto!important;width:100%!important;max-width:none!important;min-width:0!important;
+  margin:0!important;align-self:stretch!important
+ }
+}
+.measurement-hub .measurement-hub__header-grid--compact>*>label,
+.measurement-hub .measurement-hub__header-grid--compact>*>span:first-child{
+ font-size:.8rem!important;line-height:1.25!important
+}
+.measurement-hub .measurement-hub__header-grid--compact input,
+.measurement-hub .measurement-hub__header-grid--compact select,
+.measurement-hub .measurement-hub__header-grid--compact [role="combobox"]{
+ box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;
+ height:42px!important;min-height:42px!important;max-height:42px!important;
+ padding-top:7px!important;padding-bottom:7px!important;font-size:.92rem!important
+}
+.measurement-hub .measurement-hub__header-grid--compact input[type="date"],
+.measurement-hub .measurement-hub__header-grid--compact input[type="month"]{
+ appearance:auto!important;-webkit-appearance:auto!important
+}
+@media(min-width:901px){
+ .measurement-hub .measurement-hub__origin-list{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important
+ }
+}
+.measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable{
+ min-width:0!important;max-width:100%!important;border-radius:10px!important
+}
+.measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button{
+ display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+ grid-template-rows:auto auto!important;align-items:center!important;
+ width:100%!important;min-height:0!important;height:auto!important;
+ padding:10px 12px!important;gap:3px 8px!important
+}
+.measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button>span{
+ grid-column:1/-1!important;min-width:0!important;display:flex!important;
+ align-items:baseline!important;justify-content:space-between!important;gap:5px!important;flex-wrap:wrap!important
+}
+.measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button>span strong{
+ font-size:.88rem!important;line-height:1.2!important
+}
+.measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button>span small{
+ font-size:.68rem!important;color:#64748b!important
+}
+.measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button>b{
+ grid-column:1!important;grid-row:2!important;font-size:1rem!important;line-height:1.3!important
+}
+.measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button>em{
+ grid-column:2!important;grid-row:2!important;align-self:center!important;
+ justify-self:end!important;font-size:.73rem!important;white-space:nowrap!important
+}
+@media(max-width:900px){
+ .measurement-hub .measurement-hub__origin-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:480px){
+ .measurement-hub .measurement-hub__origin-list{grid-template-columns:1fr!important}
+ .measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button{padding:9px 11px!important}
+}
