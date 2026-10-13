@@ -1,25 +1,19 @@
 {
-  "name": "Gestão",
+  "name": "Gestão 3.0",
   "short_name": "Gestão",
   "description": "Gestão financeira, RH e engenharia.",
   "lang": "pt-BR",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#071426",
-  "theme_color": "#071426",
+  "background_color": "#061b3a",
+  "theme_color": "#061b3a",
   "icons": [
     {
-      "src": "/gestao-icon.svg?v=3",
+      "src": "/gestao-app-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/gestao-icon.svg?v=3-maskable",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }
