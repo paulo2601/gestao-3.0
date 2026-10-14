@@ -1,4 +1,5 @@
 import { Dialog } from '../../../shared/ui/Dialog';
+import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 import { useEffect, useMemo, useState } from 'react';
 import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
 import { chooseActiveExecutionMeasurement, deriveExecutionProjection } from '../domain/measurementExecutionProjection';
@@ -13,6 +14,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const measurement=model.measurements.find(item=>item.id===activeId);
  const items=useMemo(()=>activeId?deriveExecutionProjection(model,activeId):[],[model,activeId]);
  const [entries,setEntries]=useState<LineExecution[]>([]);
+ const [external,setExternal]=useState<Map<string,{ratio:number;value:number}>>(new Map());
  const [selected,setSelected]=useState<string|null>(null);
  const [selectedReferences,setSelectedReferences]=useState<string[]>([]);
  const [editing,setEditing]=useState<string|null>(null);
@@ -32,16 +34,18 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  .catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao carregar execução')})
  .finally(()=>{if(live)setLoading(false)});
  return()=>{live=false};},[scope,ids]);
+ useEffect(()=>{let live=true;const addendumIds=[...new Set(items.filter(item=>item.targetKind==='addendum').map(item=>item.targetId))];if(!addendumIds.length){setExternal(new Map());return()=>{live=false}};const db=getSupabaseClient();(async()=>{const {data:links,error:linkError}=await db.from('engineering_goal_physical_service_links').select('addendum_line_id,control_item_id').in('addendum_line_id',addendumIds);if(linkError)throw linkError;const linked=(links??[]).filter(row=>row.control_item_id);const itemIds=[...new Set(linked.map(row=>String(row.control_item_id)))];if(!itemIds.length){if(live)setExternal(new Map());return}const {data:controls,error:controlError}=await db.from('engineering_service_control_items').select('id,control_id,contracted_quantity,unit_price').in('id',itemIds);if(controlError)throw controlError;const controlIds=[...new Set((controls??[]).map(row=>String(row.control_id)))];const {data:owners,error:ownerError}=await db.from('engineering_service_controls').select('id,contract_id').in('id',controlIds);if(ownerError)throw ownerError;const validIds=new Set((owners??[]).filter(row=>row.contract_id===model.contractId).map(row=>String(row.id)));const validItems=(controls??[]).filter(row=>validIds.has(String(row.control_id)));const {data:records,error:entryError}=await db.from('engineering_service_control_entries').select('item_id,executed_quantity').in('item_id',validItems.map(row=>row.id));if(entryError)throw entryError;const byItem=new Map<string,number>();for(const record of records??[])byItem.set(String(record.item_id),(byItem.get(String(record.item_id))??0)+Number(record.executed_quantity));const next=new Map<string,{ratio:number;value:number}>();for(const link of linked){const item=validItems.find(row=>String(row.id)===String(link.control_item_id));if(!item)continue;const meters=byItem.get(String(item.id))??0;const contracted=Number(item.contracted_quantity);if(contracted>0)next.set(String(link.addendum_line_id),{ratio:meters/contracted,value:Math.round(meters*Number(item.unit_price)*100)/100})}if(live)setExternal(next)})().catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao sincronizar infraestrutura externa')});return()=>{live=false}},[model.contractId,items]);
  const doneByLine=useMemo(()=>{const sums=new Map<string,number>();for(const entry of entries)sums.set(entry.measurementLineId,(sums.get(entry.measurementLineId)??0)+entry.executedQuantity);return sums},[entries]);
+ const effectiveDone=(item:typeof items[number])=>external.has(item.targetId)?external.get(item.targetId)!.ratio:(doneByLine.get(item.measurementLineId)??0);
  const contractStages=useMemo(()=>new Map(model.origins.flatMap(origin=>origin.services.map(service=>[service.targetKind+':'+service.targetId,service] as const))),[model]);
  const contractUnitPrice=(item:typeof items[number])=>contractStages.get(item.targetKind+':'+item.targetId)?.unitPrice??item.unitPrice;
  const contractValue=(item:typeof items[number])=>{const stage=contractStages.get(item.targetKind+':'+item.targetId);return stage?stage.contractedQuantity*stage.unitPrice:item.plannedValue;};
  const groupContractValue=(lines:typeof items)=>[...new Map(lines.map(line=>[line.targetKind+':'+line.targetId,contractValue(line)])).values()].reduce((sum,value)=>sum+value,0);
- const financialExecuted=(item:typeof items[number])=>Math.max(0,doneByLine.get(item.measurementLineId)??0)*(item.targetKind==='addendum'?contractUnitPrice(item):(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0));
+ const financialExecuted=(item:typeof items[number])=>external.has(item.targetId)?external.get(item.targetId)!.value:Math.max(0,doneByLine.get(item.measurementLineId)??0)*(item.targetKind==='addendum'?contractUnitPrice(item):(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0));
  const projected=items.reduce((sum,item)=>sum+item.plannedValue,0);
  const executed=items.reduce((sum,item)=>sum+financialExecuted(item),0);
  const filtered=items.filter(item=>{
-  const done=doneByLine.get(item.measurementLineId)??0;
+  const done=effectiveDone(item);
   if(statusFilter==='pending'&&done>=item.plannedQuantity)return false;
   if(statusFilter==='done'&&done<item.plannedQuantity)return false;
   const query=search.trim().toLocaleLowerCase('pt-BR');
@@ -55,9 +59,11 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const filteredGroups=groups.filter(group=>group.lines.some(item=>filtered.includes(item)));
  const activeGroup=groups.find(group=>group.key===selected);
  const current=items.find(item=>item.measurementLineId===selected)??activeGroup?.lines[0];
- const groupCandidates=(activeGroup?.lines??[]).filter(item=>Math.max(0,item.plannedQuantity-(doneByLine.get(item.measurementLineId)??0))>0.0000001);
+ const groupCandidates=(activeGroup?.lines??[]).filter(item=>!external.has(item.targetId)&&Math.max(0,item.plannedQuantity-(doneByLine.get(item.measurementLineId)??0))>0.0000001);
  const floorOf=(reference:string|null)=>{const value=(reference??'').trim();const match=value.match(/^(\d+)$/);return match&&match[1]!.length>=3?Number(match[1]!.slice(0,-2))+'º pavimento':/^0?[1-8]$/.test(value)?'Térreo':'Outros'};
  const floorGroups=[...new Set(groupCandidates.map(item=>floorOf(item.reference)))].sort((a,b)=>{const n=(x:string)=>x==='Outros'?-1:parseInt(x,10);return n(a)-n(b)}).map(floor=>({floor,lines:groupCandidates.filter(item=>floorOf(item.reference)===floor).sort((a,b)=>(a.reference??'').localeCompare(b.reference??'','pt-BR',{numeric:true}))}));
+ const showPercent=(group:typeof items)=>group.length>0&&group.every(item=>item.targetKind==='addendum'&&item.unitKind==='unidade'&&item.plannedQuantity<=1);
+ const formatCardQuantity=(value:number,percent:boolean)=>percent?`${(value*100).toLocaleString('pt-BR',{maximumFractionDigits:2})}%`:value.toLocaleString('pt-BR',{maximumFractionDigits:3});
  const groupRemaining=groupCandidates.reduce((sum,line)=>sum+Math.max(0,line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)),0);
  const remaining=current?Math.max(0,(current.targetKind==='addendum'?(contractStages.get(current.targetKind+':'+current.targetId)?.contractedQuantity??current.plannedQuantity):current.plannedQuantity)-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
@@ -105,7 +111,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
   {loading?<p>Carregando execução…</p>:items.length===0?<p>Nenhum serviço lançado nesta medição.</p>:filteredGroups.length===0?<p>Nenhum serviço corresponde aos filtros.</p>:<div className="measurement-execution-overview__items">{filteredGroups.map(group=>{
    const planned=group.lines.reduce((sum,item)=>sum+item.plannedQuantity,0);
-   const done=group.lines.reduce((sum,item)=>sum+(doneByLine.get(item.measurementLineId)??0),0);
+   const done=group.lines.reduce((sum,item)=>sum+effectiveDone(item),0);
    const value=group.lines.reduce((sum,item)=>sum+item.plannedValue,0);
    const executedValue=group.lines.reduce((sum,item)=>sum+financialExecuted(item),0);
    const pendingValue=value-executedValue;
@@ -116,9 +122,9 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
     <small>{group.lines[0]?.originName} · {group.lines[0]?.unitKind==='hall'?'Halls / área comum':group.lines[0]?.unitKind==='apartamento'?'Apartamentos':'Unidades'}</small>
     <strong>{group.lines[0]?.description}</strong>
     <span className="ex-card-metrics">
-     <span><small>Projetado</small><strong>{planned.toLocaleString('pt-BR')}</strong><small>{money.format(value)}</small></span>
-     <span className="ex-card-done"><small>Executado</small><strong>{done.toLocaleString('pt-BR')}</strong><small>{money.format(executedValue)}</small></span>
-     <span className="ex-card-pending"><small>Pendente</small><strong>{(planned-done).toLocaleString('pt-BR')}</strong><small>{money.format(pendingValue)}</small></span>
+     <span><small>Projetado</small><strong>{formatCardQuantity(planned,showPercent(group.lines))}</strong><small>{money.format(value)}</small></span>
+     <span className="ex-card-done"><small>Executado</small><strong>{formatCardQuantity(done,showPercent(group.lines))}</strong><small>{money.format(executedValue)}</small></span>
+     <span className="ex-card-pending"><small>Pendente</small><strong>{formatCardQuantity(planned-done,showPercent(group.lines))}</strong><small>{money.format(pendingValue)}</small></span>
     </span>
     <progress className="ex-card-progress" max={100} value={Math.min(100,progress)}/>
     <small>{progress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do projetado · {contractProgress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do contrato</small>
