@@ -638,3 +638,13 @@
  .measurement-hub .measurement-hub__origin-list{grid-template-columns:1fr!important}
  .measurement-hub .measurement-hub__origin-list>.measurement-origin-expandable>button{padding:9px 11px!important}
 }
+
+/* Mobile unit editor: readable summary and two non-overlapping actions. */
+@media(max-width:640px){
+ .guided-measurement-unit-picker .aup-footer{position:sticky!important;bottom:0!important;z-index:15!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px!important;align-items:stretch!important;padding:10px 12px max(12px,env(safe-area-inset-bottom))!important;background:#fff!important;box-sizing:border-box!important;width:100%!important}
+ .guided-measurement-unit-picker .aup-footer>div{grid-column:1/-1!important;min-width:0!important;display:flex!important;flex-wrap:wrap!important;gap:5px!important;overflow-wrap:anywhere!important}
+ .guided-measurement-unit-picker .aup-footer>button{width:100%!important;min-width:0!important;max-width:100%!important;min-height:44px!important;height:auto!important;padding:9px 6px!important;white-space:normal!important;overflow-wrap:break-word!important;font-size:13px!important;line-height:1.2!important;box-sizing:border-box!important}
+ .guided-measurement-unit-picker .aup-footer>button:only-of-type{grid-column:1/-1!important}
+ .guided-measurement-unit-picker .guided-measurement-picker__panel{min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+ .guided-measurement-unit-picker .aup-summary{min-width:0!important}
+}
