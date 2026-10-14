@@ -152,24 +152,3 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   </Dialog>
  </section>;
 }
-:''}</small>}
-   <label>Data<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
-   <div role="group" aria-label="Forma de lançamento" className="measurement-execution-overview__mode">{(['quantity','value','percent'] as const).map(mode=><button key={mode} type="button" aria-pressed={entryMode===mode} onClick={()=>{setEntryMode(mode);setQuantity('');setError(null);setNotice(null)}}>{mode==='quantity'?'Quantidade':mode==='value'?'Valor (R$)':'Porcentagem (%)'}</button>)}</div>
-   {entryMode==='percent'&&current.targetKind==='addendum'&&<small>Base: {money.format(groupContractValue(activeGroup?.lines??[current]))} do contrato do serviço. O avanço exibido compara o valor executado com o projetado.</small>}
-   {entryMode==='percent'&&current.targetKind==='addendum'&&<small>O percentual é aplicado ao contrato completo deste serviço; selecione as unidades que receberão o valor. Não é percentual do projetado.</small>}
-   <label>{entryMode==='quantity'?'Quantidade por unidade':entryMode==='value'?'Valor total executado (R$)' :current.targetKind==='addendum'?'Percentual do contratado (%)':'Percentual do projetado (%)'}<input inputMode="decimal" value={quantity} onChange={event=>setQuantity(event.target.value)}/></label>
-   <div><button type="button" onClick={()=>{setSelected(null);setEditing(null)}} disabled={saving}>Cancelar</button><button type="button" onClick={()=>void submit()} disabled={saving||(activeGroup&&!editing?selectedReferences.length===0:remaining<=0)}>{saving?'Salvando…':editing?'Salvar alteração':'Salvar execução'}</button></div>
-  </div>}
-  </Dialog>
-  <details><summary>Histórico diário ({entries.length})</summary>{[...entries].sort((a,b)=>b.executionDate.localeCompare(a.executionDate)).map(entry=><div className="measurement-execution-overview__history-row" key={entry.id}><span>{entry.executionDate.split('-').reverse().join('/')} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.description??'Serviço'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.originName??'Origem não identificada'} · {items.find(item=>item.measurementLineId===entry.measurementLineId)?.reference??'Geral'} · {entry.executedQuantity.toLocaleString('pt-BR')}</span><button type="button" disabled={saving} onClick={()=>{setSelected(entry.measurementLineId);setEditing(entry.id);setQuantity(String(entry.executedQuantity));setDate(entry.executionDate);setError(null)}}>Editar</button><button type="button" disabled={saving} onClick={()=>setPendingDelete(entry.id)}>Excluir</button></div>)}</details>
-  <Dialog open={Boolean(pendingDelete)} title="Excluir execução" description="Esta ação excluirá apenas o registro físico de execução, sem alterar a medição financeira." onClose={()=>{if(!saving)setPendingDelete(null)}}>
-   <div className="measurement-execution-overview__entry">
-    <p>Deseja realmente excluir este lançamento do histórico?</p>
-    <div>
-     <button type="button" disabled={saving} onClick={()=>setPendingDelete(null)}>Cancelar</button>
-     <button type="button" disabled={saving} onClick={()=>{if(!pendingDelete)return;setSaving(true);setError(null);void deleteLineExecution(pendingDelete).then(()=>loadLineExecutions(scope,ids)).then(rows=>{setEntries(rows);setPendingDelete(null)}).catch(cause=>setError(cause instanceof Error?cause.message:'Falha ao excluir')).finally(()=>setSaving(false))}}>{saving?'Excluindo…':'Confirmar exclusão'}</button>
-    </div>
-   </div>
-  </Dialog>
- </section>;
-}
