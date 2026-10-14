@@ -55,10 +55,10 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const filteredGroups=groups.filter(group=>group.lines.some(item=>filtered.includes(item)));
  const activeGroup=groups.find(group=>group.key===selected);
  const current=items.find(item=>item.measurementLineId===selected)??activeGroup?.lines[0];
- const groupCandidates=activeGroup?.lines??[];
+ const groupCandidates=(activeGroup?.lines??[]).filter(item=>Math.max(0,item.plannedQuantity-(doneByLine.get(item.measurementLineId)??0))>0.0000001);
  const floorOf=(reference:string|null)=>{const value=(reference??'').trim();const match=value.match(/^(\d+)$/);return match&&match[1]!.length>=3?Number(match[1]!.slice(0,-2))+'º pavimento':/^0?[1-8]$/.test(value)?'Térreo':'Outros'};
  const floorGroups=[...new Set(groupCandidates.map(item=>floorOf(item.reference)))].sort((a,b)=>{const n=(x:string)=>x==='Outros'?-1:parseInt(x,10);return n(a)-n(b)}).map(floor=>({floor,lines:groupCandidates.filter(item=>floorOf(item.reference)===floor).sort((a,b)=>(a.reference??'').localeCompare(b.reference??'','pt-BR',{numeric:true}))}));
- const groupRemaining=activeGroup?.lines.reduce((sum,line)=>sum+Math.max(0,line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)),0)??0;
+ const groupRemaining=groupCandidates.reduce((sum,line)=>sum+Math.max(0,line.plannedQuantity-(doneByLine.get(line.measurementLineId)??0)),0);
  const remaining=current?Math.max(0,(current.targetKind==='addendum'?(contractStages.get(current.targetKind+':'+current.targetId)?.contractedQuantity??current.plannedQuantity):current.plannedQuantity)-(doneByLine.get(current.measurementLineId)??0)+(editing?entries.find(entry=>entry.id===editing)?.executedQuantity??0:0)):0;
  async function submit(){
   if(!current)return;
