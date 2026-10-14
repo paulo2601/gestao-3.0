@@ -48,8 +48,10 @@ async function ensureLatestBuild(): Promise<void> {
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
-      void registration.update();
-      window.setInterval(() => { void registration.update(); }, 15 * 60_000);
+      void registration.update().catch((error) => console.warn('PWA: atualização do service worker falhou', error));
+      window.setInterval(() => { void registration.update().catch(() => undefined); }, 15 * 60_000);
+    }).catch((error) => {
+      console.error('PWA: registro do service worker falhou', error);
     });
     void ensureLatestBuild();
   });
