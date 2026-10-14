@@ -72,7 +72,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);
   try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:quantities[0]!})}else if(activeGroup){for(let i=0;i<batch.length;i++)await saveLineExecution({measurementLineId:batch[i]!.measurementLineId,executionDate:date,quantity:quantities[i]!})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:quantities[0]!})}
-   setEntries(await loadLineExecutions(scope,ids));setSelected(null);setSelectedReferences([]);setEditing(null);setQuantity('1')}
+   setEntries(await loadLineExecutions(scope,ids));setSelectedReferences([]);setEditing(null);setQuantity('1')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
  }
