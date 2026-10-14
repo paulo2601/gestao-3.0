@@ -29,7 +29,7 @@ def icon(size):
             row.extend(color)
         rows.append(bytes(row))
     raw = zlib.compress(b"".join(rows), 9)
-    data = b"\\x89PNG\\r\\n\\x1a\\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0)) + chunk(b"IDAT", raw) + chunk(b"IEND", b"")
+    data = bytes.fromhex("89504e470d0a1a0a") + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0)) + chunk(b"IDAT", raw) + chunk(b"IEND", b"")
     (OUT / f"gestao-icon-{size}.png").write_bytes(data)
 
 for dimension in (192, 512):
