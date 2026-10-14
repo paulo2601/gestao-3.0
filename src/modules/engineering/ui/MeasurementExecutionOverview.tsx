@@ -84,7 +84,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);setNotice(null);
   try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:quantities[0]!})}else if(activeGroup){for(let i=0;i<batch.length;i++)await saveLineExecution({measurementLineId:batch[i]!.measurementLineId,executionDate:date,quantity:quantities[i]!})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:quantities[0]!})}
-   setEntries(await loadLineExecutions(scope,ids));setSelectedReferences([]);setEditing(null);setQuantity('1');setNotice('Execução salva com sucesso. Selecione as próximas unidades para continuar.')}
+   const refreshed=await loadLineExecutions(scope,ids);setEntries(refreshed);setSelectedReferences([]);setEditing(null);setQuantity('');setNotice('Execução salva com sucesso. Selecione as próximas unidades para continuar.')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
  }
@@ -126,6 +126,8 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    </button>})}</div>}
   <Dialog open={Boolean(current)} title={editing?"Editar execução":"Registrar execução"} description={current?`${current.originName} · ${current.description} · Medição ${measurement?.measurementNumber??"—"}`:undefined} onClose={()=>{if(!saving){setSelected(null);setEditing(null)}}}>
   {current&&<div className="measurement-execution-overview__entry" role="group" aria-label="Registrar execução">
+   {error&&<p role="alert" style={{color:'#b91c1c',fontWeight:600}}>{error}</p>}
+   {notice&&<p role="status" style={{color:'#047857',fontWeight:600}}>{notice}</p>}
    {activeGroup&&!editing&&<div className="measurement-execution-overview__units"><strong>{current.originName} · Selecione {current.unitKind==='hall'?'os halls':current.unitKind==='apartamento'?'os apartamentos':'as unidades'} executados</strong>
     <button type="button" onClick={()=>setSelectedReferences(groupCandidates.map(item=>item.measurementLineId))}>Marcar todas as pendentes</button>
     <button type="button" onClick={()=>setSelectedReferences([])}>Limpar seleção</button>
