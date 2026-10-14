@@ -9,3 +9,40 @@
 .engineering-commercial-budgets__item-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:760px){.engineering-commercial-budgets__item-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.engineering-commercial-budgets__item-grid>.ui-field:first-child{grid-column:1/-1}.engineering-commercial-budgets__item{grid-template-columns:minmax(0,1fr) auto}.engineering-commercial-budgets__item-actions{grid-column:1/-1}}
 @media(max-width:430px){.engineering-commercial-budgets__item-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.engineering-commercial-budgets__item-grid>.ui-field:first-child{grid-column:1/-1}.engineering-commercial-budgets__live-total{min-height:58px}.engineering-commercial-budgets__item-actions{justify-content:flex-end}}
+
+/* Uniform budget item inputs: service full-width, four equal columns. */
+.engineering-commercial-budgets__item-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:stretch;
+}
+.engineering-commercial-budgets__item-grid>.ui-field,
+.engineering-commercial-budgets__item-grid>.engineering-commercial-budgets__live-total{
+  min-width:0;
+  width:100%;
+  box-sizing:border-box;
+}
+.engineering-commercial-budgets__item-grid>.ui-field{
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+}
+.engineering-commercial-budgets__item-grid>.ui-field__control{width:100%}
+.engineering-commercial-budgets__item-grid>.ui-field .ui-input{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+.engineering-commercial-budgets__item-grid>.engineering-commercial-budgets__live-total{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-height:44px;
+  padding:6px 10px;
+  align-self:end;
+}
+@media(max-width:760px){
+  .engineering-commercial-budgets__item-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:430px){
+  .engineering-commercial-budgets__item-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
