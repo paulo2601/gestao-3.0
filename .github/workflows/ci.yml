@@ -52,5 +52,11 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Generate PWA icons
+        run: python3 scripts/generate-pwa-icons.py
+
       - name: Build
         run: npm run build
+
+      - name: Validate PWA build assets
+        run: python3 scripts/check-pwa-build.py
