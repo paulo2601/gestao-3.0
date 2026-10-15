@@ -11,10 +11,10 @@ type BudgetPdf=InstanceType<typeof jsPDF>;
 
 async function companyLogo():Promise<string|null>{
  try{
-  const response=await fetch('/company-cr.svg',{cache:'no-store'});
+  const response=await fetch('/company-cr.webp',{cache:'no-store'});
   if(!response.ok)return null;
-  const svg=await response.text();
-  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+  const blob=await response.blob();
+  const url=URL.createObjectURL(blob);
   try{
    const img=new Image();
    await new Promise<void>((resolve,reject)=>{img.onload=()=>resolve();img.onerror=()=>reject(new Error('Logo indisponível'));img.src=url;});
@@ -27,8 +27,15 @@ async function companyLogo():Promise<string|null>{
 }
 function drawHeader(pdf:BudgetPdf,logo:string|null,page:number){
  pdf.setFillColor(255,255,255);pdf.rect(0,0,210,297,'F');
- if(logo)pdf.addImage(logo,'PNG',margin,10,63,19);
+ if(logo)pdf.addImage(logo,'PNG',margin,8,63,23);
  else{pdf.setTextColor(...blue);pdf.setFont('helvetica','bold');pdf.setFontSize(18);pdf.text('CR ENGENHARIA',margin,22);}
+ if(logo){
+  // A marca d'água usa o mesmo arquivo oficial dos relatórios da Engenharia.
+  pdf.saveGraphicsState();
+  pdf.setGState(new pdf.GState({opacity:0.045}));
+  pdf.addImage(logo,'PNG',48,109,114,68);
+  pdf.restoreGraphicsState();
+ }
  pdf.setDrawColor(...blue);pdf.setLineWidth(.5);pdf.line(margin,34,210-margin,34);
  pdf.setDrawColor(170,180,192);pdf.setLineWidth(.25);pdf.line(margin,283,210-margin,283);
  pdf.setFont('helvetica','normal');pdf.setFontSize(8);pdf.setTextColor(95,107,122);
