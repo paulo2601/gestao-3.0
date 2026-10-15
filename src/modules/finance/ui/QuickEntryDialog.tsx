@@ -380,15 +380,10 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
   }
 
   function selectCompany(nextCompanyId: string) {
+    // A mudança manual de empresa não deve descartar o lançamento em andamento.
+    // Referências de outra empresa são validadas ao salvar, sem perda silenciosa.
     setCompanyId(nextCompanyId);
-    setForm((current) => ({
-      ...current,
-      categoryId: '',
-      costCenterId: '',
-      accountRef: allCompaniesMode ? current.accountRef : '',
-      cardRef: allCompaniesMode ? current.cardRef : '',
-      includeInBudget: false,
-    }));
+    setLocalError(null);
   }
 
   function smartFill(description: string) {
