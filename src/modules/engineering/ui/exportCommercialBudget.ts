@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspdf';
+import { jsPDF, GState } from 'jspdf';
 import type { EngineeringCommercialBudget } from '../infrastructure/EngineeringCommercialBudgetRepository';
 
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -32,7 +32,7 @@ function drawHeader(pdf:BudgetPdf,logo:string|null,page:number){
  if(logo){
   // A marca d'água usa o mesmo arquivo oficial dos relatórios da Engenharia.
   pdf.saveGraphicsState();
-  pdf.setGState(new pdf.GState({opacity:0.045}));
+  pdf.setGState(new GState({opacity:0.045}));
   pdf.addImage(logo,'PNG',48,109,114,68);
   pdf.restoreGraphicsState();
  }
