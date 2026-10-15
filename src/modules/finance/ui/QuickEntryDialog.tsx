@@ -187,6 +187,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
   const [inlineRegistry, setInlineRegistry] = useState<InlineRegistry | null>(null);
   const [newRegistryName, setNewRegistryName] = useState('');
   const [templates, setTemplates] = useState<readonly SmartTemplate[]>([]);
+  const manuallyEdited = useRef<Set<string>>(new Set());
+  const manualCompany = useRef(false);
   const [paymentAccounts, setPaymentAccounts] = useState<readonly OwnedAccount[]>([]);
   const [paymentCards, setPaymentCards] = useState<readonly OwnedCard[]>([]);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -214,6 +216,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
   useEffect(() => {
     if (!open) return;
     setCompanyId(initialCompanyId || companies[0]?.id || '');
+    manuallyEdited.current.clear();
+    manualCompany.current = false;
     setMoreOptions(false);
     setInlineRegistry(null);
     setNewRegistryName('');
@@ -366,22 +370,19 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
   ];
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
+    manuallyEdited.current.add(field);
     setForm((current) => ({ ...current, [field]: value }));
   }
 
   function setPaymentMethod(value: PaymentMethod) {
-    setForm((current) => ({
-      ...current,
-      paymentMethod: value,
-      launchType: value === 'credit' && current.launchType === 'recurring' ? 'single' : current.launchType,
-      accountRef: value === 'credit' ? '' : current.accountRef,
-      cardRef: value === 'credit' ? current.cardRef : '',
-    }));
+    manuallyEdited.current.add('paymentMethod');
+    setForm((current) => ({ ...current, paymentMethod: value }));
   }
 
   function selectCompany(nextCompanyId: string) {
     // A mudança manual de empresa não deve descartar o lançamento em andamento.
     // Referências de outra empresa são validadas ao salvar, sem perda silenciosa.
+    manualCompany.current = true;
     setCompanyId(nextCompanyId);
     setLocalError(null);
   }
@@ -397,28 +398,34 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCo
       set('description', description);
       return;
     }
-    if (match.companyId && match.companyId !== companyId && companies.some((item) => item.id === match.companyId)) {
+    if (!manualCompany.current && match.companyId && match.companyId !== companyId && companies.some((item) => item.id === match.companyId)) {
       setCompanyId(match.companyId);
     }
-    setForm((current) => ({
-      ...current,
-      description,
-      entryType: match.entryType,
-      categoryId: match.categoryId,
-      costCenterId: match.costCenterId,
-      accountRef: match.paymentMethod === 'credit' ? '' : match.accountRef,
-      paymentMethod: match.paymentMethod,
-      cardRef: match.paymentMethod === 'credit' ? match.cardRef : '',
-      counterparty: match.counterparty,
-      launchType: match.launchType,
-      installmentCount: match.installmentCount,
-      includeInBudget: false,
-    }));
+    setForm((current) => {
+      const suggested = {
+        entryType: match.entryType,
+        categoryId: match.categoryId,
+        costCenterId: match.costCenterId,
+        accountRef: match.paymentMethod === 'credit' ? '' : match.accountRef,
+        paymentMethod: match.paymentMethod,
+        cardRef: match.paymentMethod === 'credit' ? match.cardRef : '',
+        counterparty: match.counterparty,
+        launchType: match.launchType,
+        installmentCount: match.installmentCount,
+      };
+      const next = { ...current, description };
+      for (const key of Object.keys(suggested) as Array<keyof typeof suggested>) {
+        if (!manuallyEdited.current.has(key)) Object.assign(next, { [key]: suggested[key] });
+      }
+      return next;
+    });
   }
 
   function resetAfterSave(keepData: boolean) {
     setLocalSuccess(null);
     if (keepData) return;
+    manuallyEdited.current.clear();
+    manualCompany.current = false;
     setForm({
       entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: 'pix', launchType: 'single',
       installmentCount: '2', recurrenceCount: '12', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
