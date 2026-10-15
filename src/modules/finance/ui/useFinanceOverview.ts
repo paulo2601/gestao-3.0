@@ -30,6 +30,16 @@ export function useFinanceOverview(scope: CompanyScope | null, refreshToken = 0)
   const repositories = useMemo(() => getFinanceRepositories(), []);
   const tenantId = scope?.tenantId ?? null;
   const companyId = scope?.companyId ?? null;
+  const [syncTick, setSyncTick] = useState(0);
+  useEffect(() => {
+    const refresh = () => setSyncTick(value => value + 1);
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    const timer = window.setInterval(onVisible, 20_000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('finance-data-changed', refresh);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener('finance-data-changed', refresh); document.removeEventListener('visibilitychange', onVisible); };
+  }, []);
   const [state, setState] = useState<FinanceOverviewState>({ status: 'idle', data: null, errorMessage: null });
 
   useEffect(() => {
@@ -56,13 +66,11 @@ export function useFinanceOverview(scope: CompanyScope | null, refreshToken = 0)
         if (cancelled) return;
         // Se a atualização falhar, mantém os últimos dados válidos em vez de
         // derrubar a página que o usuário já estava utilizando.
-        setState(previous => previous.data
-          ? { status: 'ready', data: previous.data, errorMessage: null }
-          : { status: 'error', data: null, errorMessage: 'Não foi possível carregar a visão financeira desta empresa.' });
+        setState({ status: 'error', data: null, errorMessage: 'Não foi possível atualizar os dados financeiros. Verifique sua conexão e tente novamente.' });
       });
 
     return () => { cancelled = true; };
-  }, [repositories, tenantId, companyId, refreshToken]);
+  }, [repositories, tenantId, companyId, refreshToken, syncTick]);
 
   return state;
 }
