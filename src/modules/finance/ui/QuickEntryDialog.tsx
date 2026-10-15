@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, CopyPlus, Eraser } from 'lucide-react';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
