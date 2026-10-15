@@ -49,10 +49,43 @@ function addLines(pdf:BudgetPdf,value:string,x:number,y:number,maxWidth:number,f
  for(const line of lines){pdf.text(line,x,y);y+=lineHeight;}
  return y;
 }
+
+function coverPage(pdf:BudgetPdf,logo:string|null,b:EngineeringCommercialBudget){
+ pdf.setFillColor(255,255,255);pdf.rect(0,0,210,297,'F');
+ if(logo)pdf.addImage(logo,'PNG',42,35,126,46);
+ else{pdf.setFont('helvetica','bold');pdf.setFontSize(24);pdf.setTextColor(...blue);pdf.text('CR ENGENHARIA',105,65,{align:'center'});}
+ pdf.setDrawColor(...blue);pdf.setLineWidth(1.2);pdf.line(24,103,186,103);
+ pdf.setTextColor(...blue);pdf.setFont('helvetica','bold');pdf.setFontSize(22);
+ const title=pdf.splitTextToSize(b.title||'PROPOSTA COMERCIAL',157) as string[];
+ title.forEach((line,i)=>pdf.text(line,105,131+i*11,{align:'center'}));
+ pdf.setFont('helvetica','normal');pdf.setFontSize(13);pdf.setTextColor(65,79,98);
+ pdf.text(b.project||'Orçamento de instalações',105,176,{align:'center',maxWidth:160});
+ pdf.text('Cliente: '+(b.customer||'-'),105,188,{align:'center',maxWidth:160});
+ pdf.setDrawColor(...blue);pdf.setLineWidth(.4);pdf.line(24,258,186,258);
+ pdf.setFontSize(10);pdf.text('CR Engenharia  |  '+b.issueDate,105,268,{align:'center'});
+}
+function institutionalPage(pdf:BudgetPdf,logo:string|null){
+ pdf.addPage();drawHeader(pdf,logo,2);
+ let y=55;
+ const sections=[
+  ['QUEM SOMOS','A CR Engenharia atua na execução de instalações e infraestrutura de obras, com foco em serviços elétricos, hidráulicos, sanitários e sistemas complementares. Nosso trabalho prioriza organização, qualidade técnica e cumprimento das etapas previstas para cada empreendimento.'],
+  ['MISSÃO','Executar serviços de engenharia e instalações com qualidade, segurança e responsabilidade, buscando soluções técnicas adequadas às necessidades de cada cliente e empreendimento.']
+ ];
+ for(const [title,body] of sections){
+  pdf.setFont('helvetica','bold');pdf.setTextColor(...blue);pdf.setFontSize(16);pdf.text(title,margin,y);y+=11;
+  pdf.setFont('helvetica','normal');pdf.setTextColor(35,48,65);pdf.setFontSize(11);
+  const lines=pdf.splitTextToSize(body,175) as string[];
+  for(const line of lines){pdf.text(line,margin,y);y+=6.3;}
+  y+=22;
+ }
+}
 async function makePdf(b:EngineeringCommercialBudget):Promise<Blob>{
  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
  const logo=await companyLogo();
- let page=1,y=43;
+ coverPage(pdf,logo,b);
+ institutionalPage(pdf,logo);
+ pdf.addPage();
+ let page=3,y=43;
  drawHeader(pdf,logo,page);
  function nextPage(){pdf.addPage();page++;drawHeader(pdf,logo,page);y=43;}
  function ensure(height:number){if(y+height>pageBottom)nextPage();}
@@ -74,7 +107,18 @@ async function makePdf(b:EngineeringCommercialBudget):Promise<Blob>{
   pdf.setTextColor(30,41,59);y+=9;
  }
  tableHeader();
+ let previousGroup='';
  for(const [index,item] of b.items.entries()){
+  const group=(item.category||'SERVIÇOS').trim()||'SERVIÇOS';
+  if(group!==previousGroup){
+   ensure(15);
+   const subtotal=b.items.filter(row=>(row.category||'SERVIÇOS').trim()===group).reduce((sum,row)=>sum+row.quantity*row.unitPrice,0);
+   pdf.setFillColor(225,232,240);pdf.rect(margin,y,176,9,'F');
+   pdf.setFont('helvetica','bold');pdf.setFontSize(8.5);pdf.setTextColor(...blue);
+   pdf.text(group.toLocaleUpperCase('pt-BR').slice(0,63),margin+2,y+6);
+   pdf.text(money.format(subtotal),191,y+6,{align:'right'});
+   y+=9;previousGroup=group;
+  }
   pdf.setFont('helvetica','normal');pdf.setFontSize(8);
   const lines=pdf.splitTextToSize(item.description||'-',104) as string[];
   const height=Math.max(8,lines.length*4.1+3);
@@ -102,6 +146,14 @@ async function makePdf(b:EngineeringCommercialBudget):Promise<Blob>{
  }
  section('CONDIÇÕES DE PAGAMENTO',b.paymentTerms||'');
  section('OBSERVAÇÕES',b.notes||'');
+ nextPage();
+ pdf.setFont('helvetica','bold');pdf.setTextColor(...blue);pdf.setFontSize(17);
+ pdf.text('CONSIDERAÇÕES FINAIS',margin,65);
+ pdf.setFont('helvetica','normal');pdf.setTextColor(35,48,65);pdf.setFontSize(11);
+ const closing='A CR Engenharia agradece a oportunidade de apresentar esta proposta comercial e permanece à disposição para esclarecimentos e alinhamentos necessários à execução dos serviços.';
+ addLines(pdf,closing,margin,84,174,11,7);
+ pdf.setDrawColor(...blue);pdf.line(margin,231,193,231);
+ pdf.setFont('helvetica','bold');pdf.setFontSize(12);pdf.text('CR ENGENHARIA',margin,241);
  return pdf.output('blob');
 }
 export async function exportCommercialBudget(b:EngineeringCommercialBudget,mode:'print'|'share'):Promise<void>{
