@@ -180,7 +180,7 @@ function recurrenceEnd(start: string, count: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function QuickEntryDialog({ open, companies, initialCompanyId = '', allCompaniesMode = false, initialPaymentMethod, initialAccountRef = '', initialCardRef = '', embedded = false, initialValues, onSaved, onClose }: QuickEntryDialogProps) {
+export function QuickEntryDialog({ open, companies, initialCompanyId = '', initialPaymentMethod, initialAccountRef = '', initialCardRef = '', embedded = false, initialValues, onSaved, onClose }: QuickEntryDialogProps) {
   const navigate = useNavigate();
   const [companyId, setCompanyId] = useState(initialCompanyId || companies[0]?.id || '');
   const [moreOptions, setMoreOptions] = useState(false);
