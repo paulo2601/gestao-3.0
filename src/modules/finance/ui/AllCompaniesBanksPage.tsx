@@ -46,6 +46,15 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
   useEffect(() => { void load(); }, [load, refreshToken]);
   useEffect(() => { const refresh = () => setRefreshToken((value) => value + 1); window.addEventListener('finance-data-changed', refresh); return () => window.removeEventListener('finance-data-changed', refresh); }, []);
 
+  useEffect(() => {
+    const refresh = () => setRefreshToken(value => value + 1);
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    const timer = window.setInterval(onVisible, 20_000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', onVisible); };
+  }, []);
+
   const options = [{ value: '', label: 'Selecione…' }, ...accounts.map((account) => ({ value: account.accountId, label: `${account.companyName} · ${account.name} · ${currency.format(account.currentBalance)}` }))];
   const destinationOptions = options.filter((option) => !option.value || option.value !== form.fromAccountId);
 
