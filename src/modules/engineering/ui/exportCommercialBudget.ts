@@ -67,7 +67,7 @@ function coverPage(pdf:BudgetPdf,logo:string|null,b:EngineeringCommercialBudget)
 function institutionalPage(pdf:BudgetPdf,logo:string|null){
  pdf.addPage();drawHeader(pdf,logo,2);
  let y=55;
- const sections=[
+ const sections:[string,string][]=[
   ['QUEM SOMOS','A CR Engenharia atua na execução de instalações e infraestrutura de obras, com foco em serviços elétricos, hidráulicos, sanitários e sistemas complementares. Nosso trabalho prioriza organização, qualidade técnica e cumprimento das etapas previstas para cada empreendimento.'],
   ['MISSÃO','Executar serviços de engenharia e instalações com qualidade, segurança e responsabilidade, buscando soluções técnicas adequadas às necessidades de cada cliente e empreendimento.']
  ];
