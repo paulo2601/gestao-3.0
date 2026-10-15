@@ -3,7 +3,7 @@ import { jsPDF } from 'jspdf';
 import type { EngineeringCommercialBudget } from '../infrastructure/EngineeringCommercialBudgetRepository';
 
 const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
-const esc = (v:unknown) => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]??c));
+const esc = (v:unknown) => (typeof v==='string'?v:typeof v==='number'||typeof v==='boolean'?String(v):'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]??c));
 function report(b:EngineeringCommercialBudget):HTMLDivElement {
  const root=document.createElement('div');
  root.style.cssText='position:fixed;left:-20000px;top:0;width:794px;box-sizing:border-box;padding:46px 48px;background:white;color:#172638;font-family:Arial,sans-serif;font-size:12px;line-height:1.5;z-index:-1';
