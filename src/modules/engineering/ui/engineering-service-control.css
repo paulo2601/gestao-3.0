@@ -88,3 +88,12 @@
 .service-control__dashboard{grid-template-columns:repeat(3,minmax(0,1fr))}
 .service-control__dashboard strong{font-size:.7rem!important}
 }
+
+/* Approved compact service-control layout */
+.service-control__progress{display:flex;flex-direction:column;gap:5px;min-width:90px;font-variant-numeric:tabular-nums;font-weight:600}
+.service-control__progress-track{height:6px;border-radius:999px;background:#e5eaf3;overflow:hidden}
+.service-control__progress-track>div{height:100%;background:#2563eb;border-radius:999px;transition:width .2s ease}
+.service-control__table--screen tbody tr:hover{background:#f5f8ff}
+.service-control__table--screen td{vertical-align:middle}
+.service-control__quick-actions{gap:8px}
+@media(max-width:760px){.service-control__progress{min-width:64px}.service-control__progress-track{height:5px}}
