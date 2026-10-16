@@ -78,6 +78,17 @@ jobs:
           python3 scripts/generate-pwa-icons.py
           npm run build
 
+      - name: Remove incompatible SPA redirects before Workers deploy
+        run: |
+          # Workers SPA routing is configured in wrangler.jsonc (not_found_handling).
+          # A generated _redirects file may trigger Cloudflare error 100324.
+          if [ -f dist/_redirects ]; then
+            echo 'Removing dist/_redirects (incompatible with Workers SPA handling)'
+            cat dist/_redirects
+            rm dist/_redirects
+          fi
+          test ! -e dist/_redirects
+
       - name: Deploy to Cloudflare Workers
         run: npx wrangler@4 deploy
         env:
