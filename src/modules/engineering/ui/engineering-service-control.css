@@ -91,8 +91,8 @@
 
 /* Approved compact service-control layout */
 .service-control__progress{display:flex;flex-direction:column;gap:5px;min-width:90px;font-variant-numeric:tabular-nums;font-weight:600}
-.service-control__progress-track{height:6px;border-radius:999px;background:#e5eaf3;overflow:hidden}
-.service-control__progress-track>div{height:100%;background:#2563eb;border-radius:999px;transition:width .2s ease}
+.service-control__progress-track{display:block;width:100%;height:6px;border:0;border-radius:999px;background:#e5eaf3;overflow:hidden;appearance:none}
+.service-control__progress-track::-webkit-progress-bar{background:#e5eaf3;border-radius:999px}.service-control__progress-track::-webkit-progress-value{background:#2563eb;border-radius:999px}.service-control__progress-track::-moz-progress-bar{background:#2563eb;border-radius:999px}
 .service-control__table--screen tbody tr:hover{background:#f5f8ff}
 .service-control__table--screen td{vertical-align:middle}
 .service-control__quick-actions{gap:8px}
