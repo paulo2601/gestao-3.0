@@ -34,11 +34,9 @@ async function ensureLatestBuild(): Promise<void> {
     if (!payload.version) return;
     localStorage.setItem(VERSION_KEY, payload.version);
     if (payload.version !== __BUILD_VERSION__) {
-      const registrations = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistrations() : [];
-      await Promise.all(registrations.map(registration => registration.update().catch(() => undefined)));
-      const url = new URL(window.location.href);
-      url.searchParams.set('__build', payload.version.slice(0, 12));
-      window.location.replace(url.toString());
+      // Do not replace the active document while React is running.
+      // The next normal navigation/reopen will receive the new build.
+      window.dispatchEvent(new CustomEvent('gestao-update-available', { detail: { version: payload.version } }));
     }
   } catch {
     // Sem rede, mantém a versão aberta e tenta novamente quando o app voltar a ficar ativo.
@@ -56,12 +54,6 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     void ensureLatestBuild();
   });
 
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const key = 'gestao-sw-controller-reload';
-    if (sessionStorage.getItem(key) === '1') return;
-    sessionStorage.setItem(key, '1');
-    window.location.reload();
-  });
 
   window.addEventListener('pageshow', () => {
     sessionStorage.removeItem('gestao-sw-controller-reload');
