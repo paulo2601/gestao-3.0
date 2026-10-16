@@ -22,7 +22,7 @@ interface Props {
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const numberValue=(value:string)=>{const parsed=Number(value.replace(',','.'));return Number.isFinite(parsed)?parsed:0;};
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
-const competenceDate=(competence:string)=>`${competence.slice(0,7)}-01`;
+const competenceDate=(competence:string)=>{const current=today();return competence.slice(0,7)===current.slice(0,7)?current:`${competence.slice(0,7)}-01`;};
 
 export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,onSaved,editEntry=null}:Props){
   const now=new Date();const currentMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;const currentPeriod=snapshot.periods.find(item=>item.status==='open'&&item.competence.slice(0,7)===currentMonth);const [periodId,setPeriodId]=useState(currentPeriod?.id??'');
@@ -30,7 +30,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   const [unitIds,setUnitIds]=useState<string[]>([]);
   const [unitPickerOpen,setUnitPickerOpen]=useState(false);
   const [serviceId,setServiceId]=useState('');
-  const [productionDate,setProductionDate]=useState(currentPeriod?competenceDate(currentPeriod.competence):today());
+  const [productionDate,setProductionDate]=useState(today());
   const [executedQuantity,setExecutedQuantity]=useState('');
   const [unitValue,setUnitValue]=useState('');
   const [notes,setNotes]=useState('');
@@ -95,7 +95,7 @@ export function EngineeringProductionEntryDialog({open,scope,snapshot,onClose,on
   function toggleParticipant(id:string){if(participants.some(item=>item.id===id)){removeParticipant(id);return;}addParticipant(id);}
   function updateParticipant(id:string,key:'percentage'|'value',value:string){setParticipants(current=>current.map(item=>item.id===id?{...item,[key]:value}:item));}
   function changeDivision(mode:DivisionMode){setDivisionMode(mode);if(mode==='percentage'&&participants.length){const share=(100/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,percentage:share})));}if(mode==='value'&&participants.length&&total>0){const share=(total/participants.length).toFixed(2);setParticipants(current=>current.map(item=>({...item,value:share})));}}
-  function resetEntry(keepContext=false){if(!keepContext){setPeriodId(currentPeriod?.id??'');setStructureId('');}setUnitIds([]);setServiceId('');setProductionDate(currentPeriod?competenceDate(currentPeriod.competence):today());setExecutedQuantity('');setUnitValue('');setNotes('');if(!keepContext){setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');}setError(null);}
+  function resetEntry(keepContext=false){if(!keepContext){setPeriodId(currentPeriod?.id??'');setStructureId('');}setUnitIds([]);setServiceId('');setProductionDate(today());setExecutedQuantity('');setUnitValue('');setNotes('');if(!keepContext){setDivisionMode('equal');setParticipants([]);setEmployeeSearch('');}setError(null);}
   function resetForAnotherService(){setUnitIds([]);setServiceId('');setExecutedQuantity('');setUnitValue('');setNotes('');setError(null);}
   function reset(){resetEntry(false);}
   function close(){if(busy)return;reset();onClose();}
