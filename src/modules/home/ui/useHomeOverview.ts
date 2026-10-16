@@ -35,7 +35,7 @@ function isPersonalCompany(label:string){return normalizeLabel(label)==='PESSOAL
 function isPersonalBalanceAccount(name:string){const normalized=normalizeLabel(name);return normalized==='NUBANK PESSOAL'||normalized==='DINHEIRO';}
 
 export function useHomeOverview(companies:readonly CompanySummary[],refreshToken=0):HomeOverviewState{
- const finance=useMemo(()=>getFinanceRepositories(),[]); const hr=useMemo(()=>getHrBudgetRepository(),[]); const hrOperations=useMemo(()=>getHrOperationsRepository(),[]); const supabase=useMemo(()=>getSupabaseClient(),[]); const companyKey=companies.map(c=>c.id).sort().join(','); const stableCompanies=useMemo(()=>companies,[companyKey]);
+ const finance=useMemo(()=>getFinanceRepositories(),[]); const hr=useMemo(()=>getHrBudgetRepository(),[]); const hrOperations=useMemo(()=>getHrOperationsRepository(),[]); const supabase=useMemo(()=>getSupabaseClient(),[]); const companyKey=companies.map(c=>c.id).sort().join(','); const companySnapshot=JSON.stringify(companies); const stableCompanies=useMemo<readonly CompanySummary[]>(()=>JSON.parse(companySnapshot) as CompanySummary[],[companySnapshot]);
  const [state,setState]=useState<HomeOverviewState>(()=>{const cached=readHomeCache(companyKey);return cached?{status:'ready',data:cached,errorMessage:null}:{status:'idle',data:null,errorMessage:null};});
  useEffect(()=>{
   if(stableCompanies.length===0){setState({status:'idle',data:null,errorMessage:null});return;}
