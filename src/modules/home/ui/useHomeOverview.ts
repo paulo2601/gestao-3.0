@@ -61,5 +61,5 @@ export function useHomeOverview(companies:readonly CompanySummary[],refreshToken
    const nextData={month,bankBalance,incomePlanned,incomeRealized,expensePlanned,expenseRealized,entries,balanceMovements,budgets,bankAccounts,cards}; writeHomeCache(companyKey,nextData); setState({status:'ready',data:nextData,errorMessage:null});
   }).catch(()=>{if(cancelled)return;setState(previous=>({status:'error',data:previous.data??readHomeCache(companyKey),errorMessage:'Não foi possível atualizar os dados. Verifique a conexão e tente novamente.'}));});
   return()=>{cancelled=true;};
- },[finance,hr,hrOperations,supabase,companyKey,refreshToken,companies]); return state;
+ },[finance,hr,hrOperations,supabase,companyKey,refreshToken]); return state;
 }
