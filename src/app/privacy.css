@@ -1,0 +1,31 @@
+/* Presentation-only masking: original amounts remain untouched in React state. */
+.gestao-private #app-main .gestao-private-value,
+.gestao-private #app-main .gestao-private-mixed {
+  position: relative !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  user-select: none !important;
+}
+.gestao-private #app-main .gestao-private-value::after,
+.gestao-private #app-main .gestao-private-mixed::after {
+  content: '••••••';
+  position: absolute;
+  inset: 0;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  background: var(--surface, #fff);
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.gestao-private #app-main .balance-chart,
+.gestao-private #app-main .recharts-wrapper,
+.gestao-private #app-main canvas {
+  visibility: hidden !important;
+}
+.home-hero__privacy { white-space: nowrap; }
+@media (max-width: 600px) {
+  .home-hero { flex-wrap: wrap; }
+  .home-hero__privacy { min-width: 0; padding-inline: 10px; }
+}
