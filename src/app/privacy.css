@@ -24,8 +24,11 @@
 .gestao-private #app-main canvas {
   visibility: hidden !important;
 }
-.home-hero__privacy { white-space: nowrap; }
+
 @media (max-width: 600px) {
-  .home-hero { flex-wrap: wrap; }
-  .home-hero__privacy { min-width: 0; padding-inline: 10px; }
 }
+
+/* Compact privacy eye inside the balance card */
+.balance-privacy-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.balance-privacy-eye { display:inline-flex; align-items:center; justify-content:center; flex:0 0 42px; width:42px; height:42px; min-width:42px; padding:8px !important; border-radius:12px; color:#2563eb; background:#eff6ff; border:1px solid #dbeafe; }
+.balance-privacy-eye svg { display:block; flex:none; }
