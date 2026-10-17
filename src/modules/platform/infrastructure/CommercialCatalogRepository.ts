@@ -8,6 +8,7 @@ export async function loadCommercialCatalog():Promise<{plans:Plan[];modules:Modu
  db.from('platform_plans').select('id,nome,slug,descricao,preco_mensal,preco_anual,publico,ordem').order('ordem'),
  db.from('platform_module_catalog').select('modulo,nome,categoria,ativo,vendavel').order('ordem'),
  db.from('platform_plan_modules').select('plan_id,modulo,habilitado')]);
- if(p.error||m.error||a.error)throw p.error||m.error||a.error;
+ const failure = p.error ?? m.error ?? a.error;
+ if (failure) throw new Error(`Falha ao carregar catálogo comercial: ${failure.message}`);
  return {plans:(p.data??[]) as Plan[],modules:(m.data??[]) as Module[],assignments:(a.data??[]) as Assignment[]};
 }
