@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePrivacyMode } from '../../../app/PrivacyMode';
+import { usePrivacyMode } from '../../../app/usePrivacyMode';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
 import { getFinanceRepositories } from '../../finance/infrastructure/createFinanceRepositories';
 import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
