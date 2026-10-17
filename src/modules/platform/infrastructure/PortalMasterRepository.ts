@@ -25,3 +25,20 @@ export async function assignCustomerPlan(tenantId:string,planId:string,cycle:'mo
  if(response.error)throw new Error(response.error.message);
  if(typeof result!=='string')throw new Error('Resposta inválida ao cadastrar assinatura.');
 }
+
+export type CustomerModule={modulo:string;nome:string;habilitado:boolean;personalizado:boolean};
+export async function loadCustomerModules(tenantId:string):Promise<CustomerModule[]>{
+ const response=await getSupabaseClient().rpc('platform_master_modules',{p_tenant:tenantId});
+ if(response.error)throw new Error(response.error.message);
+ const rows:unknown=response.data;
+ if(!Array.isArray(rows))throw new Error('Resposta inválida na consulta de módulos.');
+ return rows as CustomerModule[];
+}
+export async function setCustomerModule(tenantId:string,moduleCode:string,enabled:boolean):Promise<void>{
+ const response=await getSupabaseClient().rpc('platform_master_set_module',{p_tenant:tenantId,p_modulo:moduleCode,p_habilitado:enabled});
+ if(response.error)throw new Error(response.error.message);
+}
+export async function resetCustomerModule(tenantId:string,moduleCode:string):Promise<void>{
+ const response=await getSupabaseClient().rpc('platform_master_reset_module',{p_tenant:tenantId,p_modulo:moduleCode});
+ if(response.error)throw new Error(response.error.message);
+}
