@@ -42,3 +42,19 @@ export async function resetCustomerModule(tenantId:string,moduleCode:string):Pro
  const response=await getSupabaseClient().rpc('platform_master_reset_module',{p_tenant:tenantId,p_modulo:moduleCode});
  if(response.error)throw new Error(response.error.message);
 }
+
+export async function saveSaasCustomer(id:string|null,name:string,slug:string,status:'active'|'inactive'):Promise<void>{
+ const response=await getSupabaseClient().rpc('platform_master_save_tenant',{p_id:id,p_name:name,p_slug:slug,p_status:status});
+ if(response.error)throw new Error(response.error.message);
+}
+export type CommercialStatus='pending'|'trial'|'active'|'past_due'|'suspended'|'cancelled';
+export async function saveSaasSubscription(tenantId:string,planId:string,cycle:'monthly'|'annual',status:CommercialStatus):Promise<void>{
+ const response=await getSupabaseClient().rpc('platform_master_save_subscription',{p_tenant:tenantId,p_plan:planId,p_cycle:cycle,p_status:status});
+ if(response.error)throw new Error(response.error.message);
+}
+export async function checkModuleAccess(tenantId:string,moduleCode:string):Promise<boolean>{
+ const response=await getSupabaseClient().rpc('platform_module_allowed',{p_tenant:tenantId,p_module:moduleCode});
+ if(response.error)throw new Error(response.error.message);
+ const value:unknown=response.data;
+ return value===true;
+}
