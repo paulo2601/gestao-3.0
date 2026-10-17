@@ -4,7 +4,9 @@ export type SubscriptionOverview={id:string;tenant_id:string;plan_id:string;stat
 export type PlanOverview={id:string;nome:string;slug:string};
 export async function loadPortalMaster(){
  const db=getSupabaseClient();
- const {data:operator,error:operatorError}=await db.rpc('is_platform_operator');
+ const operatorResponse=await db.rpc('is_platform_operator');
+ const operator:unknown=operatorResponse.data;
+ const operatorError=operatorResponse.error;
  if(operatorError)throw new Error(operatorError.message);
  if(operator!==true)return {authorized:false as const,tenants:[] as TenantOverview[],subscriptions:[] as SubscriptionOverview[],plans:[] as PlanOverview[]};
  const [t,s,p]=await Promise.all([
