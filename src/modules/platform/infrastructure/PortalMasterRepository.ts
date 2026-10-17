@@ -20,7 +20,8 @@ export async function loadPortalMaster(){
 }
 
 export async function assignCustomerPlan(tenantId:string,planId:string,cycle:'monthly'|'annual'):Promise<void>{
- const {data,error}=await getSupabaseClient().rpc('platform_master_assign_plan',{p_tenant:tenantId,p_plan:planId,p_cycle:cycle});
- if(error)throw new Error(error.message);
- if(typeof data!=='string')throw new Error('Resposta inválida ao cadastrar assinatura.');
+ const response=await getSupabaseClient().rpc('platform_master_assign_plan',{p_tenant:tenantId,p_plan:planId,p_cycle:cycle});
+ const result:unknown=response.data;
+ if(response.error)throw new Error(response.error.message);
+ if(typeof result!=='string')throw new Error('Resposta inválida ao cadastrar assinatura.');
 }
