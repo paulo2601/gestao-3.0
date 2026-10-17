@@ -10,11 +10,17 @@ export async function loadPortalMaster(){
  if(operatorError)throw new Error(operatorError.message);
  if(operator!==true)return {authorized:false as const,tenants:[] as TenantOverview[],subscriptions:[] as SubscriptionOverview[],plans:[] as PlanOverview[]};
  const [t,s,p]=await Promise.all([
- db.from('tenants').select('id,name,slug,status,created_at').order('created_at',{ascending:false}),
+ db.rpc('platform_master_tenants'),
  db.from('platform_tenant_subscriptions').select('id,tenant_id,plan_id,status,ciclo,renova_em'),
- db.from('platform_plans').select('id,nome,slug').order('ordem')
+ db.rpc('platform_master_catalog')
  ]);
  const failure=t.error??s.error??p.error;
  if(failure)throw new Error(failure.message);
  return {authorized:true as const,tenants:(t.data??[]) as TenantOverview[],subscriptions:(s.data??[]) as SubscriptionOverview[],plans:(p.data??[]) as PlanOverview[]};
+}
+
+export async function assignCustomerPlan(tenantId:string,planId:string,cycle:'monthly'|'annual'):Promise<void>{
+ const {data,error}=await getSupabaseClient().rpc('platform_master_assign_plan',{p_tenant:tenantId,p_plan:planId,p_cycle:cycle});
+ if(error)throw new Error(error.message);
+ if(typeof data!=='string')throw new Error('Resposta inválida ao cadastrar assinatura.');
 }
