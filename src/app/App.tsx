@@ -7,6 +7,7 @@ import { AppShell } from './AppShell';
 import './shell.css';
 import './central-menu.css';
 import './final.css';
+import './privacy.css';
 
 export function App() {
   const session = usePlatformSession();
