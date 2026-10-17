@@ -1,0 +1,5 @@
+.plan-catalog__choices,.plan-catalog__modules{display:flex;flex-wrap:wrap;gap:8px}
+.plan-catalog__choices,.plan-catalog__summary{margin-bottom:16px}
+.plan-catalog__summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.plan-catalog__card{padding:14px;border:1px solid var(--border-color,#ddd);border-radius:10px;min-width:0}
+.plan-catalog__module{border:1px solid var(--border-color,#ddd);padding:7px 10px;border-radius:8px}
