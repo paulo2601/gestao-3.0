@@ -15,7 +15,7 @@ import type {
 type SettlementRow={id:string;tenant_id:string;company_id:string;person_name:string;direction:'i_owe'|'owes_me';original_amount:number|string;started_on:string;description:string|null;notes:string|null;status:'open'|'partial'|'settled'};
 type ItemRow={id:string;settlement_id:string;item_date:string;description:string;amount:number|string;notes:string|null;financial_account_id:string|null};
 type MovementRow={id:string;settlement_id:string;movement_date:string;amount:number|string;note:string|null;financial_account_id:string|null};
-type AccountRow={account_id:string;name:string;bank_institution:string|null;current_balance:number|string;status:string};
+type AccountRow={account_id:string;company_id:string;name:string;bank_institution:string|null;current_balance:number|string;status:string};
 type RpcResponse={data:unknown;error:{message:string}|null};
 
 function text(value:string){return value.trim();}
@@ -35,7 +35,7 @@ export class SupabasePersonalSettlementsRepository implements PersonalSettlement
       this.client.from('personal_settlements').select('id,tenant_id,company_id,person_name,direction,original_amount,started_on,description,notes,status').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).order('started_on',{ascending:false}).returns<SettlementRow[]>(),
       this.client.from('personal_settlement_items').select('id,settlement_id,item_date,description,amount,notes,financial_account_id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).order('item_date',{ascending:false}).returns<ItemRow[]>(),
       this.client.from('personal_settlement_movements').select('id,settlement_id,movement_date,amount,note,financial_account_id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).order('movement_date',{ascending:false}).returns<MovementRow[]>(),
-      this.client.from('financial_account_balances').select('account_id,name,bank_institution,current_balance,status').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('status','active').order('sort_order',{ascending:true}).order('name').returns<AccountRow[]>(),
+      this.client.from('financial_account_balances').select('account_id,company_id,name,bank_institution,current_balance,status').eq('tenant_id',scope.tenantId).eq('status','active').order('sort_order',{ascending:true}).order('name').returns<AccountRow[]>(),
     ]);
     const error=settlementsResult.error??itemsResult.error??movementsResult.error??accountsResult.error;if(error)throw error;
     const settlements:PersonalSettlement[]=(settlementsResult.data??[]).map(row=>({id:row.id,tenantId:row.tenant_id,companyId:row.company_id,personName:row.person_name,direction:row.direction,originalAmount:Number(row.original_amount),startedOn:row.started_on,description:row.description,notes:row.notes,status:row.status}));
