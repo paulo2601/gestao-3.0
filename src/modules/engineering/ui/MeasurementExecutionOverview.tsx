@@ -1,5 +1,5 @@
 import { Dialog } from '../../../shared/ui/Dialog';
-import { loadExternalServiceExecution } from '../infrastructure/MeasurementGoalPhysicalRepository';
+import { loadExternalServiceExecution, loadMeasurementGoalPhysicalQuantities } from '../infrastructure/MeasurementGoalPhysicalRepository';
 import { useEffect, useMemo, useState } from 'react';
 import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
 import { chooseActiveExecutionMeasurement, deriveExecutionProjection } from '../domain/measurementExecutionProjection';
@@ -14,6 +14,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const measurement=model.measurements.find(item=>item.id===activeId);
  const items=useMemo(()=>activeId?deriveExecutionProjection(model,activeId):[],[model,activeId]);
  const [entries,setEntries]=useState<LineExecution[]>([]);
+ const [physical,setPhysical]=useState<Map<string,{quantity:number;unit:string}>>(new Map());
  const [external,setExternal]=useState<Map<string,{ratio:number;value:number}>>(new Map());
  const [selected,setSelected]=useState<string|null>(null);
  const [selectedReferences,setSelectedReferences]=useState<string[]>([]);
@@ -35,6 +36,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  .finally(()=>{if(live)setLoading(false)});
  return()=>{live=false};},[scope,ids]);
  useEffect(()=>{let live=true;const addendumIds=[...new Set(items.filter(item=>item.targetKind==='addendum').map(item=>item.targetId))];void loadExternalServiceExecution(model,addendumIds).then(next=>{if(live)setExternal(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao sincronizar infraestrutura externa')});return()=>{live=false}},[model,items]);
+ useEffect(()=>{let live=true;void loadMeasurementGoalPhysicalQuantities(model).then(next=>{if(live)setPhysical(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao consultar metragens físicas')});return()=>{live=false}},[model]);
  const doneByLine=useMemo(()=>{const sums=new Map<string,number>();for(const entry of entries)sums.set(entry.measurementLineId,(sums.get(entry.measurementLineId)??0)+entry.executedQuantity);return sums},[entries]);
  const effectiveDone=(item:typeof items[number])=>external.has(item.targetId)?external.get(item.targetId)!.ratio:(doneByLine.get(item.measurementLineId)??0);
  const contractStages=useMemo(()=>new Map(model.origins.flatMap(origin=>origin.services.map(service=>[service.targetKind+':'+service.targetId,service] as const))),[model]);
@@ -115,6 +117,16 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    const value=group.lines.reduce((sum,item)=>sum+item.plannedValue,0);
    const executedValue=group.lines.reduce((sum,item)=>sum+financialExecuted(item),0);
    const pendingValue=value-executedValue;
+   const physicalStage=group.lines.length&&group.lines[0]!.targetKind==='addendum'?physical.get(group.lines[0]!.targetId):undefined;
+   const physicalUnit=physicalStage?.unit.trim().toLowerCase()??'';
+   const isMeters=physicalUnit==='m'||physicalUnit==='metro'||physicalUnit==='metros'||physicalUnit==='m linear'||physicalUnit==='ml';
+   const physicalTotal=isMeters&&physicalStage?physicalStage.quantity:0;
+   const contractValueForPhysical=groupContractValue(group.lines);
+   const physicalPlanned=contractValueForPhysical>0?physicalTotal*Math.max(0,value/contractValueForPhysical):0;
+   const physicalDone=contractValueForPhysical>0?physicalTotal*Math.max(0,executedValue/contractValueForPhysical):0;
+   const physicalPending=Math.max(0,physicalPlanned-physicalDone);
+   const meters=(amount:number)=>amount.toLocaleString('pt-BR',{maximumFractionDigits:2})+' m';
+
    const progress=value>0?Math.max(0,executedValue/value*100):0;
    const contractTotal=groupContractValue(group.lines);
    const contractProgress=contractTotal>0?executedValue/contractTotal*100:0;
@@ -126,6 +138,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
      <span className="ex-card-done"><small>Executado</small><strong>{formatCardQuantity(done,showPercent(group.lines))}</strong><small>{money.format(executedValue)}</small></span>
      <span className="ex-card-pending"><small>Pendente</small><strong>{formatCardQuantity(planned-done,showPercent(group.lines))}</strong><small>{money.format(pendingValue)}</small></span>
     </span>
+    {isMeters&&physicalTotal>0&&<span className="ex-card-physical" style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,padding:'9px 0',borderTop:'1px solid #dbe5ef',fontSize:12}}><span><small>Meta em metros</small><strong style={{display:'block'}}>{meters(physicalPlanned)}</strong></span><span><small>Executado em metros</small><strong style={{display:'block'}}>{meters(physicalDone)}</strong></span><span><small>Faltam executar</small><strong style={{display:'block',color:'#1464d9'}}>{meters(physicalPending)}</strong></span></span>}
     <progress className="ex-card-progress" max={100} value={Math.min(100,progress)}/>
     <small>{progress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do projetado · {contractProgress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do contrato</small>
     <span>{done>=planned?'Concluído · Consultar':'Selecionar unidades ›'}</span>
