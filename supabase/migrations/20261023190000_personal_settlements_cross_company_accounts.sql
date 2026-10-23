@@ -25,7 +25,7 @@ begin
   return query select v_entry,v_fin_settlement,p_account_id;
 end;$$;
 create or replace function app_private.delete_personal_finance_link(p_tenant_id uuid,p_company_id uuid,p_entry_id uuid,p_financial_settlement_id uuid)
-returns void language plpgsql security definer set search_path='' as $
+returns void language plpgsql security definer set search_path='' as $$
 declare v_account_company uuid;
 begin
   select company_id into v_account_company from public.financial_entries where tenant_id=p_tenant_id and id=p_entry_id;
