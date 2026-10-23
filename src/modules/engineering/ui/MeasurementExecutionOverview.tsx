@@ -117,16 +117,20 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    const value=group.lines.reduce((sum,item)=>sum+item.plannedValue,0);
    const executedValue=group.lines.reduce((sum,item)=>sum+financialExecuted(item),0);
    const pendingValue=value-executedValue;
-   const physicalStage=group.lines.length&&group.lines[0]!.targetKind==='addendum'?physical.get(group.lines[0]!.targetId):undefined;
-   const physicalUnit=physicalStage?.unit.trim().toLowerCase()??'';
-   const isMeters=physicalUnit==='m'||physicalUnit==='metro'||physicalUnit==='metros'||physicalUnit==='m linear'||physicalUnit==='ml';
-   const physicalTotal=isMeters&&physicalStage?physicalStage.quantity:0;
+   const stage=group.lines[0] ? contractStages.get(group.lines[0].targetKind+':'+group.lines[0].targetId) : undefined;
+   const physicalStage=group.lines[0]?.targetKind==='addendum'?physical.get(group.lines[0].targetId):undefined;
+   const physicalTotal=physicalStage?.quantity && physicalStage.quantity>0 ? physicalStage.quantity : (stage?.contractedQuantity??0);
+   const unitRaw=(physicalStage?.unit || group.lines[0]?.unit || '').trim();
+   const unitKind=group.lines[0]?.unitKind;
+   const isPercentOnly=showPercent(group.lines) && !physicalStage;
+   const physicalUnit=isPercentOnly?'%':unitKind==='apartamento'?'aptos':unitKind==='hall'?'halls':unitRaw||'un';
    const contractValueForPhysical=groupContractValue(group.lines);
    const physicalPlanned=contractValueForPhysical>0?physicalTotal*Math.max(0,value/contractValueForPhysical):0;
    const physicalDone=contractValueForPhysical>0?physicalTotal*Math.max(0,executedValue/contractValueForPhysical):0;
    const physicalPending=Math.max(0,physicalPlanned-physicalDone);
-   const meters=(amount:number)=>amount.toLocaleString('pt-BR',{maximumFractionDigits:2})+' m';
-
+   const physicalContractPending=Math.max(0,physicalTotal-physicalDone);
+   const indivisible=unitKind==='apartamento'||unitKind==='hall'||/^(un|unidade|unidades|peça|peças|ponto|pontos|apto|aptos)$/i.test(physicalUnit);
+   const physicalFormat=(amount:number)=> (indivisible?Math.ceil(Math.max(0,amount)-0.0000001):amount).toLocaleString('pt-BR',{maximumFractionDigits:2})+' '+physicalUnit;
    const progress=value>0?Math.max(0,executedValue/value*100):0;
    const contractTotal=groupContractValue(group.lines);
    const contractProgress=contractTotal>0?executedValue/contractTotal*100:0;
@@ -138,7 +142,13 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
      <span className="ex-card-done"><small>Executado</small><strong>{formatCardQuantity(done,showPercent(group.lines))}</strong><small>{money.format(executedValue)}</small></span>
      <span className="ex-card-pending"><small>Pendente</small><strong>{formatCardQuantity(planned-done,showPercent(group.lines))}</strong><small>{money.format(pendingValue)}</small></span>
     </span>
-    {isMeters&&physicalTotal>0&&<span className="ex-card-physical" style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,padding:'9px 0',borderTop:'1px solid #dbe5ef',fontSize:12}}><span><small>Meta em metros</small><strong style={{display:'block'}}>{meters(physicalPlanned)}</strong></span><span><small>Executado em metros</small><strong style={{display:'block'}}>{meters(physicalDone)}</strong></span><span><small>Faltam executar</small><strong style={{display:'block',color:'#1464d9'}}>{meters(physicalPending)}</strong></span></span>}
+    {physicalTotal>0&&<span className="ex-card-physical" style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,padding:'10px',border:'1px solid #dbe5ef',borderRadius:10,background:'#f5f9ff',fontSize:12,minWidth:0}}>
+      <span><small>Contrato total</small><strong style={{display:'block'}}>{physicalFormat(physicalTotal)}</strong></span>
+      <span><small>Meta projetada</small><strong style={{display:'block'}}>{physicalFormat(physicalPlanned)}</strong></span>
+      <span><small>Executado</small><strong style={{display:'block',color:'#078653'}}>{physicalFormat(physicalDone)}</strong></span>
+      <span><small>Faltam para a meta</small><strong style={{display:'block',color:'#1464d9'}}>{physicalFormat(physicalPending)}</strong></span>
+      <span style={{gridColumn:'1 / -1'}}><small>Saldo físico do contrato</small><strong style={{display:'block'}}>{physicalFormat(physicalContractPending)}</strong></span>
+    </span>}
     <progress className="ex-card-progress" max={100} value={Math.min(100,progress)}/>
     <small>{progress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do projetado · {contractProgress.toLocaleString('pt-BR',{maximumFractionDigits:1})}% do contrato</small>
     <span>{done>=planned?'Concluído · Consultar':'Selecionar unidades ›'}</span>
