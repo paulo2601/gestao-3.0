@@ -25,8 +25,8 @@ export async function listServiceControls(scope:{tenantId:string;companyId:strin
 export async function addServiceControlEntry(scope:{tenantId:string;companyId:string},controlId:string,itemId:string,date:string,quantity:number,notes:string){
  const client=getSupabaseClient();const r=await client.from('engineering_service_control_entries').insert({tenant_id:scope.tenantId,company_id:scope.companyId,control_id:controlId,item_id:itemId,execution_date:date,executed_quantity:quantity,notes:notes.trim()||null});if(r.error)throw r.error;
 }
-export async function updateServiceControlEntry(scope:{tenantId:string;companyId:string},id:string,date:string,quantity:number,notes:string){
- const client=getSupabaseClient();const r=await client.from('engineering_service_control_entries').update({execution_date:date,executed_quantity:quantity,notes:notes.trim()||null}).eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('id',id);if(r.error)throw r.error;
+export async function updateServiceControlEntry(scope:{tenantId:string;companyId:string},controlId:string,id:string,itemId:string,date:string,quantity:number,notes:string){
+ const client=getSupabaseClient();const r=await client.from('engineering_service_control_entries').update({item_id:itemId,execution_date:date,executed_quantity:quantity,notes:notes.trim()||null}).eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('control_id',controlId).eq('id',id).select('id,item_id').single();if(r.error)throw r.error;if(r.data?.item_id!==itemId)throw new Error('O serviço não foi atualizado. Tente novamente.');
 }
 export async function deleteServiceControlEntry(id:string){const client=getSupabaseClient();const r=await client.from('engineering_service_control_entries').delete().eq('id',id);if(r.error)throw r.error;}
 
