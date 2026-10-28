@@ -1,5 +1,5 @@
 import { useEffect,useState, type ReactNode } from 'react';
-import { checkModuleAccess } from '../infrastructure/PortalMasterRepository';
+import { checkModuleAccess, recoverModuleAccessSession } from '../infrastructure/PortalMasterRepository';
 const routeModules:Record<string,string>={
  '/':'dashboard','/financeiro':'financeiro','/contas-do-mes':'financeiro',
  '/bancos':'bancos','/cartoes':'cartoes','/orcamento':'limites','/limites':'limites',
@@ -18,7 +18,13 @@ export function CommercialGate({tenantIds,path,children}:{tenantIds:string;path:
   const ids=tenantIds.split(',').filter(Boolean);
   setAllowed(null);setError('');
   if(ids.length===0){setAllowed(false);return;}
-  void Promise.all(ids.map(id=>checkModuleAccess(id,moduleCode))).then(results=>{
+  const validate=()=>Promise.all(ids.map(id=>checkModuleAccess(id,moduleCode)));
+  void validate().catch(async (failure:unknown)=>{
+   const message=failure instanceof Error?failure.message:'';
+   if(!/JWT issued at future/i.test(message))throw failure;
+   await recoverModuleAccessSession();
+   return validate();
+  }).then(results=>{
    if(current)setAllowed(results.every(Boolean));
   }).catch((e:unknown)=>{
    if(current){setAllowed(false);setError(e instanceof Error?e.message:'Falha ao verificar acesso comercial.');}
