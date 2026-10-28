@@ -58,3 +58,10 @@ export async function checkModuleAccess(tenantId:string,moduleCode:string):Promi
  const value:unknown=response.data;
  return value===true;
 }
+
+/** Renew a possibly stale access token before retrying a failed permission check. */
+export async function recoverModuleAccessSession():Promise<void>{
+ const {data,error}=await getSupabaseClient().auth.refreshSession();
+ if(error)throw new Error('Não foi possível renovar a sessão. '+error.message);
+ if(!data.session)throw new Error('Sua sessão expirou. Entre novamente para continuar.');
+}
