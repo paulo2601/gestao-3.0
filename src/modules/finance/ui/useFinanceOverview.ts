@@ -66,7 +66,7 @@ export function useFinanceOverview(scope: CompanyScope | null, refreshToken = 0)
         if (cancelled) return;
         // Se a atualização falhar, mantém os últimos dados válidos em vez de
         // derrubar a página que o usuário já estava utilizando.
-        setState({ status: 'error', data: null, errorMessage: 'Não foi possível atualizar os dados financeiros. Verifique sua conexão e tente novamente.' });
+        setState(previous => previous.data ? previous : { status: 'error', data: null, errorMessage: 'Não foi possível atualizar os dados financeiros. Verifique sua conexão e tente novamente.' });
       });
 
     return () => { cancelled = true; };
