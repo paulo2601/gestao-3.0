@@ -57,6 +57,29 @@ export async function loadEngineeringProduction(scope:EngineeringProductionScope
     const meters=allocated>0?allocated:Number(contract.contracted_quantity);
     if(meters>0)meterQuantityByType.set(type,(meterQuantityByType.get(type)??0)+meters);
   }
+  // Controle de Serviços é a fonte dos metros da infraestrutura externa.
+  const contracts=await client.from('engineering_contracts').select('id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',workId).returns<{id:string}[]>();
+  if(contracts.error)throw contracts.error;
+  const contractIds=(contracts.data??[]).map(c=>c.id);
+  if(contractIds.length){
+    const controls=await client.from('engineering_service_controls').select('id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).in('contract_id',contractIds).returns<{id:string}[]>();
+    if(controls.error)throw controls.error;
+    const controlIds=(controls.data??[]).map(c=>c.id);
+    if(controlIds.length){
+      const controlItems=await client.from('engineering_service_control_items').select('description,unit,contracted_quantity').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).in('control_id',controlIds).returns<{description:string;unit:string;contracted_quantity:number|string}[]>();
+      if(controlItems.error)throw controlItems.error;
+      for(const item of controlItems.data??[]){
+        if(!['M','MT','METRO','METROS','ML'].includes(normalizeInfraName(item.unit)))continue;
+        const name=normalizeInfraName(item.description);
+        let type:string|null=infraMeterType(item.description);
+        if(!type&&name.startsWith('INFRA ')&&name.includes('ELETRICA'))type='ELETRICA';
+        if(!type&&name.startsWith('INFRA ')&&name.includes('ENTRADA DE ENERGIA'))type='ELETRICA';
+        if(!type)continue;
+        const qty=Number(item.contracted_quantity);
+        if(qty>0)meterQuantityByType.set(type,(meterQuantityByType.get(type)??0)+qty);
+      }
+    }
+  }
   const productionPriceRefs=(productionPrices.data??[]).map(item=>{const relation=item.engineering_production_services;const service=Array.isArray(relation)?relation[0]:relation;return {structureId:item.structure_id,contractServiceId:item.contract_service_id,productionServiceId:item.production_service_id,productionServiceName:service?.name??null,productionServiceKind:service?.kind??null,unit:service?.unit??null,unitValue:Number(item.unit_value),plannedQuantity:service?.planned_quantity==null?null:Number(service.planned_quantity),infrastructureMeters:service?.kind==='manual'&&service.name&&infraMeterType(service.name)?meterQuantityByType.get(infraMeterType(service.name)!)??null:null};});
   if(periodRows.length===0)return {workId,periods:[],entries:[],employees:employeeRefs,structures:structureRefs,structureNodes:allStructureRefs,services:serviceRefs,serviceIdsByStructure,productionPrices:productionPriceRefs};
   const periodIds=periodRows.map(item=>item.id);
