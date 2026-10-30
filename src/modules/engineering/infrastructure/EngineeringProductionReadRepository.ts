@@ -47,17 +47,7 @@ export async function loadEngineeringProduction(scope:EngineeringProductionScope
   for(const allocation of [...allocationMappings,...historicalMappings]){if(!contractServiceById.has(allocation.contract_service_id))continue;const list=serviceIdsByStructure[allocation.structure_id]??[];if(!list.includes(allocation.contract_service_id))list.push(allocation.contract_service_id);serviceIdsByStructure[allocation.structure_id]=list;}
   // Quantitativos contratados na Medição. A alocação é opcional para itens de infraestrutura.
   const meterQuantityByType=new Map<string,number>();
-  for(const contract of contractServices.data??[]){
-    const normalized=normalizeInfraName(contract.description);
-    const type=INFRA_METER_NAMES.find(candidate=>normalized.includes(candidate));
-    const unit=normalizeInfraName(contract.unit);
-    if(!type||!['M','MT','METRO','METROS','ML'].includes(unit))continue;
-    const allocated=(allocations.data??[]).filter(a=>a.contract_service_id===contract.id)
-      .reduce((sum,a)=>sum+Number(a.allocated_quantity),0);
-    const meters=allocated>0?allocated:Number(contract.contracted_quantity);
-    if(meters>0)meterQuantityByType.set(type,(meterQuantityByType.get(type)??0)+meters);
-  }
-  // Controle de Serviços é a fonte dos metros da infraestrutura externa.
+  // Controle de Serviços é a única fonte dos metros da infraestrutura externa.
   const contracts=await client.from('engineering_contracts').select('id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('work_id',workId).returns<{id:string}[]>();
   if(contracts.error)throw contracts.error;
   const contractIds=(contracts.data??[]).map(c=>c.id);
