@@ -1,6 +1,6 @@
 import { useEffect,useState } from 'react';
 import { Button } from '../../../shared/ui/Button';
-import { loadPortalMaster, loadCustomerModules, setCustomerModule, resetCustomerModule, saveSaasCustomer, saveSaasSubscription, type CommercialStatus, type CustomerModule, type TenantOverview, type SubscriptionOverview, type PlanOverview } from '../infrastructure/PortalMasterRepository';
+import { loadPortalMaster, loadCustomerModules, setCustomerModule, resetCustomerModule, saveSaasCustomer, saveSaasSubscription, linkCustomerOwner, type CommercialStatus, type CustomerModule, type TenantOverview, type SubscriptionOverview, type PlanOverview } from '../infrastructure/PortalMasterRepository';
 import './PortalMasterPage.css';
 type PortalState={authorized:boolean;tenants:TenantOverview[];subscriptions:SubscriptionOverview[];plans:PlanOverview[]};
 const statuses:CommercialStatus[]=['pending','trial','active','past_due','suspended','cancelled'];
@@ -13,6 +13,9 @@ export function PortalMasterPage(){
  const [customerId,setCustomerId]=useState<string|null>(null);
  const [customerName,setCustomerName]=useState('');
  const [customerSlug,setCustomerSlug]=useState('');
+ const [ownerTenant,setOwnerTenant]=useState('');
+ const [ownerEmail,setOwnerEmail]=useState('');
+ const [ownerCompany,setOwnerCompany]=useState('');
  const [customerStatus,setCustomerStatus]=useState<'active'|'inactive'>('active');
  const [tenantId,setTenantId]=useState('');
  const [planId,setPlanId]=useState('');
@@ -44,6 +47,13 @@ export function PortalMasterPage(){
    setNotice('Assinatura atualizada. Nenhuma cobrança foi criada automaticamente.');
    await refresh();
   }catch(e){setError(e instanceof Error?e.message:'Falha ao salvar assinatura.');}
+  finally{setBusy(false);}
+ }
+ async function saveOwner(){
+  if(!ownerTenant||!ownerEmail.trim()||ownerCompany.trim().length<2)return;
+  setBusy(true);setError('');setNotice('');
+  try{await linkCustomerOwner(ownerTenant,ownerEmail,ownerCompany);setNotice('Responsável vinculado com sucesso.');setOwnerEmail('');setOwnerCompany('');await refresh();}
+  catch(e){setError(e instanceof Error?e.message:'Falha ao vincular responsável.');}
   finally{setBusy(false);}
  }
  function editSubscription(t:TenantOverview){
@@ -78,6 +88,14 @@ export function PortalMasterPage(){
     <label>Situação<select value={customerStatus} onChange={e=>setCustomerStatus(e.target.value as 'active'|'inactive')}><option value="active">Ativo</option><option value="inactive">Inativo</option></select></label>
     <Button size="sm" disabled={busy||customerName.trim().length<2||!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(customerSlug)} onClick={()=>void saveCustomer()}>{busy?'Salvando…':'Salvar cliente'}</Button>
     {customerId&&<Button size="sm" variant="secondary" onClick={clearCustomer}>Cancelar edição</Button>}</div>
+   </section>
+   <section className="portal-master__assignment"><h2>Responsável e empresa</h2><p>O usuário deve ter uma conta existente com e-mail confirmado.</p>
+    <div className="portal-master__fields">
+     <label>Cliente<select value={ownerTenant} onChange={e=>setOwnerTenant(e.target.value)}><option value="">Selecionar</option>{data.tenants.filter(t=>t.status==='active').map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+     <label>E-mail do responsável<input type="email" value={ownerEmail} maxLength={320} onChange={e=>setOwnerEmail(e.target.value)}/></label>
+     <label>Nome da empresa<input value={ownerCompany} maxLength={160} onChange={e=>setOwnerCompany(e.target.value)}/></label>
+     <Button size="sm" disabled={busy||!ownerTenant||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(ownerEmail.trim())||ownerCompany.trim().length<2} onClick={()=>void saveOwner()}>{busy?'Vinculando…':'Vincular responsável'}</Button>
+    </div>
    </section>
    <section className="portal-master__assignment"><h2>Plano e assinatura</h2><p>Ativação é manual. Não gera cobrança.</p>
     <div className="portal-master__fields"><label>Cliente<select value={tenantId} onChange={e=>setTenantId(e.target.value)}><option value="">Selecionar</option>{data.tenants.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>

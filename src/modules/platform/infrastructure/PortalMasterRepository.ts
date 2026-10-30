@@ -47,6 +47,11 @@ export async function saveSaasCustomer(id:string|null,name:string,slug:string,st
  const response=await getSupabaseClient().rpc('platform_master_save_tenant',{p_id:id,p_name:name,p_slug:slug,p_status:status});
  if(response.error)throw new Error(response.error.message);
 }
+export async function linkCustomerOwner(tenantId:string,email:string,companyName:string):Promise<void>{
+ const response=await getSupabaseClient().rpc('platform_master_link_customer_owner',{p_tenant:tenantId,p_email:email.trim().toLowerCase(),p_company_name:companyName.trim()});
+ if(response.error)throw new Error(response.error.message);
+ if(typeof response.data!=='string')throw new Error('Vínculo não confirmado.');
+}
 export type CommercialStatus='pending'|'trial'|'active'|'past_due'|'suspended'|'cancelled';
 export async function saveSaasSubscription(tenantId:string,planId:string,cycle:'monthly'|'annual',status:CommercialStatus):Promise<void>{
  const response=await getSupabaseClient().rpc('platform_master_save_subscription',{p_tenant:tenantId,p_plan:planId,p_cycle:cycle,p_status:status});
