@@ -94,7 +94,7 @@ export function PortalMasterPage(){
      <label>Cliente<select value={ownerTenant} onChange={e=>setOwnerTenant(e.target.value)}><option value="">Selecionar</option>{data.tenants.filter(t=>t.status==='active').map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
      <label>E-mail do responsável<input type="email" value={ownerEmail} maxLength={320} onChange={e=>setOwnerEmail(e.target.value)}/></label>
      <label>Nome da empresa<input value={ownerCompany} maxLength={160} onChange={e=>setOwnerCompany(e.target.value)}/></label>
-     <Button size="sm" disabled={busy||!ownerTenant||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(ownerEmail.trim())||ownerCompany.trim().length<2} onClick={()=>void saveOwner()}>{busy?'Vinculando…':'Vincular responsável'}</Button>
+     <Button size="sm" disabled={busy||!ownerTenant||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail.trim())||ownerCompany.trim().length<2} onClick={()=>void saveOwner()}>{busy?'Vinculando…':'Vincular responsável'}</Button>
     </div>
    </section>
    <section className="portal-master__assignment"><h2>Plano e assinatura</h2><p>Ativação é manual. Não gera cobrança.</p>
