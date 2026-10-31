@@ -94,9 +94,8 @@ function EmployeePortalEntry() {
     </form>
   </main>;
 }
-export function App() {
+function ManagementApp() {
   const session = usePlatformSession();
-  if (window.location.pathname === '/portal-colaborador') return <EmployeePortalEntry/>;
   if(new URLSearchParams(window.location.search).get('recovery')==='1'||window.location.hash.includes('type=recovery'))return <RecoveryPage/>;
 
   if (session.status === 'loading') {
@@ -127,4 +126,8 @@ export function App() {
       </BrowserRouter>
     </AppErrorBoundary></>
   );
+}
+
+export function App() {
+  return window.location.pathname === '/portal-colaborador' ? <EmployeePortalEntry/> : <ManagementApp/>;
 }
