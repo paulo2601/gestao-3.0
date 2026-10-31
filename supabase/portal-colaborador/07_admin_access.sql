@@ -18,6 +18,14 @@ begin
   not exists (select 1 from public.company_memberships cm join public.companies c on c.id=cm.company_id where cm.company_id=p_company_id and c.tenant_id=p_tenant_id and cm.user_id=(select auth.uid()) and cm.status='active' and cm.role='company_admin')
   and not exists (select 1 from public.tenant_memberships tm join public.companies c on c.tenant_id=tm.tenant_id where c.id=p_company_id and c.tenant_id=p_tenant_id and tm.user_id=(select auth.uid()) and tm.status='active' and tm.role='tenant_owner')
  ) then raise exception 'Sem permissão para administrar acessos'; end if;
+ -- Revogação deve funcionar mesmo após desligamento ou desativação da obra.
+ if p_enabled is false then
+  update public.employee_clock_access a set enabled=false
+  where a.tenant_id=p_tenant_id and a.company_id=p_company_id
+    and a.employment_contract_id=p_employment_contract_id and a.user_id=p_user_id;
+  if not found then raise exception 'Vínculo de ponto não encontrado para revogação'; end if;
+  return;
+ end if;
  if not exists (select 1 from public.employment_contracts ec where ec.id=p_employment_contract_id and ec.tenant_id=p_tenant_id and ec.company_id=p_company_id and ec.status='active')
  then raise exception 'Contrato não ativo nesta empresa'; end if;
  if not exists (select 1 from public.employee_clock_worksites w where w.work_id=p_work_id and w.tenant_id=p_tenant_id and w.company_id=p_company_id and (w.enabled or p_enabled = false))
