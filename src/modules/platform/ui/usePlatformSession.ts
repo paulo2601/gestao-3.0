@@ -100,7 +100,7 @@ export function usePlatformSession(): PlatformSession {
     let nextContexts = await accessRepository.listContextsForCurrentUser();
     let nextCompanies = flattenAuthorizedCompanies(nextContexts);
     if (nextCompanies.length === 0) {
-      const { error: refreshError } = await (await import('../../../shared/infrastructure/supabase/client')).getSupabaseClient().auth.refreshSession();
+      const refreshError = await authGateway.refreshSessionError();
       if (!refreshError) {
         nextContexts = await accessRepository.listContextsForCurrentUser();
         nextCompanies = flattenAuthorizedCompanies(nextContexts);
