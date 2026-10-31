@@ -60,6 +60,7 @@ function EmployeePortalEntry() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
   useEffect(() => {
     let mounted = true;
     const client = getSupabaseClient();
@@ -85,6 +86,13 @@ function EmployeePortalEntry() {
     } catch { setError('Falha de conexão. Tente novamente.'); }
     finally { setBusy(false); }
   };
+  const signInWithPasskey = async () => {
+    if (passkeyBusy || busy) return;
+    setPasskeyBusy(true); setError('');
+    try { await new SupabaseAuthGateway().signInWithPasskey(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível autenticar com biometria.'); }
+    finally { setPasskeyBusy(false); }
+  };
   if (status === 'loading') return <main className="employee-clock-portal">Verificando acesso…</main>;
   if (status === 'authorized') return <EmployeeClockPortal/>;
   if (status === 'denied') return <main className="employee-clock-portal"><h1>Acesso não autorizado</h1><p>Solicite ao RH a liberação do Portal do Colaborador.</p><button type="button" onClick={() => void getSupabaseClient().auth.signOut()}>Sair</button></main>;
@@ -92,7 +100,8 @@ function EmployeePortalEntry() {
     <form onSubmit={event => { event.preventDefault(); void signIn(); }}>
       <label htmlFor="clock-email">E-mail</label><input id="clock-email" type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)}/>
       <label htmlFor="clock-password">Senha</label><input id="clock-password" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)}/>
-      <button disabled={busy} type="submit">{busy ? 'Entrando…' : 'Entrar'}</button>
+      <button disabled={busy || passkeyBusy} type="submit">{busy ? 'Entrando…' : 'Entrar'}</button>
+      <button disabled={busy || passkeyBusy} type="button" onClick={() => void signInWithPasskey()}>{passkeyBusy ? 'Aguardando autenticação…' : 'Entrar com biometria / passkey'}</button>
       {error && <p role="alert">{error}</p>}
     </form>
   </main>;
