@@ -160,6 +160,14 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
       p_bank_hours_enabled: input.bankHoursEnabled ?? false,
     });
     if (result.error) throw result.error;
+    if (input.email?.trim()) {
+      const { error: inviteError } = await this.client.functions.invoke('employee-clock-invite', {
+        body: { employmentContractId },
+      });
+      if (inviteError) {
+        console.error('Convite Ponto Digital não enviado:', inviteError);
+      }
+    }
   }
   async replaceFixedCompensationItems(scope: CompanyScope, employmentContractId: string, items: readonly {description:string;kind:'earning'|'deduction';destination:'advance'|'payment';valueType:'fixed'|'percent';value:number;recurring:boolean;active:boolean;affectsInss:boolean;affectsIrrf:boolean;affectsFgts:boolean}[]): Promise<void> {
     const remove=await this.client.from('hr_fixed_compensation_items').delete().eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('employment_contract_id',employmentContractId);
