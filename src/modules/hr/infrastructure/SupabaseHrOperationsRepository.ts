@@ -165,7 +165,7 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
         body: { employmentContractId },
       });
       if (inviteError) {
-        console.error('Convite Ponto Digital não enviado:', inviteError);
+        console.error('Convite Ponto Digital não enviado:', String(inviteError));
       }
     }
   }
