@@ -1,35 +1,14 @@
 import { Dialog } from '../../../shared/ui/Dialog';
-import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 import { loadExternalServiceExecution, loadMeasurementGoalPhysicalQuantities } from '../infrastructure/MeasurementGoalPhysicalRepository';
 import { useEffect, useMemo, useState } from 'react';
 import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
 import { chooseActiveExecutionMeasurement, deriveExecutionProjection } from '../domain/measurementExecutionProjection';
-import { loadLineExecutions, saveLineExecution, updateLineExecution, deleteLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
+import { loadLineExecutions, loadCompleteHistory, saveLineExecution, updateLineExecution, deleteLineExecution, type LineExecution } from '../infrastructure/MeasurementLineExecutionRepository';
 const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 interface Props {model:MeasurementParityModel;measurementId?:string;scope:{tenantId:string;companyId:string}}
 const formatMoneyInput=(raw:string)=>{const digits=raw.replace(/\D/g,'');return digits?money.format(Number(digits)/100):''};
 const parseMoneyInput=(raw:string)=>Number(raw.replace(/[^\d]/g,''))/100;
 const today=()=>{const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')};
-// Pagina cada lote para não perder lançamentos quando a consulta excede o limite do PostgREST.
-async function loadCompleteHistory(scope:Props['scope'],lineIds:string[]):Promise<LineExecution[]>{
- const client=getSupabaseClient();
- const all:LineExecution[]=[];
- for(let offset=0;offset<lineIds.length;offset+=80){
-  const batch=lineIds.slice(offset,offset+80);
-  for(let page=0;;page++){
-   const start=page*500;
-   const {data,error}=await client.from('engineering_measurement_line_executions')
-    .select('id,measurement_line_id,execution_date,executed_quantity,notes')
-    .eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId)
-    .in('measurement_line_id',batch).order('id',{ascending:true}).range(start,start+499);
-   if(error)throw error;
-   const rows=data??[];
-   all.push(...rows.map(row=>({id:String(row.id),measurementLineId:String(row.measurement_line_id),executionDate:String(row.execution_date),executedQuantity:Number(row.executed_quantity),notes:row.notes as string|null})));
-   if(rows.length<500)break;
-  }
- }
- return all;
-}
 export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const activeId=measurementId||chooseActiveExecutionMeasurement(model);
  const measurement=model.measurements.find(item=>item.id===activeId);
@@ -159,7 +138,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    <div><small>Pendente</small><strong>{money.format(Math.max(0,projected-executed))}</strong></div>
    <div><small>Conclusão</small><strong>{projected>0?(executed/projected*100).toLocaleString('pt-BR',{maximumFractionDigits:1}):'0'}%</strong><progress className="ex-card-progress" max={100} value={projected>0?Math.min(100,executed/projected*100):0}/></div>
   </div>
-  <p role="status"><strong>Saldo de execução acumulado (todas as medições): {historyReady?money.format(signedTotal):'Carregando histórico…'}</strong><small style={{display:'block'}}>Execução física menos valor financeiramente medido. Negativo: medido acima do executado; positivo: executado ainda não medido. Não altera o saldo financeiro do contrato.</small></p>
+  <p role="status"><strong>Saldo de execução acumulado (todas as medições): {historyReady?money.format(signedTotal):'Carregando histórico…'}</strong><small>Execução física menos valor financeiramente medido. Negativo: medido acima do executado; positivo: executado ainda não medido. Não altera o saldo financeiro do contrato.</small></p>
   <div className="measurement-execution-overview__filters">
    <label>Buscar serviço ou apartamento<input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Ex.: 1102 ou esgoto"/></label>
    <label>Situação<select value={statusFilter} onChange={event=>setStatusFilter(event.target.value as 'all'|'pending'|'done')}><option value="all">Todos</option><option value="pending">Pendentes</option><option value="done">Concluídos</option></select></label>
