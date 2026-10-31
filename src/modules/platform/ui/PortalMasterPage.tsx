@@ -1,6 +1,6 @@
 import { useEffect,useState } from 'react';
 import { Button } from '../../../shared/ui/Button';
-import { loadPortalMaster, loadCustomerModules, setCustomerModule, resetCustomerModule, saveSaasCustomer, saveSaasSubscription, linkCustomerOwner, inviteCustomerOwner, type CommercialStatus, type CustomerModule, type TenantOverview, type SubscriptionOverview, type PlanOverview } from '../infrastructure/PortalMasterRepository';
+import { loadPortalMaster, loadCustomerModules, setCustomerModule, resetCustomerModule, saveSaasCustomer, saveSaasSubscription, linkCustomerOwner, type CommercialStatus, type CustomerModule, type TenantOverview, type SubscriptionOverview, type PlanOverview } from '../infrastructure/PortalMasterRepository';
 import './PortalMasterPage.css';
 type PortalState={authorized:boolean;tenants:TenantOverview[];subscriptions:SubscriptionOverview[];plans:PlanOverview[]};
 const statuses:CommercialStatus[]=['pending','trial','active','past_due','suspended','cancelled'];
@@ -56,13 +56,6 @@ export function PortalMasterPage(){
   catch(e){setError(e instanceof Error?e.message:'Falha ao vincular responsável.');}
   finally{setBusy(false);}
  }
- async function sendInvitation(){
-  if(!ownerTenant||!ownerEmail.trim())return;
-  setBusy(true);setError('');setNotice('');
-  try{await inviteCustomerOwner(ownerTenant,ownerEmail);setNotice('Convite solicitado com sucesso. Após confirmação do e-mail, vincule o responsável.');}
-  catch(e){setError(e instanceof Error?e.message:'Falha ao enviar convite.');}
-  finally{setBusy(false);}
- }
  function editSubscription(t:TenantOverview){
   const sub=data?.subscriptions.find(s=>s.tenant_id===t.id&&s.status!=='cancelled');
   setTenantId(t.id);setPlanId(sub?.plan_id??'');setCycle(sub?.ciclo==='annual'?'annual':'monthly');
@@ -101,7 +94,6 @@ export function PortalMasterPage(){
      <label>Cliente<select value={ownerTenant} onChange={e=>setOwnerTenant(e.target.value)}><option value="">Selecionar</option>{data.tenants.filter(t=>t.status==='active').map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
      <label>E-mail do responsável<input type="email" value={ownerEmail} maxLength={320} onChange={e=>setOwnerEmail(e.target.value)}/></label>
      <label>Nome da empresa<input value={ownerCompany} maxLength={160} onChange={e=>setOwnerCompany(e.target.value)}/></label>
-     <Button size="sm" variant="secondary" disabled={busy||!ownerTenant||!ownerEmail.trim()} onClick={()=>void sendInvitation()}>Enviar convite por e-mail</Button>
      <Button size="sm" disabled={busy||!ownerTenant||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail.trim())||ownerCompany.trim().length<2} onClick={()=>void saveOwner()}>{busy?'Vinculando…':'Vincular responsável'}</Button>
     </div>
    </section>

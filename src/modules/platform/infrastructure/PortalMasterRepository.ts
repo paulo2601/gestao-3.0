@@ -72,8 +72,11 @@ export async function recoverModuleAccessSession():Promise<void>{
 }
 
 export async function inviteCustomerOwner(tenantId:string,email:string):Promise<void>{
- const {data,error}=await getSupabaseClient().functions.invoke('platform-invite-customer',{body:{tenantId,email:email.trim().toLowerCase()}});
- if(error)throw new Error(error.message);
- if(data?.error)throw new Error(String(data.error));
- if(data?.sent!==true)throw new Error('Envio não confirmado.');
+ const response=await getSupabaseClient().functions.invoke<unknown>('platform-invite-customer',{body:{tenantId,email:email.trim().toLowerCase()}});
+ if(response.error)throw new Error(response.error.message);
+ const result:unknown=response.data;
+ if(typeof result!=='object'||result===null)throw new Error('Resposta inválida do serviço de convite.');
+ const payload=result as Record<string,unknown>;
+ if(typeof payload.error==='string')throw new Error(payload.error);
+ if(payload.sent!==true)throw new Error('Envio não confirmado.');
 }
