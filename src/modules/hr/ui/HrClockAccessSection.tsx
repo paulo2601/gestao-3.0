@@ -28,8 +28,8 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
     return () => { active = false; };
   }, [companyId]);
   const save = async () => {
-    if (!company || !eligible.some(item => item.employmentContractId === contractId) || !sites.some(site => site.work_id === workId && site.enabled)) {
-      setFeedback('Selecione um colaborador ativo e uma obra com ponto GPS habilitado.'); return;
+    if (!company || !eligible.some(item => item.employmentContractId === contractId) || !sites.some(site => site.work_id === workId && (site.enabled || !enabled))) {
+      setFeedback('Selecione um colaborador ativo e uma obra válida. Para habilitar acesso, a obra deve estar habilitada.'); return;
     }
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
       setFeedback('Informe um identificador válido da conta de login do colaborador.'); return;
@@ -53,7 +53,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
           {eligible.map(item => <option key={item.employmentContractId} value={item.employmentContractId}>{item.fullName}</option>)}</select></label>
         <label>Conta de login (ID de autenticação) <input value={userId} onChange={event => setUserId(event.target.value)} placeholder="Identificador UUID da conta" /></label>
         <label>Obra autorizada <select value={workId} onChange={event => setWorkId(event.target.value)}><option value="">Selecione</option>
-          {enabledSites.map(site => <option key={site.id} value={site.work_id}>{site.work_id} ({site.radius_m} m)</option>)}</select></label>
+          {sites.filter(site => site.enabled || (!enabled && site.work_id === workId)).map(site => <option key={site.id} value={site.work_id}>{site.work_id} ({site.radius_m} m)</option>)}</select></label>
         <label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Acesso habilitado</label>
         <Button disabled={busy || !companyId} onClick={() => void save()}>{busy ? 'Salvando…' : 'Salvar autorização'}</Button>
         {feedback && <p role="status">{feedback}</p>}
