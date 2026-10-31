@@ -53,7 +53,7 @@ function RecoveryPage(){
 }
 export function App() {
   const session = usePlatformSession();
-  if(window.location.hash.includes('type=recovery'))return <RecoveryPage/>;
+  if(new URLSearchParams(window.location.search).get('recovery')==='1'||window.location.hash.includes('type=recovery'))return <RecoveryPage/>;
 
   if (session.status === 'loading') {
     return (
