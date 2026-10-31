@@ -22,6 +22,9 @@ declare const __BUILD_VERSION__: string;
 
 const VERSION_KEY = 'gestao-build-version';
 const UPDATE_ATTEMPT_KEY = 'gestao-update-attempt';
+const UPDATE_ATTEMPT_AT_KEY = 'gestao-update-attempt-at';
+const UPDATE_RETRY_MS = 30_000;
+const UPDATE_CHECK_MS = 60_000;
 let pendingBuild: string | null = null;
 let updateInProgress = false;
 function editingInProgress(): boolean {
@@ -32,12 +35,15 @@ function editingInProgress(): boolean {
 function applyPendingBuild(): void {
   if (!pendingBuild || updateInProgress || editingInProgress()) return;
   const lastAttempt = sessionStorage.getItem(UPDATE_ATTEMPT_KEY);
-  if (lastAttempt === pendingBuild) return; // Avoid an endless reload when CDN still serves old HTML.
+  const lastAttemptAt = Number(sessionStorage.getItem(UPDATE_ATTEMPT_AT_KEY) || 0);
+  if (lastAttempt === pendingBuild && Date.now() - lastAttemptAt < UPDATE_RETRY_MS) return; // Retry after a cooldown if the CDN served an older build.
   updateInProgress = true;
   sessionStorage.setItem(UPDATE_ATTEMPT_KEY, pendingBuild);
+  sessionStorage.setItem(UPDATE_ATTEMPT_AT_KEY, String(Date.now()));
   window.location.reload();
 }
 document.addEventListener('focusout', () => { window.setTimeout(applyPendingBuild, 500); });
+window.addEventListener('focus', () => { void ensureLatestBuild(); applyPendingBuild(); });
 window.addEventListener('online', applyPendingBuild);
 
 async function ensureLatestBuild(): Promise<void> {
@@ -51,7 +57,7 @@ async function ensureLatestBuild(): Promise<void> {
     const payload = await response.json() as { version?: string };
     if (!payload.version) return;
     localStorage.setItem(VERSION_KEY, payload.version);
-    if (payload.version === __BUILD_VERSION__) { sessionStorage.removeItem(UPDATE_ATTEMPT_KEY); pendingBuild = null; return; }
+    if (payload.version === __BUILD_VERSION__) { sessionStorage.removeItem(UPDATE_ATTEMPT_KEY); sessionStorage.removeItem(UPDATE_ATTEMPT_AT_KEY); pendingBuild = null; return; }
     if (payload.version !== __BUILD_VERSION__) {
       pendingBuild = payload.version;
       window.dispatchEvent(new CustomEvent('gestao-update-available', { detail: { version: payload.version } }));
@@ -66,7 +72,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
       void registration.update().catch((error) => console.warn('PWA: atualização do service worker falhou', error));
-      window.setInterval(() => { void registration.update().catch(() => undefined); }, 15 * 60_000);
+      window.setInterval(() => { void registration.update().catch(() => undefined); }, UPDATE_CHECK_MS);
     }).catch((error) => {
       console.error('PWA: registro do service worker falhou', error);
     });
