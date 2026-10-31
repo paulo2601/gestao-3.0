@@ -4,7 +4,6 @@ import { Card } from '../../../shared/ui/Card';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { SupabaseAuthGateway } from '../infrastructure/SupabaseAuthGateway';
-import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 
 export interface LoginPageProps {
   loading: boolean;
@@ -26,7 +25,7 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onBo
   const [passkeyError,setPasskeyError]=useState('');
   async function signInWithPasskey(){
     setPasskeyBusy(true);setPasskeyError('');
-    try{const {error}=await getSupabaseClient().auth.signInWithPasskey();if(error)throw error;}
+    try{await new SupabaseAuthGateway().signInWithPasskey();}
     catch(e){setPasskeyError(e instanceof Error?e.message:'Não foi possível autenticar com biometria.');}
     finally{setPasskeyBusy(false);}
   }

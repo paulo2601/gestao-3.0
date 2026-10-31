@@ -87,6 +87,14 @@ export class SupabaseAuthGateway implements AuthGateway {
     if(error)throw error;
     await this.signOut();
   }
+  async signInWithPasskey():Promise<void>{
+    const {error}=await getSupabaseClient().auth.signInWithPasskey();
+    if(error)throw error;
+  }
+  async registerPasskey():Promise<void>{
+    const {error}=await getSupabaseClient().auth.registerPasskey();
+    if(error)throw error;
+  }
   async signOut(): Promise<void> {
     const { error } = await getSupabaseClient().auth.signOut();
 
