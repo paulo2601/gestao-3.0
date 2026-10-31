@@ -95,13 +95,21 @@ export function usePlatformSession(): PlatformSession {
       setErrorMessage(null); setNoticeMessage(null); setStatus('ready');
     }
 
-    const nextContexts = await accessRepository.listContextsForCurrentUser();
-    const nextCompanies = flattenAuthorizedCompanies(nextContexts);
-    if (nextCompanies.length === 0 && window.location.hash.includes('type=recovery')) { setUser(currentUser); setStatus('anonymous'); return; }
+    // A fresh login or password recovery can race the initial access lookup.
+    // Refresh the auth token once before concluding that a new tenant has no companies.
+    let nextContexts = await accessRepository.listContextsForCurrentUser();
+    let nextCompanies = flattenAuthorizedCompanies(nextContexts);
+    if (nextCompanies.length === 0) {
+      const { error: refreshError } = await (await import('../../../shared/infrastructure/supabase/client')).getSupabaseClient().auth.refreshSession();
+      if (!refreshError) {
+        nextContexts = await accessRepository.listContextsForCurrentUser();
+        nextCompanies = flattenAuthorizedCompanies(nextContexts);
+      }
+    }
     if (nextCompanies.length === 0) {
       clearStoredContexts(currentUser.id);
-      await authGateway.signOut(); setUser(null); setContexts([]); setActiveCompanyId(null);
-      setErrorMessage('Usuário autenticado, mas sem empresa autorizada.'); setStatus('anonymous'); return;
+      setUser(currentUser); setContexts([]); setActiveCompanyId(null);
+      setErrorMessage('Não foi possível localizar uma empresa autorizada para este cadastro. Verifique o vínculo do usuário com a empresa.'); setStatus('anonymous'); return;
     }
     storeContexts(currentUser.id, nextContexts);
     const storedCompanyId = readStoredCompany(currentUser.id);
