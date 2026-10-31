@@ -31,8 +31,12 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSi
   useEffect(()=>{
     if(!biometricUnlock||unlockAttempted.current)return;
     unlockAttempted.current=true;
-    void signInWithPasskey();
-  },[biometricUnlock, onSignInWithPasskey, signInWithPasskey]);
+    // Attempt passkey once on mount; browsers that require a gesture
+    // can use the explicit unlock button instead.
+    void onSignInWithPasskey().catch((error:unknown)=>{
+      setPasskeyError(error instanceof Error?error.message:'Toque em Desbloquear com biometria para continuar.');
+    });
+  },[biometricUnlock,onSignInWithPasskey]);
   const [passkeyBusy,setPasskeyBusy]=useState(false);
   const [passkeyError,setPasskeyError]=useState('');
   async function signInWithPasskey(){
