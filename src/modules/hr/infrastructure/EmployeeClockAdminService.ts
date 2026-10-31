@@ -48,3 +48,10 @@ export async function saveClockAccess(input: Omit<ClockAccess, 'id'>): Promise<v
   });
   if (error) throw new Error(error.message);
 }
+
+export interface ClockWorkOption { id: string; name: string; }
+export async function listClockWorks(companyId: string): Promise<ClockWorkOption[]> {
+  const { data, error } = await getSupabaseClient().rpc('employee_clock_admin_list_works', { p_company_id: companyId });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ClockWorkOption[];
+}
