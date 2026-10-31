@@ -68,7 +68,7 @@ function EmployeePortalEntry() {
       const { data: auth, error: authError } = await client.auth.getUser();
       if (!mounted) return;
       if (authError || !auth.user) { setStatus('anonymous'); return; }
-      const { data, error: accessError } = await client.rpc('employee_clock_can_access');
+      const { data, error: accessError } = await client.rpc('employee_clock_can_access') as { data: boolean | null; error: { message: string } | null };
       if (!mounted) return;
       setStatus(!accessError && data === true ? 'authorized' : 'denied');
     };
