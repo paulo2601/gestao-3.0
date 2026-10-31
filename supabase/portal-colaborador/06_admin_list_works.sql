@@ -17,7 +17,7 @@ begin
   )
  ) then raise exception 'Sem permissão para consultar obras'; end if;
  return query select w.id,w.name from public.works w
- where w.company_id=p_company_id order by w.name;
+ where w.company_id=p_company_id and exists (select 1 from public.companies c where c.id=p_company_id and c.tenant_id=w.tenant_id) order by w.name;
 end; $$;
 revoke all on function public.employee_clock_admin_list_works(uuid) from public,anon;
 grant execute on function public.employee_clock_admin_list_works(uuid) to authenticated;
