@@ -1,4 +1,5 @@
 import { Dialog } from '../../../shared/ui/Dialog';
+import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 import { loadExternalServiceExecution, loadMeasurementGoalPhysicalQuantities } from '../infrastructure/MeasurementGoalPhysicalRepository';
 import { useEffect, useMemo, useState } from 'react';
 import type { MeasurementParityModel } from '../infrastructure/LegacyMeasurementParityRepository';
@@ -9,6 +10,26 @@ interface Props {model:MeasurementParityModel;measurementId?:string;scope:{tenan
 const formatMoneyInput=(raw:string)=>{const digits=raw.replace(/\D/g,'');return digits?money.format(Number(digits)/100):''};
 const parseMoneyInput=(raw:string)=>Number(raw.replace(/[^\d]/g,''))/100;
 const today=()=>{const date=new Date();return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')};
+// Pagina cada lote para não perder lançamentos quando a consulta excede o limite do PostgREST.
+async function loadCompleteHistory(scope:Props['scope'],lineIds:string[]):Promise<LineExecution[]>{
+ const client=getSupabaseClient();
+ const all:LineExecution[]=[];
+ for(let offset=0;offset<lineIds.length;offset+=80){
+  const batch=lineIds.slice(offset,offset+80);
+  for(let page=0;;page++){
+   const start=page*500;
+   const {data,error}=await client.from('engineering_measurement_line_executions')
+    .select('id,measurement_line_id,execution_date,executed_quantity,notes')
+    .eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId)
+    .in('measurement_line_id',batch).order('id',{ascending:true}).range(start,start+499);
+   if(error)throw error;
+   const rows=data??[];
+   all.push(...rows.map(row=>({id:String(row.id),measurementLineId:String(row.measurement_line_id),executionDate:String(row.execution_date),executedQuantity:Number(row.executed_quantity),notes:row.notes as string|null})));
+   if(rows.length<500)break;
+  }
+ }
+ return all;
+}
 export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const activeId=measurementId||chooseActiveExecutionMeasurement(model);
  const measurement=model.measurements.find(item=>item.id===activeId);
@@ -16,6 +37,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const [entries,setEntries]=useState<LineExecution[]>([]);
  const [historicalEntries,setHistoricalEntries]=useState<LineExecution[]>([]);
  const [historyReady,setHistoryReady]=useState(false);
+ const [historyRevision,setHistoryRevision]=useState(0);
  const [physical,setPhysical]=useState<Map<string,{quantity:number;unit:string}>>(new Map());
  const [external,setExternal]=useState<Map<string,{ratio:number;value:number}>>(new Map());
  const [selected,setSelected]=useState<string|null>(null);
@@ -33,7 +55,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const [statusFilter,setStatusFilter]=useState<'all'|'pending'|'done'>('all');
  const ids=useMemo(()=>items.map(item=>item.measurementLineId),[items]);
  const allLineIds=useMemo(()=>model.lines.map(line=>line.id),[model.lines]);
- useEffect(()=>{let live=true;setHistoryReady(false);void loadLineExecutions(scope,allLineIds).then(rows=>{if(live){setHistoricalEntries(rows);setHistoryReady(true)}}).catch(cause=>{if(live){setHistoryReady(false);setError(cause instanceof Error?cause.message:'Falha ao carregar histórico acumulado')}});return()=>{live=false}},[scope,allLineIds]);
+ useEffect(()=>{let live=true;setHistoryReady(false);void loadCompleteHistory(scope,allLineIds).then(rows=>{if(live){setHistoricalEntries(rows);setHistoryReady(true)}}).catch(cause=>{if(live){setHistoryReady(false);setError(cause instanceof Error?cause.message:'Falha ao carregar histórico acumulado')}});return()=>{live=false}},[scope,allLineIds,historyRevision]);
  useEffect(()=>{let live=true;setLoading(true);setError(null);void loadLineExecutions(scope,ids)
  .then(rows=>{if(live)setEntries(rows)})
  .catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao carregar execução')})
@@ -65,7 +87,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    if(!line)continue;
    const key=line.targetKind+':'+line.targetId;
    // Serviços vinculados ao Controle de Serviços são apurados exclusivamente por ele.
-   if(external.has(line.targetId))continue;
+   if(line.targetKind==='addendum'&&external.has(line.targetId))continue;
    executedPhysical.set(key,(executedPhysical.get(key)??0)+entry.executedQuantity*(line.unitPriceSnapshot||prices.get(key)||0));
   }
   for(const [targetId,physical] of external)executedPhysical.set('addendum:'+targetId,physical.value);
@@ -123,7 +145,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);setNotice(null);
   try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:quantities[0]!})}else if(activeGroup){for(let i=0;i<batch.length;i++)await saveLineExecution({measurementLineId:batch[i]!.measurementLineId,executionDate:date,quantity:quantities[i]!})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:quantities[0]!})}
-   const refreshed=await loadLineExecutions(scope,ids);setEntries(refreshed);setSelectedReferences([]);setEditing(null);setQuantity('');setNotice('Execução salva com sucesso. Selecione as próximas unidades para continuar.')}
+   const refreshed=await loadLineExecutions(scope,ids);setEntries(refreshed);setHistoryRevision(revision=>revision+1);setSelectedReferences([]);setEditing(null);setQuantity('');setNotice('Execução salva com sucesso. Selecione as próximas unidades para continuar.')}
   catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
   finally{setSaving(false)}
  }
@@ -214,7 +236,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
     <p>Deseja realmente excluir este lançamento do histórico?</p>
     <div>
      <button type="button" disabled={saving} onClick={()=>setPendingDelete(null)}>Cancelar</button>
-     <button type="button" disabled={saving} onClick={()=>{if(!pendingDelete)return;setSaving(true);setError(null);void deleteLineExecution(pendingDelete).then(()=>loadLineExecutions(scope,ids)).then(rows=>{setEntries(rows);setPendingDelete(null)}).catch(cause=>setError(cause instanceof Error?cause.message:'Falha ao excluir')).finally(()=>setSaving(false))}}>{saving?'Excluindo…':'Confirmar exclusão'}</button>
+     <button type="button" disabled={saving} onClick={()=>{if(!pendingDelete)return;setSaving(true);setError(null);void deleteLineExecution(pendingDelete).then(()=>loadLineExecutions(scope,ids)).then(rows=>{setEntries(rows);setHistoryRevision(revision=>revision+1);setPendingDelete(null)}).catch(cause=>setError(cause instanceof Error?cause.message:'Falha ao excluir')).finally(()=>setSaving(false))}}>{saving?'Excluindo…':'Confirmar exclusão'}</button>
     </div>
    </div>
   </Dialog>
