@@ -15,6 +15,7 @@ declare
  v_contract public.employment_contracts%rowtype;
  v_last text;
  v_next text;
+ v_count integer;
  v_distance double precision;
  v_now timestamptz := clock_timestamp();
  v_id uuid;
@@ -51,6 +52,9 @@ begin
  end if;
  -- Bloqueio serializado por usuário e dia para impedir registros concorrentes.
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_user::text || (v_now at time zone 'America/Sao_Paulo')::date::text,0));
+ select count(*) into v_count from public.employee_clock_events e
+ where e.user_id=v_user and (e.occurred_at at time zone 'America/Sao_Paulo')::date=(v_now at time zone 'America/Sao_Paulo')::date;
+ if v_count >= 4 then raise exception 'Quatro marcações já realizadas hoje'; end if;
  select e.event_type into v_last from public.employee_clock_events e
  where e.user_id=v_user
  and (e.occurred_at at time zone 'America/Sao_Paulo')::date=(v_now at time zone 'America/Sao_Paulo')::date
@@ -61,6 +65,9 @@ begin
  when 'exit' then null
  else 'entry' end;
  if v_next is null then raise exception 'Quatro marcações já realizadas hoje'; end if;
+ if v_count > 0 and (v_last is distinct from case v_count when 1 then 'entry' when 2 then 'lunch_out' when 3 then 'lunch_in' end) then
+  raise exception 'Sequência de marcações inconsistente; solicite revisão ao RH';
+ end if;
  insert into public.employee_clock_events(
  tenant_id,company_id,employment_contract_id,work_id,user_id,event_type,
  occurred_at,latitude,longitude,accuracy_m,distance_m)
