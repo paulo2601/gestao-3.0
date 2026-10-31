@@ -17,7 +17,6 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
   const [feedback, setFeedback] = useState('');
   const company = companies.find(item => item.id === companyId);
   const eligible = employees.filter(item => item.companyId === companyId && item.contractStatus === 'active');
-  const enabledSites = sites.filter(site => site.enabled);
   useEffect(() => {
     let active = true;
     setAccess([]); setSites([]); setContractId(''); setWorkId(''); setUserId(''); setFeedback('');
