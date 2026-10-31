@@ -16,7 +16,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState('');
   const company = companies.find(item => item.id === companyId);
-  const eligible = employees.filter(item => item.companyId === companyId && item.contractStatus === 'active');
+  const eligible = employees.filter(item => item.companyId === companyId && (item.contractStatus === 'active' || access.some(a => a.employment_contract_id === item.employmentContractId)));
   useEffect(() => {
     let active = true;
     setAccess([]); setSites([]); setContractId(''); setWorkId(''); setUserId(''); setFeedback('');
@@ -27,8 +27,8 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
     return () => { active = false; };
   }, [companyId]);
   const save = async () => {
-    if (!company || !eligible.some(item => item.employmentContractId === contractId) || !sites.some(site => site.work_id === workId && (site.enabled || !enabled))) {
-      setFeedback('Selecione um colaborador ativo e uma obra válida. Para habilitar acesso, a obra deve estar habilitada.'); return;
+    if (!company || !eligible.some(item => item.employmentContractId === contractId) || (enabled && !eligible.some(item => item.employmentContractId === contractId && item.contractStatus === 'active')) || !sites.some(site => site.work_id === workId && (site.enabled || !enabled))) {
+      setFeedback('Selecione um colaborador e uma obra válidos. Para habilitar, o contrato e a obra precisam estar ativos.'); return;
     }
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
       setFeedback('Informe um identificador válido da conta de login do colaborador.'); return;
@@ -49,7 +49,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
         <label>Empresa <select value={companyId} onChange={event => setCompanyId(event.target.value)}>{companies.map(item =>
           <option key={item.id} value={item.id}>{item.tradeName || item.legalName}</option>)}</select></label>
         <label>Colaborador ativo <select value={contractId} onChange={event => setContractId(event.target.value)}><option value="">Selecione</option>
-          {eligible.map(item => <option key={item.employmentContractId} value={item.employmentContractId}>{item.fullName}</option>)}</select></label>
+          {eligible.map(item => <option key={item.employmentContractId} value={item.employmentContractId}>{item.fullName}{item.contractStatus !== 'active' ? ' (desligado — apenas revogação)' : ''}</option>)}</select></label>
         <label>Conta de login (ID de autenticação) <input value={userId} onChange={event => setUserId(event.target.value)} placeholder="Identificador UUID da conta" /></label>
         <label>Obra autorizada <select value={workId} onChange={event => setWorkId(event.target.value)}><option value="">Selecione</option>
           {sites.filter(site => site.enabled || (!enabled && site.work_id === workId)).map(site => <option key={site.id} value={site.work_id}>{site.work_id} ({site.radius_m} m)</option>)}</select></label>
