@@ -16,7 +16,7 @@ export function EngineeringContractSummaryDashboard({contract}:Props){
       <section className="engineering-summary-dashboard__panel engineering-summary-dashboard__evolution">
         <h3>Evolução física do contrato</h3>
         <p className="engineering-summary-dashboard__intro">Acompanhe o percentual físico executado com base nas medições.</p>
-        <div className="engineering-summary-dashboard__progress"><div style={{width:`${progress}%`}}/></div>
+        <div className="engineering-summary-dashboard__progress"><progress className="engineering-summary-dashboard__native-progress" max={100} value={progress} aria-label="Percentual físico executado"/></div>
         <div className="engineering-summary-dashboard__progress-label"><strong>{progress.toFixed(1)}%</strong><span>{remaining.toFixed(1)}% restante</span></div>
         <div className="engineering-summary-dashboard__evolution-stats"><div><small>Planejado</small><strong>100,0%</strong><span>Contrato total</span></div><div><small>Executado</small><strong>{progress.toFixed(1)}%</strong><span>Medições realizadas</span></div><div><small>Restante</small><strong>{remaining.toFixed(1)}%</strong><span>A executar</span></div></div>
       </section>
@@ -24,7 +24,7 @@ export function EngineeringContractSummaryDashboard({contract}:Props){
         <h3>Distribuição do contrato</h3>
         <p className="engineering-summary-dashboard__intro">Visualização do valor medido e saldo contratual.</p>
         <div className="engineering-summary-dashboard__distribution">
-          <div className="engineering-summary-dashboard__donut engineering-summary-dashboard__donut--large" style={{background:`conic-gradient(var(--ui-success, #16a36a) 0 ${progress}%, var(--ui-border, #d9e0ea) ${progress}% 100%)`}}><div><strong>{currency.format(contract.updatedContractValue)}</strong><span>Total do contrato</span><b>100%</b></div></div>
+          <div className="engineering-summary-dashboard__donut engineering-summary-dashboard__donut--large engineering-summary-dashboard__donut--svg"><svg viewBox="0 0 100 100" className="engineering-summary-dashboard__donut-chart" aria-hidden="true"><circle cx="50" cy="50" r="43" className="engineering-summary-dashboard__donut-track"/><circle cx="50" cy="50" r="43" className="engineering-summary-dashboard__donut-fill" pathLength={100} strokeDasharray={`${progress} ${100-progress}`}/></svg><div><strong>{currency.format(contract.updatedContractValue)}</strong><span>Total do contrato</span><b>100%</b></div></div>
           <div className="engineering-summary-dashboard__legend engineering-summary-dashboard__legend--cards"><p><i className="is-measured"/>Medido <strong>{currency.format(contract.measuredNet)}</strong><span>{progress.toFixed(1)}%</span></p><p><i/>Saldo <strong>{currency.format(contract.grossBalance)}</strong><span>{remaining.toFixed(1)}%</span></p></div>
         </div>
       </section>
