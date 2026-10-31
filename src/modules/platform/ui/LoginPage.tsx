@@ -22,7 +22,7 @@ export interface LoginPageProps {
 
 export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSignInWithPasskey, onBootstrapFirstOwner }: LoginPageProps) {
   const [setupMode, setSetupMode] = useState(false);
-  const [biometricUnlock,setBiometricUnlock]=useState(()=>{
+  const [biometricUnlock]=useState(()=>{
     try{return window.localStorage.getItem('gestao.biometric.unlock')==='enabled';}
     catch{return false;}
   });
@@ -32,7 +32,7 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSi
     if(!biometricUnlock||unlockAttempted.current)return;
     unlockAttempted.current=true;
     void signInWithPasskey();
-  },[biometricUnlock]);
+  },[biometricUnlock, onSignInWithPasskey]);
   const [passkeyBusy,setPasskeyBusy]=useState(false);
   const [passkeyError,setPasskeyError]=useState('');
   async function signInWithPasskey(){
