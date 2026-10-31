@@ -57,6 +57,12 @@ export async function saveSaasSubscription(tenantId:string,planId:string,cycle:'
  const response=await getSupabaseClient().rpc('platform_master_save_subscription',{p_tenant:tenantId,p_plan:planId,p_cycle:cycle,p_status:status});
  if(response.error)throw new Error(response.error.message);
 }
+export async function checkPlatformOperator():Promise<boolean>{
+ const response=await getSupabaseClient().rpc('is_platform_operator');
+ if(response.error)throw new Error(response.error.message);
+ return response.data===true;
+}
+
 export async function checkModuleAccess(tenantId:string,moduleCode:string):Promise<boolean>{
  const response=await getSupabaseClient().rpc('platform_module_allowed',{p_tenant:tenantId,p_module:moduleCode});
  if(response.error)throw new Error(response.error.message);
