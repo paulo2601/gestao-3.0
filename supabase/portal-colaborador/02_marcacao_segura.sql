@@ -21,10 +21,10 @@ declare
  v_receipt uuid;
 begin
  if v_user is null then raise exception 'Autenticação obrigatória'; end if;
- if p_latitude is null or p_longitude is null or p_latitude not between -90 and 90 or p_longitude not between -180 and 180 then
+ if p_latitude is null or p_longitude is null or p_latitude not between -90 and 90 or p_longitude not between -180 and 180 or p_latitude = 'NaN'::float8 or p_longitude = 'NaN'::float8 then
   raise exception 'Coordenadas inválidas';
  end if;
- if p_accuracy_m is null or p_accuracy_m <= 0 or p_accuracy_m > 50 then
+ if p_accuracy_m is null or p_accuracy_m <= 0 or p_accuracy_m > 50 or p_accuracy_m = 'NaN'::float8 then
   raise exception 'Precisão GPS insuficiente';
  end if;
  select * into v_access from public.employee_clock_access
