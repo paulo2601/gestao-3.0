@@ -6,7 +6,7 @@ language plpgsql security definer set search_path = '' stable as $$
 begin
  if (select auth.uid()) is null or not exists (
   select 1 from public.company_memberships cm
-  where cm.company_id=p_company_id and cm.user_id=(select auth.uid()) and cm.role in ('owner','admin')
+  where cm.company_id=p_company_id and cm.user_id=(select auth.uid()) and cm.status='active' and cm.role in ('company_admin')
  ) then raise exception 'Sem permissão para consultar acessos'; end if;
  return query select a.* from public.employee_clock_access a where a.company_id=p_company_id order by a.created_at desc;
 end; $$;
@@ -19,8 +19,8 @@ begin
  if (select auth.uid()) is null or not exists (
   select 1 from public.company_memberships cm
   join public.companies c on c.id=cm.company_id
-  where cm.company_id=p_company_id and c.tenant_id=p_tenant_id
-   and cm.user_id=(select auth.uid()) and cm.role in ('owner','admin')
+  where cm.company_id=p_company_id and cm.status='active' and c.tenant_id=p_tenant_id
+   and cm.user_id=(select auth.uid()) and cm.role in ('company_admin')
  ) then raise exception 'Sem permissão para administrar acessos'; end if;
  if not exists (
   select 1 from public.employment_contracts ec
