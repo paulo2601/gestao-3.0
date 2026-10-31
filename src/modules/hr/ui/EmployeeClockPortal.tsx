@@ -1,3 +1,4 @@
+import './employee-clock-portal.css';
 import { useCallback, useEffect, useState } from 'react';
 import { CLOCK_LABELS, CLOCK_SEQUENCE, loadOwnClockEvents, registerClockPosition, requestClockPosition, type ClockEvent } from '../infrastructure/EmployeeClockService';
 import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
