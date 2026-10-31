@@ -36,6 +36,7 @@
     "vitest": "3.2.4"
   },
   "overrides": {
-    "electron-to-chromium": "1.5.420"
+    "electron-to-chromium": "1.5.420",
+    "rollup": "4.52.4"
   }
 }
