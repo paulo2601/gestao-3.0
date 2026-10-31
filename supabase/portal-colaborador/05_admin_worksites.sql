@@ -20,7 +20,7 @@ begin
  ) then raise exception 'Sem permissão para configurar perímetros'; end if;
  if not exists (select 1 from public.works w where w.id=p_work_id and w.company_id=p_company_id and w.tenant_id=p_tenant_id)
  then raise exception 'Obra não pertence à empresa'; end if;
- if p_latitude is null or p_latitude < -90 or p_latitude > 90 or p_longitude is null or p_longitude < -180 or p_longitude > 180 or p_radius_m is null or p_radius_m < 20 or p_radius_m > 2000
+ if p_latitude is null or p_latitude < -90 or p_latitude > 90 or p_latitude = 'Infinity'::float8 or p_latitude = '-Infinity'::float8 or p_latitude = 'NaN'::float8 or p_longitude is null or p_longitude < -180 or p_longitude > 180 or p_longitude = 'Infinity'::float8 or p_longitude = '-Infinity'::float8 or p_longitude = 'NaN'::float8 or p_radius_m is null or p_radius_m < 20 or p_radius_m > 2000
  then raise exception 'Coordenadas ou raio inválidos'; end if;
  insert into public.employee_clock_worksites(tenant_id,company_id,work_id,latitude,longitude,radius_m,enabled)
  values(p_tenant_id,p_company_id,p_work_id,p_latitude,p_longitude,p_radius_m,p_enabled)
