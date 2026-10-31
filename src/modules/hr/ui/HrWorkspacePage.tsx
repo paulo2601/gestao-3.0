@@ -14,6 +14,8 @@ import { currentHrCompetence } from './useHrBudgetOverview';
 import { HrComplianceSection } from './HrComplianceSection';
 import { HrEpiSection } from './HrEpiSection';
 import { HrAttendanceSection } from './HrAttendanceSection';
+import { HrClockSettingsSection } from './HrClockSettingsSection';
+import { HrClockAccessSection } from './HrClockAccessSection';
 import { HrBankHoursSection, type BankDraft } from './HrBankHoursSection';
 import { HrReceiptsSection, HrReportsSection } from './HrReportsSection';
 import { HrDocumentsSection, HrImportsSection } from './HrImportsSection';
@@ -26,7 +28,7 @@ import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartM
 import './hr-workspace.css';
 import './hr-people-modern.css';
 
-type HrWorkspaceTab = 'dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
+type HrWorkspaceTab = 'dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'ponto_gps' | 'acesso_ponto' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
 type CompanyData = { company: CompanySummary; operations: HrOperationalSnapshot; overview: Awaited<ReturnType<ReturnType<typeof getHrBudgetRepository>['getOverview']>>; };
 type WorkspaceEmployee = HrEmployeeRow & { companyId: string; companyName: string; tenantId: string };
 type EmployeeDraft = { fullName:string; companyId:string; jobTitle:string; cpf:string; pix:string; phone:string; email:string; notes:string; employmentType:EmploymentType; sector:string; supervisor:string; weeklyHours:string; bankHoursEnabled:string; baseSalary:string; costCenterId:string; effectiveOn:string };
@@ -43,7 +45,7 @@ type AttendancePeriodDraft = {
 
 const ALL_HR_COMPANIES = '__all_hr_companies__';
 const tabs: Array<{ id: HrWorkspaceTab; label: string; icon: typeof BarChart3 }> = [
-  { id:'dashboard',label:'Dashboard',icon:BarChart3 },{ id:'colaboradores',label:'Colaboradores',icon:UsersRound },{ id:'epis',label:'EPIs',icon:HardHat },{ id:'compliance',label:'ASO, NR e Férias',icon:ShieldCheck },{ id:'salarios',label:'Salários e pagamentos',icon:WalletCards },{ id:'presenca',label:'Presença e ponto',icon:CalendarCheck },{ id:'banco_horas',label:'Banco de horas',icon:Clock3 },{ id:'fechamento',label:'Fechamento quinzenal',icon:WalletCards },{ id:'relatorios',label:'Relatórios',icon:FileText },{ id:'recibos',label:'Recibos',icon:ReceiptText },{ id:'importacoes',label:'Importações',icon:Upload },{ id:'documentos',label:'Importações RH',icon:FolderUp },
+  { id:'dashboard',label:'Dashboard',icon:BarChart3 },{ id:'colaboradores',label:'Colaboradores',icon:UsersRound },{ id:'epis',label:'EPIs',icon:HardHat },{ id:'compliance',label:'ASO, NR e Férias',icon:ShieldCheck },{ id:'salarios',label:'Salários e pagamentos',icon:WalletCards },{ id:'presenca',label:'Presença e ponto',icon:CalendarCheck },{ id:'ponto_gps',label:'Ponto GPS',icon:Clock3 },{ id:'acesso_ponto',label:'Acesso ao ponto',icon:ShieldCheck },{ id:'banco_horas',label:'Banco de horas',icon:Clock3 },{ id:'fechamento',label:'Fechamento quinzenal',icon:WalletCards },{ id:'relatorios',label:'Relatórios',icon:FileText },{ id:'recibos',label:'Recibos',icon:ReceiptText },{ id:'importacoes',label:'Importações',icon:Upload },{ id:'documentos',label:'Importações RH',icon:FolderUp },
 ];
 const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const employmentTypeOptions = [
@@ -129,6 +131,8 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
   {!loading&&!errorMessage&&tab==='compliance'&&<HrComplianceSection loading={complianceLoading} records={complianceRecords} employees={employees} feedback={complianceFeedback} onNew={openCompliance}/>}
   {!loading&&!errorMessage&&tab==='salarios'&&<div className="hr-workspace__content"><Card title="Salários e folha" description="Ações operacionais usando o histórico do vínculo."><div className="hr-workspace__form"><Select label="Colaborador" value={payrollEmployeeId} onChange={e=>{setPayrollEmployeeId(e.target.value);setPayrollFeedback(null);}} options={[{value:'',label:'Selecione um colaborador'},...activeEmployees.map(item=>({value:item.employmentContractId,label:`${item.fullName} · ${item.companyName}`}))]}/>{payrollEmployeeId&&(()=>{const employee=activeEmployees.find(item=>item.employmentContractId===payrollEmployeeId);return employee?<><div className="hr-workspace__salary-summary"><strong>{employee.fullName}</strong><span>{money.format(employee.baseSalary)} · {employee.costCenterName??'Sem obra'}</span></div><div className="hr-workspace__actions"><Button onClick={()=>openEmployee(employee)}>Editar salário / alocação</Button><Button variant="secondary" onClick={()=>void closeEmployeePayroll(employee)}>Fechar folha da competência</Button></div></>:null})()}{payrollFeedback&&<Feedback title="Folha" message={payrollFeedback} tone={payrollFeedback.includes('sucesso')?'success':'danger'}/>}</div></Card></div>}
   {!loading&&!errorMessage&&tab==='presenca'&&<HrAttendanceSection date={attendanceDate} setDate={setAttendanceDate} search={attendanceSearch} setSearch={setAttendanceSearch} rows={attendance} employees={attendanceEmployees} loading={attendanceLoading} feedback={attendanceFeedback} onAllPresent={()=>void markAllPresent()} onChange={(employee,status)=>void changeAttendance(employee,status)} onRowsChange={setAttendance} onFeedback={setAttendanceFeedback}/>} 
+  {!loading&&!errorMessage&&tab==='ponto_gps'&&<HrClockSettingsSection companies={companies}/>}
+  {!loading&&!errorMessage&&tab==='acesso_ponto'&&<HrClockAccessSection companies={companies} employees={employees}/>}
   {!loading&&!errorMessage&&tab==='banco_horas'&&<HrBankHoursSection employees={activeEmployees} movements={bankMovements} draft={bankDraft} setDraft={setBankDraft} saving={bankSaving} feedback={bankFeedback} onSave={()=>void registerBankMovement()} onClose={()=>void closeBank()}/>} 
   {!loading&&!errorMessage&&tab==='fechamento'&&<HrFortnightClosingSection employees={activeEmployees} fixedItems={allFixedItems} competence={competenceMonth} onCloseEmployee={closeEmployeePayroll}/>} 
   {!loading&&!errorMessage&&tab==='relatorios'&&<HrReportsSection employees={activeEmployees} competence={competence}/>}
