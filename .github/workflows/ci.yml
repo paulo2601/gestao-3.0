@@ -1,6 +1,7 @@
 name: CI
 
 # O código versionado é a fonte de verdade. CI valida e publica; não reescreve módulos.
+# Reexecutar publicação da interface aprovada de lançamentos por colaborador.
 on:
   push:
     branches: [main]
