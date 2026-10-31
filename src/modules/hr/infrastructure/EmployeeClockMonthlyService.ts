@@ -24,12 +24,16 @@ const localParts = (timestamp: string) => {
 export async function loadClockMonthlyMarks(companyIds: string[], start: string, end: string): Promise<Map<string, ClockDayMarks>> {
   const uniqueIds = [...new Set(companyIds)];
   const result = new Map<string, ClockDayMarks>();
-  for (const companyId of uniqueIds) {
+  // Consultas independentes em paralelo, sem serializar uma empresa após a outra.
+  const batches = await Promise.all(uniqueIds.map(async companyId => {
     const { data, error } = await getSupabaseClient().rpc('employee_clock_monthly_report', {
       p_company_id: companyId, p_start: start, p_end: end
     });
     if (error) throw new Error('Não foi possível consultar as marcações GPS: ' + error.message);
-    for (const event of (data ?? []) as ClockMonthlyEvent[]) {
+    return (data ?? []) as ClockMonthlyEvent[];
+  }));
+  for (const events of batches) {
+    for (const event of events) {
       if (!['entry', 'lunch_out', 'lunch_in', 'exit'].includes(event.event_type)) continue;
       const local = localParts(event.occurred_at);
       const key = event.employment_contract_id + ':' + local.date;
