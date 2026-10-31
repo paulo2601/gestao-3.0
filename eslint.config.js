@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'eslint.config.js', 'public/sw.js', 'scripts/**/*.mjs'] },
+  { ignores: ['dist', 'coverage', 'eslint.config.js', 'public/sw.js', 'scripts/**/*.mjs', 'ponto-digital/**/*.js'] },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
