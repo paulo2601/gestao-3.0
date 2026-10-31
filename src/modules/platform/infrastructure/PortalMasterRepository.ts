@@ -70,3 +70,10 @@ export async function recoverModuleAccessSession():Promise<void>{
  if(error)throw new Error('Não foi possível renovar a sessão. '+error.message);
  if(!data.session)throw new Error('Sua sessão expirou. Entre novamente para continuar.');
 }
+
+export async function inviteCustomerOwner(tenantId:string,email:string):Promise<void>{
+ const {data,error}=await getSupabaseClient().functions.invoke('platform-invite-customer',{body:{tenantId,email:email.trim().toLowerCase()}});
+ if(error)throw new Error(error.message);
+ if(data?.error)throw new Error(String(data.error));
+ if(data?.sent!==true)throw new Error('Envio não confirmado.');
+}
