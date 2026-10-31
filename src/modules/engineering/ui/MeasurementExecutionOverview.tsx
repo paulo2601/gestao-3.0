@@ -14,6 +14,8 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const measurement=model.measurements.find(item=>item.id===activeId);
  const items=useMemo(()=>activeId?deriveExecutionProjection(model,activeId):[],[model,activeId]);
  const [entries,setEntries]=useState<LineExecution[]>([]);
+ const [historicalEntries,setHistoricalEntries]=useState<LineExecution[]>([]);
+ const [historyReady,setHistoryReady]=useState(false);
  const [physical,setPhysical]=useState<Map<string,{quantity:number;unit:string}>>(new Map());
  const [external,setExternal]=useState<Map<string,{ratio:number;value:number}>>(new Map());
  const [selected,setSelected]=useState<string|null>(null);
@@ -30,12 +32,14 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const [search,setSearch]=useState('');
  const [statusFilter,setStatusFilter]=useState<'all'|'pending'|'done'>('all');
  const ids=useMemo(()=>items.map(item=>item.measurementLineId),[items]);
+ const allLineIds=useMemo(()=>model.lines.map(line=>line.id),[model.lines]);
+ useEffect(()=>{let live=true;setHistoryReady(false);void loadLineExecutions(scope,allLineIds).then(rows=>{if(live){setHistoricalEntries(rows);setHistoryReady(true)}}).catch(cause=>{if(live){setHistoryReady(false);setError(cause instanceof Error?cause.message:'Falha ao carregar histórico acumulado')}});return()=>{live=false}},[scope,allLineIds]);
  useEffect(()=>{let live=true;setLoading(true);setError(null);void loadLineExecutions(scope,ids)
  .then(rows=>{if(live)setEntries(rows)})
  .catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao carregar execução')})
  .finally(()=>{if(live)setLoading(false)});
  return()=>{live=false};},[scope,ids]);
- useEffect(()=>{let live=true;const addendumIds=[...new Set(items.filter(item=>item.targetKind==='addendum').map(item=>item.targetId))];void loadExternalServiceExecution(model,addendumIds).then(next=>{if(live)setExternal(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao sincronizar infraestrutura externa')});return()=>{live=false}},[model,items]);
+ useEffect(()=>{let live=true;const addendumIds=[...new Set(model.origins.flatMap(origin=>origin.services.filter(item=>item.targetKind==='addendum').map(item=>item.targetId)))];void loadExternalServiceExecution(model,addendumIds).then(next=>{if(live)setExternal(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao sincronizar infraestrutura externa')});return()=>{live=false}},[model,items]);
  useEffect(()=>{let live=true;void loadMeasurementGoalPhysicalQuantities(model).then(next=>{if(live)setPhysical(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao consultar metragens físicas')});return()=>{live=false}},[model]);
  const doneByLine=useMemo(()=>{const sums=new Map<string,number>();for(const entry of entries)sums.set(entry.measurementLineId,(sums.get(entry.measurementLineId)??0)+entry.executedQuantity);return sums},[entries]);
  const effectiveDone=(item:typeof items[number])=>external.has(item.targetId)?external.get(item.targetId)!.ratio:(doneByLine.get(item.measurementLineId)??0);
@@ -44,6 +48,33 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  const contractValue=(item:typeof items[number])=>{const stage=contractStages.get(item.targetKind+':'+item.targetId);return stage?stage.contractedQuantity*stage.unitPrice:item.plannedValue;};
  const groupContractValue=(lines:typeof items)=>[...new Map(lines.map(line=>[line.targetKind+':'+line.targetId,contractValue(line)])).values()].reduce((sum,value)=>sum+value,0);
  const financialExecuted=(item:typeof items[number])=>external.has(item.targetId)?external.get(item.targetId)!.value:Math.max(0,doneByLine.get(item.measurementLineId)??0)*(item.targetKind==='addendum'?contractUnitPrice(item):(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0));
+ // Conciliação histórica por serviço: execução física menos medição financeira.
+ // Não transfere nem altera registros de medições anteriores.
+ const signedByTarget=useMemo(()=>{
+  const billed=new Map<string,number>();
+  const executedPhysical=new Map<string,number>();
+  const prices=new Map(model.origins.flatMap(origin=>origin.services.map(service=>[service.targetKind+':'+service.targetId,service.unitPrice] as const)));
+  const lineById=new Map(model.lines.map(line=>[line.id,line] as const));
+  for(const line of model.lines){
+   if(!['draft','closed','approved'].includes(line.measurementStatus))continue;
+   const key=line.targetKind+':'+line.targetId;
+   billed.set(key,(billed.get(key)??0)+(line.exactGrossValue??line.measuredQuantity*line.unitPriceSnapshot));
+  }
+  for(const entry of historicalEntries){
+   const line=lineById.get(entry.measurementLineId);
+   if(!line)continue;
+   const key=line.targetKind+':'+line.targetId;
+   // Serviços vinculados ao Controle de Serviços são apurados exclusivamente por ele.
+   if(external.has(line.targetId))continue;
+   executedPhysical.set(key,(executedPhysical.get(key)??0)+entry.executedQuantity*(line.unitPriceSnapshot||prices.get(key)||0));
+  }
+  for(const [targetId,physical] of external)executedPhysical.set('addendum:'+targetId,physical.value);
+  const result=new Map<string,number>();
+  for(const key of new Set([...billed.keys(),...executedPhysical.keys()]))
+   result.set(key,Math.round(((executedPhysical.get(key)??0)-(billed.get(key)??0))*100)/100);
+  return result;
+ },[model,historicalEntries,external]);
+ const signedTotal=[...signedByTarget.values()].reduce((sum,value)=>sum+value,0);
  const projected=items.reduce((sum,item)=>sum+item.plannedValue,0);
  const executed=items.reduce((sum,item)=>sum+financialExecuted(item),0);
  const filtered=items.filter(item=>{
@@ -106,6 +137,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    <div><small>Pendente</small><strong>{money.format(Math.max(0,projected-executed))}</strong></div>
    <div><small>Conclusão</small><strong>{projected>0?(executed/projected*100).toLocaleString('pt-BR',{maximumFractionDigits:1}):'0'}%</strong><progress className="ex-card-progress" max={100} value={projected>0?Math.min(100,executed/projected*100):0}/></div>
   </div>
+  <p role="status"><strong>Saldo de execução acumulado (todas as medições): {historyReady?money.format(signedTotal):'Carregando histórico…'}</strong><small style={{display:'block'}}>Execução física menos valor financeiramente medido. Negativo: medido acima do executado; positivo: executado ainda não medido. Não altera o saldo financeiro do contrato.</small></p>
   <div className="measurement-execution-overview__filters">
    <label>Buscar serviço ou apartamento<input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Ex.: 1102 ou esgoto"/></label>
    <label>Situação<select value={statusFilter} onChange={event=>setStatusFilter(event.target.value as 'all'|'pending'|'done')}><option value="all">Todos</option><option value="pending">Pendentes</option><option value="done">Concluídos</option></select></label>
@@ -117,6 +149,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    const value=group.lines.reduce((sum,item)=>sum+item.plannedValue,0);
    const executedValue=group.lines.reduce((sum,item)=>sum+financialExecuted(item),0);
    const pendingValue=value-executedValue;
+   const signedGroupBalance=[...new Set(group.lines.map(line=>line.targetKind+':'+line.targetId))].reduce((sum,key)=>sum+(signedByTarget.get(key)??0),0);
    const stage=group.lines[0] ? contractStages.get(group.lines[0].targetKind+':'+group.lines[0].targetId) : undefined;
    const physicalStage=group.lines[0]?.targetKind==='addendum'?physical.get(group.lines[0].targetId):undefined;
    const physicalTotal=physicalStage?.quantity && physicalStage.quantity>0 ? physicalStage.quantity : (stage?.contractedQuantity??0);
@@ -137,6 +170,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    return <button type="button" key={group.key} className={`measurement-execution-overview__service ${done>=planned?'is-done':'is-pending'}`} onClick={()=>{setSelected(group.key);setSelectedReferences([]);setEditing(null);setEntryMode('quantity');setQuantity('1');setError(null);setNotice(null)}} disabled={saving}>
     <small>{group.lines[0]?.originName} · {group.lines[0]?.unitKind==='hall'?'Halls / área comum':group.lines[0]?.unitKind==='apartamento'?'Apartamentos':'Unidades'}</small>
     <strong>{group.lines[0]?.description}</strong>
+    <small>Saldo acumulado de execução: {historyReady?money.format(signedGroupBalance):'Carregando…'}</small>
     <span className="ex-card-metrics">
      <span><small>Projetado</small><strong>{formatCardQuantity(planned,showPercent(group.lines))}</strong><small>{money.format(value)}</small></span>
      <span className="ex-card-done"><small>Executado</small><strong>{formatCardQuantity(done,showPercent(group.lines))}</strong><small>{money.format(executedValue)}</small></span>
