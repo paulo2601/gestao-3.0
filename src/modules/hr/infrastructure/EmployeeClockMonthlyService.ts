@@ -28,7 +28,7 @@ export async function loadClockMonthlyMarks(companyIds: string[], start: string,
   const batches = await Promise.all(uniqueIds.map(async companyId => {
     const { data, error } = await getSupabaseClient().rpc('employee_clock_monthly_report', {
       p_company_id: companyId, p_start: start, p_end: end
-    });
+    }) as { data: unknown; error: { message: string } | null };
     if (error) throw new Error('Não foi possível consultar as marcações GPS: ' + error.message);
     return (data ?? []) as ClockMonthlyEvent[];
   }));
