@@ -75,7 +75,7 @@ export class SupabaseAuthGateway implements AuthGateway {
   }
 
   async requestPasswordRecovery(email:string):Promise<void>{
-    const {error}=await getSupabaseClient().auth.resetPasswordForEmail(email,{redirectTo:'https://gestao-3-0.pauloroberto-87.workers.dev/'});
+    const {error}=await getSupabaseClient().auth.resetPasswordForEmail(email,{redirectTo:`${window.location.origin}/?recovery=1`});
     if(error)throw error;
   }
   async updatePassword(password:string):Promise<void>{
