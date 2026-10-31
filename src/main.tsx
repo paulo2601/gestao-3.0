@@ -89,5 +89,5 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     if (document.visibilityState === 'visible') void ensureLatestBuild();
   });
 
-  window.setInterval(() => { void ensureLatestBuild(); }, 5 * 60_000);
+  window.setInterval(() => { void ensureLatestBuild(); applyPendingBuild(); }, UPDATE_CHECK_MS);
 }
