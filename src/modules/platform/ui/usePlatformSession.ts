@@ -28,6 +28,21 @@ export interface PlatformSession {
 }
 
 const ACCESS_CACHE_VERSION = 'v1';
+const APP_OPEN_KEY = 'gestao-app-open-v1';
+async function requireLoginOnFreshOpen(authGateway:SupabaseAuthGateway):Promise<boolean>{
+  try{
+    if(window.sessionStorage.getItem(APP_OPEN_KEY)==='active')return false;
+    // Session storage survives reloads and backgrounding, but not a fresh app context.
+    // Do not globally revoke other devices' sessions.
+    await authGateway.signOutLocal();
+    window.sessionStorage.setItem(APP_OPEN_KEY,'active');
+    return true;
+  }catch{
+    // If storage is blocked, fail closed: do not silently unlock a persisted session.
+    await authGateway.signOutLocal();
+    return true;
+  }
+}
 function companyStorageKey(userId: string): string { return `gestao.activeCompanyId:${userId}`; }
 function accessStorageKey(userId: string): string { return `gestao.accessContexts:${ACCESS_CACHE_VERSION}:${userId}`; }
 function readStoredContexts(userId: string): readonly AccessContext[] {
@@ -96,7 +111,18 @@ export function usePlatformSession(): PlatformSession {
     setErrorMessage(null); setNoticeMessage(null); setStatus('ready');
   }, [accessRepository, authGateway]);
 
-  useEffect(() => { void hydrateAccess().catch(() => { setErrorMessage('Não foi possível carregar a sessão.'); setStatus('error'); }); }, [hydrateAccess]);
+  useEffect(() => {
+    let cancelled=false;
+    void (async()=>{
+      try{
+        const fresh=await requireLoginOnFreshOpen(authGateway);
+        if(cancelled)return;
+        if(fresh){setUser(null);setContexts([]);setActiveCompanyId(null);setStatus('anonymous');return;}
+        await hydrateAccess();
+      }catch{if(!cancelled){setErrorMessage('Não foi possível iniciar a sessão.');setStatus('error');}}
+    })();
+    return()=>{cancelled=true;};
+  }, [authGateway,hydrateAccess]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     setStatus('loading'); setErrorMessage(null); setNoticeMessage(null);
