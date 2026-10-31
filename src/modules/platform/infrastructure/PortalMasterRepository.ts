@@ -72,7 +72,7 @@ export async function recoverModuleAccessSession():Promise<void>{
 }
 
 export async function inviteCustomerOwner(tenantId:string,email:string):Promise<void>{
- const response: {data:unknown;error:Error|null}=await getSupabaseClient().functions.invoke<unknown>('platform-invite-customer',{body:{tenantId,email:email.trim().toLowerCase()}});
+ const response=await getSupabaseClient().functions.invoke<unknown>('platform-invite-customer',{body:{tenantId,email:email.trim().toLowerCase()}});
  if(response.error)throw new Error(response.error.message);
  const result:unknown=response.data;
  if(typeof result!=='object'||result===null)throw new Error('Resposta inválida do serviço de convite.');

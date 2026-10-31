@@ -81,6 +81,7 @@ export function usePlatformSession(): PlatformSession {
 
     const nextContexts = await accessRepository.listContextsForCurrentUser();
     const nextCompanies = flattenAuthorizedCompanies(nextContexts);
+    if (nextCompanies.length === 0 && window.location.hash.includes('type=recovery')) { setUser(currentUser); setStatus('anonymous'); return; }
     if (nextCompanies.length === 0) {
       clearStoredContexts(currentUser.id);
       await authGateway.signOut(); setUser(null); setContexts([]); setActiveCompanyId(null);

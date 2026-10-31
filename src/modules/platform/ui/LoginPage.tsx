@@ -3,6 +3,7 @@ import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
+import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 
 export interface LoginPageProps {
   loading: boolean;
@@ -20,6 +21,15 @@ export interface LoginPageProps {
 
 export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onBootstrapFirstOwner }: LoginPageProps) {
   const [setupMode, setSetupMode] = useState(false);
+  const [recoveryNotice,setRecoveryNotice]=useState('');
+  const [recoveryBusy,setRecoveryBusy]=useState(false);
+  async function requestRecovery(){
+    if(!email.trim()){setValidationMessage('Informe o e-mail antes de solicitar a recuperação.');return;}
+    setRecoveryBusy(true);setValidationMessage(null);setRecoveryNotice('');
+    try {const response=await getSupabaseClient().auth.resetPasswordForEmail(email.trim(),{redirectTo:'https://gestao-3-0.pauloroberto-87.workers.dev/'});if(response.error)throw new Error(response.error.message);setRecoveryNotice('Se o e-mail estiver cadastrado, você receberá um link para definir sua senha.');}
+    catch(e){setValidationMessage(e instanceof Error?e.message:'Não foi possível solicitar recuperação.');}
+    finally{setRecoveryBusy(false);}
+  }
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -78,10 +88,12 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onBo
             <Input label="E-mail" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
             <Input label="Senha" type="password" autoComplete={setupMode ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} required />
             {setupMode && <Input label="Confirmar senha" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />}
+            {recoveryNotice && <Feedback tone="success" title="Recuperação de acesso" message={recoveryNotice} />}
             {noticeMessage && <Feedback tone="success" title="Primeiro acesso" message={noticeMessage} />}
             {validationMessage && <Feedback tone="danger" title="Confira os dados" message={validationMessage} />}
             {errorMessage && <Feedback tone="danger" title={setupMode ? 'Não foi possível criar o acesso' : 'Não foi possível entrar'} message={errorMessage} />}
             <Button type="submit" size="lg" disabled={loading} loading={loading}>{setupMode ? 'Criar primeiro acesso' : 'Entrar'}</Button>
+            {!setupMode && <Button type="button" variant="tertiary" disabled={loading||recoveryBusy} onClick={()=>void requestRecovery()}>Definir ou recuperar senha</Button>}
             <Button type="button" variant="tertiary" disabled={loading} onClick={toggleSetupMode}>{setupMode ? 'Voltar para entrar' : 'Configurar primeiro acesso'}</Button>
           </form>
         </Card>
