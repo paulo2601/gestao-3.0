@@ -10,10 +10,10 @@ export interface DailyClockSummary {
   incomplete: boolean;
   receipts: string[];
 }
-const formatter = new Intl.DateTimeFormat('en-CA', {
+const formatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
 });
-const formatDate = (timestamp: string) => formatter.format(new Date(timestamp));
+const formatDate = (timestamp: string) => { const parts = formatter.formatToParts(new Date(timestamp)); const get = (type: string) => parts.find(part => part.type === type)?.value ?? ''; return [get('year'), get('month'), get('day')].join('-'); };
 const minutes = (from: string, to: string) => Math.max(0, Math.round((Date.parse(to) - Date.parse(from)) / 60000));
 
 /** Consolidates raw server events without generating absences or modifying payroll. */
