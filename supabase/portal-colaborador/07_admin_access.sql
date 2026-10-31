@@ -20,7 +20,7 @@ begin
  ) then raise exception 'Sem permissão para administrar acessos'; end if;
  if not exists (select 1 from public.employment_contracts ec where ec.id=p_employment_contract_id and ec.tenant_id=p_tenant_id and ec.company_id=p_company_id and ec.status='active')
  then raise exception 'Contrato não ativo nesta empresa'; end if;
- if not exists (select 1 from public.employee_clock_worksites w where w.work_id=p_work_id and w.tenant_id=p_tenant_id and w.company_id=p_company_id and w.enabled)
+ if not exists (select 1 from public.employee_clock_worksites w where w.work_id=p_work_id and w.tenant_id=p_tenant_id and w.company_id=p_company_id and (w.enabled or p_enabled = false))
  then raise exception 'Obra não habilitada para ponto GPS'; end if;
  if not exists (select 1 from auth.users u where u.id=p_user_id)
  then raise exception 'Conta de autenticação inexistente'; end if;
