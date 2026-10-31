@@ -24,6 +24,7 @@ import { calculateInss, calculateIrrf, fixedTotals as compensationFixedTotals } 
 import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
 import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartMatches } from './hrWorkspaceHelpers';
 import './hr-workspace.css';
+import './hr-people-modern.css';
 
 type HrWorkspaceTab = 'dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
 type CompanyData = { company: CompanySummary; operations: HrOperationalSnapshot; overview: Awaited<ReturnType<ReturnType<typeof getHrBudgetRepository>['getOverview']>>; };
