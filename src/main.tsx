@@ -28,11 +28,6 @@ const UPDATE_CHECK_MS = 60_000;
 let pendingBuild: string | null = null;
 let updateInProgress = false;
 let updateApproved = false;
-function editingInProgress(): boolean {
-  const active = document.activeElement;
-  if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || (active instanceof HTMLElement && active.isContentEditable)) return true;
-  return Array.from(document.querySelectorAll('form')).some(form => Array.from(form.elements).some(element => element instanceof HTMLInputElement && element.value !== element.defaultValue || element instanceof HTMLTextAreaElement && element.value !== element.defaultValue));
-}
 function applyPendingBuild(): void {
   if (!pendingBuild || !updateApproved || updateInProgress) return;
   const lastAttempt = sessionStorage.getItem(UPDATE_ATTEMPT_KEY);
