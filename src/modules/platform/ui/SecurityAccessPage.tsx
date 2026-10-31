@@ -19,13 +19,13 @@ export function SecurityAccessPage(){
  useEffect(()=>{void refresh();},[]);
  async function register(){
   setBusy(true);setMessage('');setError('');
-  try{await gateway.registerPasskey();await refresh();setMessage('Biometria cadastrada. Saia e use Entrar com biometria / passkey para testar.');}
+  try{await gateway.registerPasskey();try{window.localStorage.setItem('gestao.biometric.unlock','enabled');}catch{/* preferência local indisponível */}await refresh();setMessage('Biometria cadastrada. Saia e use Entrar com biometria / passkey para testar.');}
   catch(e){setError(e instanceof Error?e.message:'Não foi possível cadastrar a biometria.');}
   finally{setBusy(false);}
  }
  async function remove(id:string){
   setBusy(true);setMessage('');setError('');
-  try{await gateway.deletePasskey(id);setPendingRemoval(null);await refresh();setMessage('Credencial removida.');}
+  try{await gateway.deletePasskey(id);setPendingRemoval(null);await refresh();if((await gateway.listPasskeys()).length===0){try{window.localStorage.removeItem('gestao.biometric.unlock');}catch{/* preferência local indisponível */}}setMessage('Credencial removida.');}
   catch(e){setError(e instanceof Error?e.message:'Não foi possível remover a credencial.');}
   finally{setBusy(false);}
  }
