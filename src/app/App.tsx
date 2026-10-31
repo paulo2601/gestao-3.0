@@ -64,23 +64,26 @@ function EmployeePortalEntry() {
     let mounted = true;
     const client = getSupabaseClient();
     const check = async () => {
-      const { data: auth } = await client.auth.getUser();
+      const { data: auth, error: authError } = await client.auth.getUser();
       if (!mounted) return;
-      if (!auth.user) { setStatus('anonymous'); return; }
+      if (authError || !auth.user) { setStatus('anonymous'); return; }
       const { data, error: accessError } = await client.rpc('employee_clock_can_access');
       if (!mounted) return;
       setStatus(!accessError && data === true ? 'authorized' : 'denied');
     };
     void check();
-    const { data: listener } = client.auth.onAuthStateChange(() => { void check(); });
+    const { data: listener } = client.auth.onAuthStateChange(() => { setStatus('loading'); void check(); });
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, []);
   const signIn = async () => {
     if (busy) return;
     setBusy(true); setError('');
-    const { error: signInError } = await getSupabaseClient().auth.signInWithPassword({ email, password });
-    if (signInError) setError('Não foi possível autenticar. Confira seu e-mail e senha.');
-    setBusy(false);
+    try {
+      const { error: signInError } = await getSupabaseClient().auth.signInWithPassword({ email: email.trim(), password });
+      if (signInError) setError('Não foi possível autenticar. Confira seu e-mail e senha.');
+      else setPassword('');
+    } catch { setError('Falha de conexão. Tente novamente.'); }
+    finally { setBusy(false); }
   };
   if (status === 'loading') return <main className="employee-clock-portal">Verificando acesso…</main>;
   if (status === 'authorized') return <EmployeeClockPortal/>;
