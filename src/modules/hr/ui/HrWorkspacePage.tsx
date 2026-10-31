@@ -117,34 +117,6 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
   {loading&&<Card><p className="ui-muted">Carregando dados do RH...</p></Card>}{errorMessage&&<Card><Feedback tone="danger" title="Erro ao carregar RH" message={errorMessage}/></Card>}
   {!loading&&!errorMessage&&tab==='dashboard'&&<div className="hr-workspace__content hr-workspace__dashboard"><div className="hr-dashboard__headline"><div><span>Visão geral da equipe</span><strong>{activeEmployees.length} colaboradores ativos</strong><small>{works} obra(s) com equipe alocada</small></div><div><span>Folha base mensal</span><strong>{money.format(monthlyPayroll)}</strong><small>Líquido: {money.format(estimatedNetPayroll)} · Acréscimos: {money.format(monthlyFixedEarnings)} · Descontos fixos: {money.format(monthlyFixedDeductions)} · INSS: {money.format(estimatedInss)} · IRRF: {money.format(estimatedIrrf)}</small></div></div><div className="hr-dashboard__grid"><Card title="Equipe"><div className="hr-dashboard__metrics"><div><strong>{employees.length}</strong><span>Total cadastrado</span></div><div><strong>{activeEmployees.length}</strong><span>Ativos</span></div><div><strong>{employees.length-activeEmployees.length}</strong><span>Desligados</span></div></div></Card><Card title="Operação"><div className="hr-dashboard__metrics"><div><strong>{works}</strong><span>Obras com equipe</span></div><div><strong>{bankHours}</strong><span>Banco de horas</span></div><div><strong>{visibleCompanies.length}</strong><span>Empresas na visão</span></div></div></Card></div><Card title="Distribuição da equipe por obra"><div className="hr-dashboard__works">{Array.from(new Map(activeEmployees.filter(item=>item.costCenterName).map(item=>[item.costCenterName!,0])).keys()).map(name=><div key={name}><span>{name}</span><strong>{activeEmployees.filter(item=>item.costCenterName===name).length}</strong></div>)}{works===0&&<span className="ui-muted">Nenhuma equipe alocada em obra no momento.</span>}</div></Card></div>}
   {!loading&&!errorMessage&&tab==='colaboradores'&&<div className="hr-workspace__content hr-people-modern">
-    <style>{`
-      .hr-people-modern .hr-people-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
-      .hr-people-modern .hr-people-heading h2{font-size:1.45rem;font-weight:800;margin:0}
-      .hr-people-modern .hr-people-heading p{margin:4px 0 0;color:var(--text-muted,#64748b)}
-      .hr-people-modern .hr-people-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
-      .hr-people-modern .hr-people-stat{border:1px solid var(--border,#dce4ef);border-radius:12px;padding:16px;background:var(--surface,#fff)}
-      .hr-people-modern .hr-people-stat span{display:block;color:var(--text-muted,#64748b);font-size:.85rem}
-      .hr-people-modern .hr-people-stat strong{display:block;font-size:1.6rem;margin-top:5px}
-      .hr-people-modern .hr-people-filters{display:grid;grid-template-columns:minmax(240px,2fr) minmax(160px,1fr);gap:14px;margin-bottom:18px}
-      .hr-people-modern .hr-people-table-wrap{overflow-x:auto;border:1px solid var(--border,#dce4ef);border-radius:12px}
-      .hr-people-modern .hr-people-table{width:100%;border-collapse:collapse;text-align:left;min-width:790px}
-      .hr-people-modern .hr-people-table thead{background:#14243e;color:#fff}
-      .hr-people-modern .hr-people-table th{padding:14px 12px;font-size:.84rem;font-weight:700;white-space:nowrap}
-      .hr-people-modern .hr-people-table td{padding:12px;border-bottom:1px solid var(--border,#e2e8f0);vertical-align:middle}
-      .hr-people-modern .hr-people-table tbody tr:last-child td{border-bottom:0}
-      .hr-people-modern .hr-people-table tbody tr:hover{background:rgba(65,125,225,.055)}
-      .hr-people-modern .hr-people-person{display:flex;align-items:center;gap:10px}
-      .hr-people-modern .hr-people-avatar{width:36px;height:36px;flex-shrink:0;border-radius:50%;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center;font-weight:800;font-size:.8rem}
-      .hr-people-modern .hr-people-name{font-weight:750}
-      .hr-people-modern .hr-people-sub{display:block;color:var(--text-muted,#64748b);font-size:.78rem;margin-top:3px}
-      .hr-people-modern .hr-people-status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 10px;font-size:.8rem;font-weight:700;background:#dcfce7;color:#166534}
-      .hr-people-modern .hr-people-status.off{background:#e2e8f0;color:#475569}
-      .hr-people-modern .hr-people-dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-      .hr-people-modern .hr-people-actions{display:flex;gap:7px;justify-content:flex-end;white-space:nowrap}
-      .hr-people-modern .hr-people-footer{color:var(--text-muted,#64748b);font-size:.82rem;margin-top:12px}
-      @media(max-width:850px){.hr-people-modern .hr-people-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hr-people-modern .hr-people-filters{grid-template-columns:1fr}}
-      @media(max-width:480px){.hr-people-modern .hr-people-stats{gap:8px}.hr-people-modern .hr-people-stat{padding:11px}.hr-people-modern .hr-people-stat strong{font-size:1.3rem}}
-    `}</style>
     <div className="hr-people-heading"><div><h2>Colaboradores</h2><p>Cadastro, gestão e vínculos dos colaboradores</p></div><Button size="sm" onClick={()=>openNewEmployee()}>+ Novo colaborador</Button></div>
     <div className="hr-people-stats">
       <div className="hr-people-stat"><span>Colaboradores ativos</span><strong>{activeEmployees.length}</strong></div>
