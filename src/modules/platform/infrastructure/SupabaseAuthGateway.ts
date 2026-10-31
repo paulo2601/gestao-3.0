@@ -104,6 +104,10 @@ export class SupabaseAuthGateway implements AuthGateway {
     const {error}=await getSupabaseClient().auth.passkey.delete({passkeyId});
     if(error)throw error;
   }
+  async refreshSessionError():Promise<Error|null>{
+    const {error}=await getSupabaseClient().auth.refreshSession();
+    return error;
+  }
   async signOutLocal():Promise<void>{
     const {error}=await getSupabaseClient().auth.signOut({scope:'local'});
     if(error)throw error;
