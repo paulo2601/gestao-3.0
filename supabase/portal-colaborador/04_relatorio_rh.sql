@@ -22,12 +22,13 @@ begin
   select 1 from public.tenant_memberships tm
   join public.companies c on c.tenant_id = tm.tenant_id
   where c.id = p_company_id and tm.user_id = (select auth.uid())
-    and tm.status = 'active' and tm.role in ('tenant_owner','tenant_admin')
+    and tm.status = 'active' and tm.role = 'tenant_owner'
  ) then raise exception 'Sem autorização para o relatório'; end if;
  return query
  select e.employment_contract_id,e.work_id,e.event_type,e.occurred_at,e.receipt_code
  from public.employee_clock_events e
  where e.company_id=p_company_id
+   and exists (select 1 from public.employment_contracts ec where ec.id=e.employment_contract_id and ec.company_id=e.company_id and ec.tenant_id=e.tenant_id)
    and (e.occurred_at at time zone 'America/Sao_Paulo')::date between p_start and p_end
  order by e.employment_contract_id,e.occurred_at;
 end;
