@@ -12,7 +12,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
   const [contractId, setContractId] = useState('');
   const [userId, setUserId] = useState('');
   const [workId, setWorkId] = useState('');
-  const [enabled, setEnabled] = useState(false);
+  const [enabled, setEnabled] = useState(true);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [editingExisting, setEditingExisting] = useState(false);
@@ -21,7 +21,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
   const eligible = employees.filter(item => item.companyId === companyId && (item.contractStatus === 'active' || access.some(a => a.employment_contract_id === item.employmentContractId)));
   useEffect(() => {
     let active = true;
-    setAccess([]); setSites([]); setContractId(''); setWorkId(''); setUserId(''); setEditingExisting(false); setOriginalAccess(null); setFeedback('');
+    setAccess([]); setSites([]); setContractId(''); setWorkId(''); setUserId(''); setEnabled(true); setEditingExisting(false); setOriginalAccess(null); setFeedback('');
     if (!companyId) return;
     void Promise.all([listClockAccess(companyId), listClockWorksites(companyId)]).then(([a, w]) => {
       if (active) { setAccess(a); setSites(w); }
@@ -41,7 +41,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
       await saveClockAccess({ tenant_id: company.tenantId, company_id: companyId, employment_contract_id: contractId,
         user_id: userId, work_id: workId, enabled });
       setAccess(await listClockAccess(companyId));
-      setEditingExisting(false); setOriginalAccess(null);
+      setEditingExisting(false); setOriginalAccess(null); setEnabled(true); setContractId(''); setUserId(''); setWorkId('');
       setFeedback('Vínculo de ponto atualizado.');
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Não foi possível atualizar o vínculo.');
@@ -52,7 +52,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
       <div className="hr-workspace__form">
         <label>Empresa <select value={companyId} onChange={event => setCompanyId(event.target.value)}>{companies.map(item =>
           <option key={item.id} value={item.id}>{item.tradeName || item.legalName}</option>)}</select></label>
-        <label>Colaborador ativo <select value={contractId} onChange={event => setContractId(event.target.value)}><option value="">Selecione</option>
+        <label>Colaborador <select value={contractId} onChange={event => setContractId(event.target.value)}><option value="">Selecione</option>
           {eligible.map(item => <option key={item.employmentContractId} value={item.employmentContractId}>{item.fullName}{item.contractStatus !== 'active' ? ' (desligado — apenas revogação)' : ''}</option>)}</select></label>
         <label>Conta de login (ID de autenticação) <input value={userId} onChange={event => setUserId(event.target.value)} placeholder="Identificador UUID da conta" /></label>
         <label>Obra autorizada <select value={workId} onChange={event => setWorkId(event.target.value)}><option value="">Selecione</option>
