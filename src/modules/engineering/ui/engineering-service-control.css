@@ -97,3 +97,5 @@
 .service-control__table--screen td{vertical-align:middle}
 .service-control__quick-actions{gap:8px}
 @media(max-width:760px){.service-control__progress{min-width:64px}.service-control__progress-track{height:5px}}
+
+.service-control__entry-actions{display:flex;gap:8px;flex-wrap:wrap}
