@@ -32,9 +32,20 @@ const APP_OPEN_KEY = 'gestao-app-open-v1';
 async function requireLoginOnFreshOpen(authGateway:SupabaseAuthGateway):Promise<boolean>{
   try{
     if(window.sessionStorage.getItem(APP_OPEN_KEY)==='active')return false;
-    // Session storage survives reloads and backgrounding, but not a fresh app context.
-    // Do not globally revoke other devices' sessions.
-    await authGateway.signOutLocal();
+    // Fresh app context: require an explicit identity check before showing data.
+    // Preserve the existing session for passkey users; closing the app is not "Sair".
+    // Existing passkeys may predate the local preference flag.
+    let preferPasskey=window.localStorage.getItem('gestao.biometric.unlock')==='enabled';
+    if(!preferPasskey){
+      try{
+        const current=await authGateway.getCurrentUser();
+        if(current && (await authGateway.listPasskeys()).length>0){
+          window.localStorage.setItem('gestao.biometric.unlock','enabled');
+          preferPasskey=true;
+        }
+      }catch{/* unavailable offline or no authenticated session */}
+    }
+    if(!preferPasskey)await authGateway.signOutLocal();
     window.sessionStorage.setItem(APP_OPEN_KEY,'active');
     return true;
   }catch{
@@ -163,7 +174,7 @@ export function usePlatformSession(): PlatformSession {
 
   const signOut = useCallback(async () => {
     if (user) clearStoredContexts(user.id);
-    await authGateway.signOut(); setUser(null); setContexts([]); setActiveCompanyId(null); setErrorMessage(null); setNoticeMessage(null); setStatus('anonymous');
+    await authGateway.signOut(); try{window.localStorage.removeItem('gestao.biometric.unlock');}catch{/* preferência indisponível */} setUser(null); setContexts([]); setActiveCompanyId(null); setErrorMessage(null); setNoticeMessage(null); setStatus('anonymous');
   }, [authGateway, user]);
 
   const companies = flattenAuthorizedCompanies(contexts);
