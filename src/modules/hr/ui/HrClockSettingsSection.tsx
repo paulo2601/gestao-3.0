@@ -14,6 +14,7 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
   const [radius, setRadius] = useState('100');
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [feedback, setFeedback] = useState('');
   const selectedCompany = companies.find(company => company.id === companyId);
   useEffect(() => {
@@ -30,8 +31,22 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
     setWorkId(site.work_id); setLatitude(String(site.latitude)); setLongitude(String(site.longitude));
     setRadius(String(site.radius_m)); setEnabled(site.enabled); setFeedback('');
   };
+  const capturePosition = () => {
+    if (!navigator.geolocation) { setFeedback('Este dispositivo não disponibiliza GPS.'); return; }
+    setLocating(true); setFeedback('');
+    navigator.geolocation.getCurrentPosition(position => {
+      setLatitude(position.coords.latitude.toFixed(7));
+      setLongitude(position.coords.longitude.toFixed(7));
+      setLocating(false);
+      setFeedback(`Localização capturada com precisão aproximada de ${Math.round(position.coords.accuracy)} m. Confira o ponto antes de salvar.`);
+    }, error => {
+      setLocating(false);
+      setFeedback(error.code === 1 ? 'Autorize o acesso à localização.' : 'Não foi possível obter a localização. Tente novamente.');
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+  };
   const save = async () => {
     if (!selectedCompany || !works.some(work => work.id === workId)) { setFeedback('Selecione uma obra cadastrada.'); return; }
+    if (!latitude.trim() || !longitude.trim() || !radius.trim()) { setFeedback('Preencha latitude, longitude e raio.'); return; }
     setBusy(true); setFeedback('');
     try {
       await saveClockWorksite({
@@ -51,6 +66,8 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
         <label>Obra cadastrada <select value={workId} onChange={event => setWorkId(event.target.value)}><option value="">Selecione uma obra</option>{works.map(work => <option key={work.id} value={work.id}>{work.name}</option>)}</select></label>
         <label>Latitude <input inputMode="decimal" value={latitude} onChange={event => setLatitude(event.target.value)} placeholder="-22.000000" /></label>
         <label>Longitude <input inputMode="decimal" value={longitude} onChange={event => setLongitude(event.target.value)} placeholder="-47.000000" /></label>
+        <Button variant="secondary" disabled={locating || busy} onClick={capturePosition}>{locating ? 'Obtendo GPS…' : 'Usar minha localização atual'}</Button>
+        <p>Use este botão somente quando estiver fisicamente no ponto de referência da obra. A localização capturada precisa ser conferida pelo administrador.</p>
         <label>Raio permitido (metros) <input type="number" min="20" max="2000" value={radius} onChange={event => setRadius(event.target.value)} /></label>
         <label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Habilitar marcação nesta obra</label>
         <Button disabled={busy || !companyId} onClick={() => void save()}>{busy ? 'Salvando…' : 'Salvar perímetro GPS'}</Button>
