@@ -1,3 +1,4 @@
+import { UpdateNotice } from './UpdateNotice';
 import { BrowserRouter } from 'react-router-dom';
 import { useState } from 'react';
 import { SupabaseAuthGateway } from '../modules/platform/infrastructure/SupabaseAuthGateway';
@@ -76,10 +77,10 @@ export function App() {
   }
 
   return (
-    <AppErrorBoundary>
+    <><UpdateNotice/><AppErrorBoundary>
       <BrowserRouter>
         <AppShell session={session} />
       </BrowserRouter>
-    </AppErrorBoundary>
+    </AppErrorBoundary></>
   );
 }
