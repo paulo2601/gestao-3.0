@@ -145,7 +145,7 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
       @media(max-width:850px){.hr-people-modern .hr-people-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hr-people-modern .hr-people-filters{grid-template-columns:1fr}}
       @media(max-width:480px){.hr-people-modern .hr-people-stats{gap:8px}.hr-people-modern .hr-people-stat{padding:11px}.hr-people-modern .hr-people-stat strong{font-size:1.3rem}}
     `}</style>
-    <div className="hr-people-heading"><div><h2>Colaboradores</h2><p>Cadastro, gestão e vínculos dos colaboradores</p></div><Button size="sm" onClick={()=>{setCreatingEmployee(true);setNewEmployeeDraft(null);}}>+ Novo colaborador</Button></div>
+    <div className="hr-people-heading"><div><h2>Colaboradores</h2><p>Cadastro, gestão e vínculos dos colaboradores</p></div><Button size="sm" onClick={()=>openNewEmployee()}>+ Novo colaborador</Button></div>
     <div className="hr-people-stats">
       <div className="hr-people-stat"><span>Colaboradores ativos</span><strong>{activeEmployees.length}</strong></div>
       <div className="hr-people-stat"><span>Desligados</span><strong>{employees.length-activeEmployees.length}</strong></div>
