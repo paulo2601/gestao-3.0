@@ -132,10 +132,15 @@ export function usePlatformSession(): PlatformSession {
 
   const signInWithPasskey = useCallback(async () => {
     setErrorMessage(null);setNoticeMessage(null);
-    await authGateway.signInWithPasskey();
-    setStatus('loading');
-    try { await hydrateAccess(); }
-    catch { setErrorMessage('Não foi possível carregar as empresas autorizadas.');setStatus('error'); }
+    try {
+      await authGateway.signInWithPasskey();
+      setStatus('loading');
+      await hydrateAccess();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível entrar com biometria.');
+      setStatus('anonymous');
+      throw error;
+    }
   }, [authGateway, hydrateAccess]);
 
   const bootstrapFirstOwner = useCallback(async (input: { email: string; password: string; bootstrapCode: string; tenantName: string; companyName: string; }) => {

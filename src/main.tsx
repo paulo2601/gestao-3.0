@@ -21,6 +21,24 @@ createRoot(root).render(
 declare const __BUILD_VERSION__: string;
 
 const VERSION_KEY = 'gestao-build-version';
+const UPDATE_ATTEMPT_KEY = 'gestao-update-attempt';
+let pendingBuild: string | null = null;
+let updateInProgress = false;
+function editingInProgress(): boolean {
+  const active = document.activeElement;
+  if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || (active instanceof HTMLElement && active.isContentEditable)) return true;
+  return Array.from(document.querySelectorAll('form')).some(form => Array.from(form.elements).some(element => element instanceof HTMLInputElement && element.value !== element.defaultValue || element instanceof HTMLTextAreaElement && element.value !== element.defaultValue));
+}
+function applyPendingBuild(): void {
+  if (!pendingBuild || updateInProgress || editingInProgress()) return;
+  const lastAttempt = sessionStorage.getItem(UPDATE_ATTEMPT_KEY);
+  if (lastAttempt === pendingBuild) return; // Avoid an endless reload when CDN still serves old HTML.
+  updateInProgress = true;
+  sessionStorage.setItem(UPDATE_ATTEMPT_KEY, pendingBuild);
+  window.location.reload();
+}
+document.addEventListener('focusout', () => { window.setTimeout(applyPendingBuild, 500); });
+window.addEventListener('online', applyPendingBuild);
 
 async function ensureLatestBuild(): Promise<void> {
   if (!import.meta.env.PROD || document.visibilityState !== 'visible') return;
@@ -33,15 +51,11 @@ async function ensureLatestBuild(): Promise<void> {
     const payload = await response.json() as { version?: string };
     if (!payload.version) return;
     localStorage.setItem(VERSION_KEY, payload.version);
+    if (payload.version === __BUILD_VERSION__) { sessionStorage.removeItem(UPDATE_ATTEMPT_KEY); pendingBuild = null; return; }
     if (payload.version !== __BUILD_VERSION__) {
-      // Update automatically when the page is not being edited. Avoid losing unsaved forms.
-      const active = document.activeElement;
-      const editing = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || (active instanceof HTMLElement && active.isContentEditable);
-      if (!editing) {
-        window.location.reload();
-      } else {
-        window.dispatchEvent(new CustomEvent('gestao-update-available', { detail: { version: payload.version } }));
-      }
+      pendingBuild = payload.version;
+      window.dispatchEvent(new CustomEvent('gestao-update-available', { detail: { version: payload.version } }));
+      applyPendingBuild();
     }
   } catch {
     // Sem rede, mantém a versão aberta e tenta novamente quando o app voltar a ficar ativo.
