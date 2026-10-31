@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CLOCK_LABELS, CLOCK_SEQUENCE, loadOwnClockEvents, registerClockPosition, requestClockPosition, type ClockEvent } from '../infrastructure/EmployeeClockService';
 import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 
-const saoPauloDate = (value: string) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
+const saoPauloDate = (value: string) => { const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(value)); const get = (type: string) => parts.find(part => part.type === type)?.value ?? ''; return [get('year'), get('month'), get('day')].join('-'); };
 const timeLabel = (value: string) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(value));
 
 export function EmployeeClockPortal() {
@@ -18,7 +18,7 @@ export function EmployeeClockPortal() {
   useEffect(() => { void refresh(); }, [refresh]);
   const today = saoPauloDate(new Date().toISOString());
   const marks = events.filter(item => saoPauloDate(item.occurred_at) === today).reverse();
-  const next = CLOCK_SEQUENCE[marks.length];
+  const next = CLOCK_SEQUENCE.find(kind => !marks.some(mark => mark.event_type === kind));
   const register = async () => {
     if (!next || busy) return;
     setBusy(true); setError(''); setMessage('');
@@ -39,9 +39,9 @@ export function EmployeeClockPortal() {
     <section className="employee-clock-portal__panel" aria-label="Marcações do dia">
       <h2>Marcações de hoje</h2>
       <p>Horários oficiais registrados pelo servidor. O GPS é solicitado apenas ao marcar o ponto.</p>
-      <ol>{CLOCK_SEQUENCE.map((kind, index) => <li key={kind}>
+      <ol>{CLOCK_SEQUENCE.map(kind => <li key={kind}>
         <span>{CLOCK_LABELS[kind]}</span>
-        <strong>{marks[index] ? timeLabel(marks[index].occurred_at) : '—'}</strong>
+        <strong>{marks.find(mark => mark.event_type === kind) ? timeLabel(marks.find(mark => mark.event_type === kind)!.occurred_at) : '—'}</strong>
       </li>)}</ol>
       <button type="button" disabled={!next || busy} onClick={() => void register()}>
         {busy ? 'Validando GPS e registrando...' : next ? `Registrar ${CLOCK_LABELS[next].toLowerCase()}` : 'Jornada registrada'}
