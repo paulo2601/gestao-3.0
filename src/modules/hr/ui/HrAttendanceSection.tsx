@@ -16,7 +16,7 @@ function safeFileName(value:string){return value.replace(/[\\/:*?"<>|]+/g,'-').r
 function escapeHtml(value:string){return value.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[char]??char));}
 // Feriados nacionais fixos e móveis (Páscoa calculada pelo algoritmo gregoriano).
 function nationalHolidayName(date:string):string|null {
- const [year,month,day]=date.split('-').map(Number);
+ const [yearText='0',monthText='0',dayText='0']=date.split('-');const year=Number(yearText),month=Number(monthText),day=Number(dayText);
  const fixed:Record<string,string>={'01-01':'Confraternização Universal','04-21':'Tiradentes','05-01':'Dia do Trabalho','09-07':'Independência do Brasil','10-12':'Nossa Senhora Aparecida','11-02':'Finados','11-15':'Proclamação da República','11-20':'Consciência Negra','12-25':'Natal'};
  const fixedName=fixed[`${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`];if(fixedName)return fixedName;
  const a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k+7)%7,m=Math.floor((a+11*h+22*l)/451),n=h+l-7*m+114;
