@@ -46,3 +46,24 @@ export async function saveLineExecutionsBatch(input:{measurementLineIds:string[]
  });
  if(response.error)throw response.error;
 }
+
+// Pagina cada lote para não perder lançamentos quando a consulta excede o limite do PostgREST.
+export async function loadCompleteHistory(scope:{tenantId:string;companyId:string},lineIds:string[]):Promise<LineExecution[]>{
+ const client=getSupabaseClient();
+ const all:LineExecution[]=[];
+ for(let offset=0;offset<lineIds.length;offset+=80){
+  const batch=lineIds.slice(offset,offset+80);
+  for(let page=0;;page++){
+   const start=page*500;
+   const {data,error}=await client.from('engineering_measurement_line_executions')
+    .select('id,measurement_line_id,execution_date,executed_quantity,notes')
+    .eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId)
+    .in('measurement_line_id',batch).order('id',{ascending:true}).range(start,start+499);
+   if(error)throw error;
+   const rows=data??[];
+   all.push(...rows.map(row=>({id:String(row.id),measurementLineId:String(row.measurement_line_id),executionDate:String(row.execution_date),executedQuantity:Number(row.executed_quantity),notes:row.notes as string|null})));
+   if(rows.length<500)break;
+  }
+ }
+ return all;
+}
