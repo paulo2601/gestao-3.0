@@ -22,11 +22,11 @@ export const CLOCK_SEQUENCE: ClockEventType[] = ['entry', 'lunch_out', 'lunch_in
 export async function registerClockPosition(position: GeolocationPosition): Promise<ClockReceipt> {
   const { latitude, longitude, accuracy } = position.coords;
   if (![latitude, longitude, accuracy].every(Number.isFinite)) throw new Error('Localização inválida.');
-  const { data, error } = await getSupabaseClient().rpc('employee_clock_register', {
+  const response = await getSupabaseClient().rpc('employee_clock_register', {
     p_latitude: latitude, p_longitude: longitude, p_accuracy_m: accuracy
   });
-  if (error) throw new Error(error.message);
-  const receipt = (data as ClockReceipt[] | null)?.[0];
+  if (response.error) throw new Error(response.error.message);
+  const receipt = (response.data as ClockReceipt[] | null)?.[0];
   if (!receipt?.event_id || !receipt.receipt_code) throw new Error('O servidor não confirmou a marcação.');
   return receipt;
 }
