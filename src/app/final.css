@@ -48,3 +48,14 @@
 .recovery-message--busy{background:#eff6ff;color:#1d4ed8}
 .recovery-message--error{background:#fef2f2;color:#991b1b}
 .recovery-login-link{display:block;padding:15px;text-align:center;border-radius:8px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700}
+
+.engineering-summary-dashboard__native-progress{display:block;width:100%;height:100%;appearance:none;border:0;background:transparent}
+.engineering-summary-dashboard__native-progress::-webkit-progress-bar{background:var(--ui-border,#d9e0ea);border-radius:inherit}
+.engineering-summary-dashboard__native-progress::-webkit-progress-value{background:var(--ui-success,#16a36a);border-radius:inherit}
+.engineering-summary-dashboard__native-progress::-moz-progress-bar{background:var(--ui-success,#16a36a);border-radius:inherit}
+.engineering-summary-dashboard__donut--svg{background:transparent!important;position:relative}
+.engineering-summary-dashboard__donut-chart{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.engineering-summary-dashboard__donut-track,.engineering-summary-dashboard__donut-fill{fill:none;stroke-width:14}
+.engineering-summary-dashboard__donut-track{stroke:var(--ui-border,#d9e0ea)}
+.engineering-summary-dashboard__donut-fill{stroke:var(--ui-success,#16a36a)}
+.engineering-summary-dashboard__donut--svg>div{position:relative;z-index:1}
