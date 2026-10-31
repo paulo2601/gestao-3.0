@@ -161,11 +161,11 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
     });
     if (result.error) throw result.error;
     if (input.email?.trim()) {
-      const { error: inviteError } = await this.client.functions.invoke<{ message: string }>('employee-clock-invite', {
+      const inviteResult: unknown = await this.client.functions.invoke('employee-clock-invite', {
         body: { employmentContractId },
       });
-      if (inviteError) {
-        console.error('Convite Ponto Digital não enviado:', String(inviteError));
+      if (typeof inviteResult === 'object' && inviteResult !== null && 'error' in inviteResult && inviteResult.error) {
+        console.error('Convite Ponto Digital não enviado:', String(inviteResult.error));
       }
     }
   }
