@@ -1,3 +1,6 @@
+import { EmployeeClockPortal } from '../modules/hr/ui/EmployeeClockPortal';
+import { getSupabaseClient } from '../shared/infrastructure/supabase/client';
+import { useEffect } from 'react';
 import { UpdateNotice } from './UpdateNotice';
 import { BrowserRouter } from 'react-router-dom';
 import { useState } from 'react';
@@ -51,8 +54,49 @@ function RecoveryPage(){
   </section>
  </main>;
 }
+function EmployeePortalEntry() {
+  const [status, setStatus] = useState<'loading'|'anonymous'|'authorized'|'denied'>('loading');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    const client = getSupabaseClient();
+    const check = async () => {
+      const { data: auth } = await client.auth.getUser();
+      if (!mounted) return;
+      if (!auth.user) { setStatus('anonymous'); return; }
+      const { data, error: accessError } = await client.rpc('employee_clock_can_access');
+      if (!mounted) return;
+      setStatus(!accessError && data === true ? 'authorized' : 'denied');
+    };
+    void check();
+    const { data: listener } = client.auth.onAuthStateChange(() => { void check(); });
+    return () => { mounted = false; listener.subscription.unsubscribe(); };
+  }, []);
+  const signIn = async () => {
+    if (busy) return;
+    setBusy(true); setError('');
+    const { error: signInError } = await getSupabaseClient().auth.signInWithPassword({ email, password });
+    if (signInError) setError('Não foi possível autenticar. Confira seu e-mail e senha.');
+    setBusy(false);
+  };
+  if (status === 'loading') return <main className="employee-clock-portal">Verificando acesso…</main>;
+  if (status === 'authorized') return <EmployeeClockPortal/>;
+  if (status === 'denied') return <main className="employee-clock-portal"><h1>Acesso não autorizado</h1><p>Solicite ao RH a liberação do Portal do Colaborador.</p><button type="button" onClick={() => void getSupabaseClient().auth.signOut()}>Sair</button></main>;
+  return <main className="employee-clock-portal"><h1>Portal do Colaborador</h1><p>Acesso exclusivo ao registro de ponto.</p>
+    <form onSubmit={event => { event.preventDefault(); void signIn(); }}>
+      <label htmlFor="clock-email">E-mail</label><input id="clock-email" type="email" autoComplete="username" required value={email} onChange={event => setEmail(event.target.value)}/>
+      <label htmlFor="clock-password">Senha</label><input id="clock-password" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)}/>
+      <button disabled={busy} type="submit">{busy ? 'Entrando…' : 'Entrar'}</button>
+      {error && <p role="alert">{error}</p>}
+    </form>
+  </main>;
+}
 export function App() {
   const session = usePlatformSession();
+  if (window.location.pathname === '/portal-colaborador') return <EmployeePortalEntry/>;
   if(new URLSearchParams(window.location.search).get('recovery')==='1'||window.location.hash.includes('type=recovery'))return <RecoveryPage/>;
 
   if (session.status === 'loading') {
