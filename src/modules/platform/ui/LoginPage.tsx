@@ -32,7 +32,7 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSi
     if(!biometricUnlock||unlockAttempted.current)return;
     unlockAttempted.current=true;
     void signInWithPasskey();
-  },[biometricUnlock, onSignInWithPasskey]);
+  },[biometricUnlock, onSignInWithPasskey, signInWithPasskey]);
   const [passkeyBusy,setPasskeyBusy]=useState(false);
   const [passkeyError,setPasskeyError]=useState('');
   async function signInWithPasskey(){
