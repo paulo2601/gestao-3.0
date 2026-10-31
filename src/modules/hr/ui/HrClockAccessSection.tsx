@@ -15,11 +15,12 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [editingExisting, setEditingExisting] = useState(false);
   const company = companies.find(item => item.id === companyId);
   const eligible = employees.filter(item => item.companyId === companyId && (item.contractStatus === 'active' || access.some(a => a.employment_contract_id === item.employmentContractId)));
   useEffect(() => {
     let active = true;
-    setAccess([]); setSites([]); setContractId(''); setWorkId(''); setUserId(''); setFeedback('');
+    setAccess([]); setSites([]); setContractId(''); setWorkId(''); setUserId(''); setEditingExisting(false); setFeedback('');
     if (!companyId) return;
     void Promise.all([listClockAccess(companyId), listClockWorksites(companyId)]).then(([a, w]) => {
       if (active) { setAccess(a); setSites(w); }
@@ -27,6 +28,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
     return () => { active = false; };
   }, [companyId]);
   const save = async () => {
+    if (!enabled && !editingExisting) { setFeedback('Para bloquear, selecione um vínculo existente em Editar.'); return; }
     if (!company || !eligible.some(item => item.employmentContractId === contractId) || (enabled && !eligible.some(item => item.employmentContractId === contractId && item.contractStatus === 'active')) || !sites.some(site => site.work_id === workId && (site.enabled || !enabled))) {
       setFeedback('Selecione um colaborador e uma obra válidos. Para habilitar, o contrato e a obra precisam estar ativos.'); return;
     }
@@ -38,6 +40,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
       await saveClockAccess({ tenant_id: company.tenantId, company_id: companyId, employment_contract_id: contractId,
         user_id: userId, work_id: workId, enabled });
       setAccess(await listClockAccess(companyId));
+      setEditingExisting(false);
       setFeedback('Vínculo de ponto atualizado.');
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Não foi possível atualizar o vínculo.');
@@ -63,7 +66,7 @@ export function HrClockAccessSection({ companies, employees }: { companies: read
         <strong>{employees.find(employee => employee.employmentContractId === item.employment_contract_id)?.fullName ?? item.employment_contract_id}</strong>
         {' · '}{item.enabled ? 'Habilitado' : 'Bloqueado'}
         {' '}<Button variant="secondary" onClick={() => {
-          setContractId(item.employment_contract_id); setUserId(item.user_id); setWorkId(item.work_id); setEnabled(item.enabled);
+          setContractId(item.employment_contract_id); setUserId(item.user_id); setWorkId(item.work_id); setEnabled(item.enabled); setEditingExisting(true);
         }}>Editar</Button>
       </li>)}</ul>}
     </Card>
