@@ -45,7 +45,7 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
   return <div className="hr-workspace__content">
     <Card title="Ponto por GPS — obras" description="Configuração restrita ao RH autorizado. O funcionário só marca ponto em obra habilitada.">
       <div className="hr-workspace__form">
-        <label>Empresa <select value={companyId} onChange={event => setCompanyId(event.target.value)}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
+        <label>Empresa <select value={companyId} onChange={event => setCompanyId(event.target.value)}>{companies.map(company => <option key={company.id} value={company.id}>{company.tradeName || company.legalName}</option>)}</select></label>
         <label>Identificador da obra <input value={workId} onChange={event => setWorkId(event.target.value)} placeholder="UUID da obra cadastrada" /></label>
         <label>Latitude <input inputMode="decimal" value={latitude} onChange={event => setLatitude(event.target.value)} placeholder="-22.000000" /></label>
         <label>Longitude <input inputMode="decimal" value={longitude} onChange={event => setLongitude(event.target.value)} placeholder="-47.000000" /></label>
