@@ -21,6 +21,7 @@ export interface PlatformSession {
   errorMessage: string | null;
   noticeMessage: string | null;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithPasskey: () => Promise<void>;
   bootstrapFirstOwner: (input: { email: string; password: string; bootstrapCode: string; tenantName: string; companyName: string; }) => Promise<void>;
   signOut: () => Promise<void>;
   selectCompany: (companyId: string) => void;
@@ -103,6 +104,14 @@ export function usePlatformSession(): PlatformSession {
     catch { setErrorMessage('E-mail ou senha inválidos, ou acesso indisponível.'); setStatus('anonymous'); }
   }, [authGateway, hydrateAccess]);
 
+  const signInWithPasskey = useCallback(async () => {
+    setErrorMessage(null);setNoticeMessage(null);
+    await authGateway.signInWithPasskey();
+    setStatus('loading');
+    try { await hydrateAccess(); }
+    catch { setErrorMessage('Não foi possível carregar as empresas autorizadas.');setStatus('error'); }
+  }, [authGateway, hydrateAccess]);
+
   const bootstrapFirstOwner = useCallback(async (input: { email: string; password: string; bootstrapCode: string; tenantName: string; companyName: string; }) => {
     setStatus('loading'); setErrorMessage(null); setNoticeMessage(null);
     try {
@@ -130,5 +139,5 @@ export function usePlatformSession(): PlatformSession {
     }
   }, [companies, user]);
 
-  return { status, user, contexts, companies, activeCompanyId, errorMessage, noticeMessage, signIn, bootstrapFirstOwner, signOut, selectCompany };
+  return { status, user, contexts, companies, activeCompanyId, errorMessage, noticeMessage, signIn, signInWithPasskey, bootstrapFirstOwner, signOut, selectCompany };
 }

@@ -10,6 +10,7 @@ export interface LoginPageProps {
   errorMessage: string | null;
   noticeMessage: string | null;
   onSignIn: (email: string, password: string) => Promise<void>;
+  onSignInWithPasskey: () => Promise<void>;
   onBootstrapFirstOwner: (input: {
     email: string;
     password: string;
@@ -19,13 +20,13 @@ export interface LoginPageProps {
   }) => Promise<void>;
 }
 
-export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onBootstrapFirstOwner }: LoginPageProps) {
+export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSignInWithPasskey, onBootstrapFirstOwner }: LoginPageProps) {
   const [setupMode, setSetupMode] = useState(false);
   const [passkeyBusy,setPasskeyBusy]=useState(false);
   const [passkeyError,setPasskeyError]=useState('');
   async function signInWithPasskey(){
     setPasskeyBusy(true);setPasskeyError('');
-    try{await new SupabaseAuthGateway().signInWithPasskey();}
+    try{await onSignInWithPasskey();}
     catch(e){setPasskeyError(e instanceof Error?e.message:'Não foi possível autenticar com biometria.');}
     finally{setPasskeyBusy(false);}
   }

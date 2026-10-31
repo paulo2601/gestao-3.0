@@ -70,6 +70,7 @@ export function App() {
         errorMessage={session.errorMessage}
         noticeMessage={session.noticeMessage}
         onSignIn={session.signIn}
+        onSignInWithPasskey={session.signInWithPasskey}
         onBootstrapFirstOwner={session.bootstrapFirstOwner}
       />
     );
