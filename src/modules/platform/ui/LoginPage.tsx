@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { Feedback } from '../../../shared/ui/Feedback';
@@ -22,11 +22,22 @@ export interface LoginPageProps {
 
 export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSignInWithPasskey, onBootstrapFirstOwner }: LoginPageProps) {
   const [setupMode, setSetupMode] = useState(false);
+  const [biometricUnlock,setBiometricUnlock]=useState(()=>{
+    try{return window.localStorage.getItem('gestao.biometric.unlock')==='enabled';}
+    catch{return false;}
+  });
+  const [passwordFallback,setPasswordFallback]=useState(false);
+  const unlockAttempted=useRef(false);
+  useEffect(()=>{
+    if(!biometricUnlock||unlockAttempted.current)return;
+    unlockAttempted.current=true;
+    void signInWithPasskey();
+  },[biometricUnlock]);
   const [passkeyBusy,setPasskeyBusy]=useState(false);
   const [passkeyError,setPasskeyError]=useState('');
   async function signInWithPasskey(){
     setPasskeyBusy(true);setPasskeyError('');
-    try{await onSignInWithPasskey();}
+    try{await onSignInWithPasskey();try{window.localStorage.setItem('gestao.biometric.unlock','enabled');}catch{/* browser storage unavailable */}}
     catch(e){setPasskeyError(e instanceof Error?e.message:'Não foi possível autenticar com biometria.');}
     finally{setPasskeyBusy(false);}
   }
@@ -78,7 +89,13 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSi
           <img className="auth-page__logo" src="/gestao-brand.svg" alt="Gestão — Sua gestão, mais simples" />
         </div>
         <Card>
-          <form className="ui-stack" onSubmit={handleSubmit}>
+          {biometricUnlock&&!passwordFallback&&!setupMode ? <div className="ui-stack">
+            <h2>Desbloquear Gestão</h2>
+            <p>Use a impressão digital ou o bloqueio seguro do aparelho para continuar.</p>
+            <Button type="button" size="lg" disabled={loading||passkeyBusy} loading={passkeyBusy} onClick={()=>void signInWithPasskey()}>Desbloquear com biometria</Button>
+            {passkeyError&&<Feedback tone="danger" title="Biometria" message={passkeyError}/>}
+            <Button type="button" variant="tertiary" onClick={()=>setPasswordFallback(true)}>Usar senha ou recuperar acesso</Button>
+          </div> : <form className="ui-stack" onSubmit={handleSubmit}>
             {setupMode && (
               <>
                 <Feedback
@@ -106,7 +123,7 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSi
             {passkeyError&&<Feedback tone="danger" title="Acesso biométrico" message={passkeyError}/>}
             {!setupMode && <Button type="button" variant="tertiary" disabled={loading||recoveryBusy} onClick={()=>void requestRecovery()}>Definir ou recuperar senha</Button>}
             <Button type="button" variant="tertiary" disabled={loading} onClick={toggleSetupMode}>{setupMode ? 'Voltar para entrar' : 'Configurar primeiro acesso'}</Button>
-          </form>
+          </form>}
         </Card>
       </div>
     </main>
