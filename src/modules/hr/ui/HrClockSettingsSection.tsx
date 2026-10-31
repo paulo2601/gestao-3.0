@@ -47,11 +47,17 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
   const save = async () => {
     if (!selectedCompany || !works.some(work => work.id === workId)) { setFeedback('Selecione uma obra cadastrada.'); return; }
     if (!latitude.trim() || !longitude.trim() || !radius.trim()) { setFeedback('Preencha latitude, longitude e raio.'); return; }
+    const lat = Number(latitude.replace(',', '.'));
+    const lon = Number(longitude.replace(',', '.'));
+    const meters = Number(radius);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lon) || lon < -180 || lon > 180 || !Number.isInteger(meters) || meters < 20 || meters > 2000) {
+      setFeedback('Informe coordenadas válidas e raio inteiro entre 20 e 2.000 metros.'); return;
+    }
     setBusy(true); setFeedback('');
     try {
       await saveClockWorksite({
         tenant_id: selectedCompany.tenantId, company_id: companyId, work_id: workId.trim(),
-        latitude: Number(latitude), longitude: Number(longitude), radius_m: Number(radius), enabled
+        latitude: lat, longitude: lon, radius_m: meters, enabled
       });
       setWorksites(await listClockWorksites(companyId));
       setFeedback('Perímetro salvo com sucesso.');
