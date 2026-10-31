@@ -27,6 +27,11 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSi
     catch{return false;}
   });
   const [passwordFallback,setPasswordFallback]=useState(false);
+  const [switchAccount,setSwitchAccount]=useState(false);
+  const [preferredEmail,setPreferredEmail]=useState(()=>{
+    try{return window.localStorage.getItem('gestao.biometric.preferredEmail')||'';}
+    catch{return '';}
+  });
   const unlockAttempted=useRef(false);
   useEffect(()=>{
     if(!biometricUnlock||unlockAttempted.current)return;
@@ -77,7 +82,11 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSi
       });
       return;
     }
-    void onSignIn(email.trim(), password);
+    void onSignIn(email.trim(), password).then(()=>{
+      // The password login is also the explicit account-selection fallback.
+      // Do not cache the password or expose other accounts' sessions.
+      if(email.trim()){try{window.localStorage.setItem('gestao.biometric.preferredEmail',email.trim());}catch{/* optional */}}
+    });
   }
 
   function toggleSetupMode() {
@@ -96,8 +105,15 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSi
           {biometricUnlock&&!passwordFallback&&!setupMode ? <div className="ui-stack">
             <h2>Desbloquear Gestão</h2>
             <p>Use a impressão digital ou o bloqueio seguro do aparelho para continuar.</p>
+            {preferredEmail&&!switchAccount&&<p>Conta preferida neste aparelho: <strong>{preferredEmail}</strong></p>}
             <Button type="button" size="lg" disabled={loading||passkeyBusy} loading={passkeyBusy} onClick={()=>void signInWithPasskey()}>Desbloquear com biometria</Button>
             {passkeyError&&<Feedback tone="danger" title="Biometria" message={passkeyError}/>}
+            <Button type="button" variant="tertiary" onClick={()=>{
+              setSwitchAccount(true);
+              setPasswordFallback(true);
+              setPreferredEmail('');
+              try{window.localStorage.removeItem('gestao.biometric.preferredEmail');}catch{/* optional */}
+            }}>Trocar de conta</Button>
             <Button type="button" variant="tertiary" onClick={()=>setPasswordFallback(true)}>Usar senha ou recuperar acesso</Button>
           </div> : <form className="ui-stack" onSubmit={handleSubmit}>
             {setupMode && (
