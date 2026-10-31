@@ -127,6 +127,7 @@ export function Dialog({
             >
               ← {backLabel}
             </Button>
+            <Button variant="secondary" size="sm" disabled={loading} onClick={() => { if (window.confirm('Atualizar esta tela? Alterações não salvas poderão ser perdidas.')) window.location.reload(); }}>↻ Atualizar</Button>
             <div className="ui-dialog__heading">
               <h2 id={titleId}>{title}</h2>
               {description && <p id={descriptionId}>{description}</p>}
