@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
-import { listClockWorksites, saveClockWorksite, type ClockWorksite } from '../infrastructure/EmployeeClockAdminService';
+import { listClockWorks, listClockWorksites, saveClockWorksite, type ClockWorkOption, type ClockWorksite } from '../infrastructure/EmployeeClockAdminService';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 
 export function HrClockSettingsSection({ companies }: { companies: readonly CompanySummary[] }) {
   const [companyId, setCompanyId] = useState(companies[0]?.id ?? '');
   const [worksites, setWorksites] = useState<ClockWorksite[]>([]);
+  const [works, setWorks] = useState<ClockWorkOption[]>([]);
   const [workId, setWorkId] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
@@ -17,8 +18,9 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
   const selectedCompany = companies.find(company => company.id === companyId);
   useEffect(() => {
     let active = true;
-    setWorksites([]);
+    setWorksites([]); setWorks([]); setWorkId(''); setFeedback('');
     if (!companyId) return;
+    void listClockWorks(companyId).then(items => { if (active) setWorks(items); }).catch(error => { if (active) setFeedback(error instanceof Error ? error.message : 'Erro ao carregar cadastro de obras.'); });
     void listClockWorksites(companyId).then(items => {
       if (active) setWorksites(items);
     }).catch(error => { if (active) setFeedback(error instanceof Error ? error.message : 'Erro ao carregar obras.'); });
@@ -29,7 +31,7 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
     setRadius(String(site.radius_m)); setEnabled(site.enabled); setFeedback('');
   };
   const save = async () => {
-    if (!selectedCompany || !workId.trim()) { setFeedback('Informe o identificador da obra.'); return; }
+    if (!selectedCompany || !works.some(work => work.id === workId)) { setFeedback('Selecione uma obra cadastrada.'); return; }
     setBusy(true); setFeedback('');
     try {
       await saveClockWorksite({
@@ -46,7 +48,7 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
     <Card title="Ponto por GPS — obras" description="Configuração restrita ao RH autorizado. O funcionário só marca ponto em obra habilitada.">
       <div className="hr-workspace__form">
         <label>Empresa <select value={companyId} onChange={event => setCompanyId(event.target.value)}>{companies.map(company => <option key={company.id} value={company.id}>{company.tradeName || company.legalName}</option>)}</select></label>
-        <label>Identificador da obra <input value={workId} onChange={event => setWorkId(event.target.value)} placeholder="UUID da obra cadastrada" /></label>
+        <label>Obra cadastrada <select value={workId} onChange={event => setWorkId(event.target.value)}><option value="">Selecione uma obra</option>{works.map(work => <option key={work.id} value={work.id}>{work.name}</option>)}</select></label>
         <label>Latitude <input inputMode="decimal" value={latitude} onChange={event => setLatitude(event.target.value)} placeholder="-22.000000" /></label>
         <label>Longitude <input inputMode="decimal" value={longitude} onChange={event => setLongitude(event.target.value)} placeholder="-47.000000" /></label>
         <label>Raio permitido (metros) <input type="number" min="20" max="2000" value={radius} onChange={event => setRadius(event.target.value)} /></label>
@@ -58,7 +60,7 @@ export function HrClockSettingsSection({ companies }: { companies: readonly Comp
     <Card title="Obras configuradas">
       {worksites.length === 0 ? <p>Nenhum perímetro cadastrado nesta empresa.</p> :
         <ul>{worksites.map(site => <li key={site.id}>
-          <strong>{site.work_id}</strong> · {site.radius_m} m · {site.enabled ? 'Habilitada' : 'Desabilitada'}
+          <strong>{works.find(work => work.id === site.work_id)?.name ?? site.work_id}</strong> · {site.radius_m} m · {site.enabled ? 'Habilitada' : 'Desabilitada'}
           {' '}<Button variant="secondary" onClick={() => edit(site)}>Editar</Button>
         </li>)}</ul>}
     </Card>
