@@ -9,18 +9,22 @@ const timeLabel = (value: string) => new Intl.DateTimeFormat('pt-BR', { timeZone
 export function EmployeeClockPortal() {
   const [events, setEvents] = useState<ClockEvent[]>([]);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const refresh = useCallback(async () => {
+    setLoading(true);
     try { setEvents(await loadOwnClockEvents()); setError(''); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível carregar os registros.'); }
+    catch (cause) { setEvents([]); setError(cause instanceof Error ? cause.message : 'Não foi possível carregar os registros.'); }
+    finally { setLoading(false); }
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
   const today = saoPauloDate(new Date().toISOString());
   const marks = events.filter(item => saoPauloDate(item.occurred_at) === today).reverse();
-  const next = CLOCK_SEQUENCE.find(kind => !marks.some(mark => mark.event_type === kind));
+  const validSequence = marks.length <= 4 && marks.every((mark, index) => mark.event_type === CLOCK_SEQUENCE[index]);
+  const next = validSequence ? CLOCK_SEQUENCE[marks.length] : undefined;
   const register = async () => {
-    if (!next || busy) return;
+    if (!next || busy || loading || error) return;
     setBusy(true); setError(''); setMessage('');
     try {
       const position = await requestClockPosition();
@@ -43,12 +47,13 @@ export function EmployeeClockPortal() {
         <span>{CLOCK_LABELS[kind]}</span>
         <strong>{marks.find(mark => mark.event_type === kind) ? timeLabel(marks.find(mark => mark.event_type === kind)!.occurred_at) : '—'}</strong>
       </li>)}</ol>
-      <button type="button" disabled={!next || busy} onClick={() => void register()}>
+      {!validSequence && <p role="alert">Há inconsistência nas marcações de hoje. Solicite revisão ao RH.</p>}
+      <button type="button" disabled={!next || busy || loading || Boolean(error)} onClick={() => void register()}>
         {busy ? 'Validando GPS e registrando...' : next ? `Registrar ${CLOCK_LABELS[next].toLowerCase()}` : 'Jornada registrada'}
       </button>
       {message && <p role="status">{message}</p>}
       {error && <p role="alert">{error}</p>}
-      <button type="button" onClick={() => void refresh()} disabled={busy}>Atualizar registros</button>
+      <button type="button" onClick={() => void refresh()} disabled={busy || loading}>Atualizar registros</button>
     </section>
     <section className="employee-clock-portal__panel">
       <h2>Meus comprovantes</h2>
