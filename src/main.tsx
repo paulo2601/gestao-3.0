@@ -27,13 +27,14 @@ const UPDATE_RETRY_MS = 30_000;
 const UPDATE_CHECK_MS = 60_000;
 let pendingBuild: string | null = null;
 let updateInProgress = false;
+let updateApproved = false;
 function editingInProgress(): boolean {
   const active = document.activeElement;
   if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || (active instanceof HTMLElement && active.isContentEditable)) return true;
   return Array.from(document.querySelectorAll('form')).some(form => Array.from(form.elements).some(element => element instanceof HTMLInputElement && element.value !== element.defaultValue || element instanceof HTMLTextAreaElement && element.value !== element.defaultValue));
 }
 function applyPendingBuild(): void {
-  if (!pendingBuild || updateInProgress || editingInProgress()) return;
+  if (!pendingBuild || !updateApproved || updateInProgress) return;
   const lastAttempt = sessionStorage.getItem(UPDATE_ATTEMPT_KEY);
   const lastAttemptAt = Number(sessionStorage.getItem(UPDATE_ATTEMPT_AT_KEY) || 0);
   if (lastAttempt === pendingBuild && Date.now() - lastAttemptAt < UPDATE_RETRY_MS) return; // Retry after a cooldown if the CDN served an older build.
@@ -42,9 +43,9 @@ function applyPendingBuild(): void {
   sessionStorage.setItem(UPDATE_ATTEMPT_AT_KEY, String(Date.now()));
   window.location.reload();
 }
-document.addEventListener('focusout', () => { window.setTimeout(applyPendingBuild, 500); });
-window.addEventListener('focus', () => { void ensureLatestBuild(); applyPendingBuild(); });
-window.addEventListener('online', applyPendingBuild);
+window.addEventListener('gestao-update-confirmed', () => { updateApproved = true; applyPendingBuild(); });
+window.addEventListener('focus', () => { void ensureLatestBuild(); });
+window.addEventListener('online', () => { void ensureLatestBuild(); });
 
 async function ensureLatestBuild(): Promise<void> {
   if (!import.meta.env.PROD || document.visibilityState !== 'visible') return;
@@ -57,11 +58,10 @@ async function ensureLatestBuild(): Promise<void> {
     const payload = await response.json() as { version?: string };
     if (!payload.version) return;
     localStorage.setItem(VERSION_KEY, payload.version);
-    if (payload.version === __BUILD_VERSION__) { sessionStorage.removeItem(UPDATE_ATTEMPT_KEY); sessionStorage.removeItem(UPDATE_ATTEMPT_AT_KEY); pendingBuild = null; return; }
+    if (payload.version === __BUILD_VERSION__) { sessionStorage.removeItem(UPDATE_ATTEMPT_KEY); sessionStorage.removeItem(UPDATE_ATTEMPT_AT_KEY); pendingBuild = null; updateApproved = false; return; }
     if (payload.version !== __BUILD_VERSION__) {
       pendingBuild = payload.version;
       window.dispatchEvent(new CustomEvent('gestao-update-available', { detail: { version: payload.version } }));
-      applyPendingBuild();
     }
   } catch {
     // Sem rede, mantém a versão aberta e tenta novamente quando o app voltar a ficar ativo.
@@ -89,5 +89,5 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     if (document.visibilityState === 'visible') void ensureLatestBuild();
   });
 
-  window.setInterval(() => { void ensureLatestBuild(); applyPendingBuild(); }, UPDATE_CHECK_MS);
+  window.setInterval(() => { void ensureLatestBuild(); }, UPDATE_CHECK_MS);
 }
