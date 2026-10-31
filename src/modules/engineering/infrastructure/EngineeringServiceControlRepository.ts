@@ -43,3 +43,10 @@ export async function updateServiceControlItem(scope:{tenantId:string;companyId:
 export async function deleteServiceControlItem(scope:{tenantId:string;companyId:string},id:string){
  const client=getSupabaseClient();const existing=await client.from('engineering_service_control_entries').select('id',{count:'exact',head:true}).eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('item_id',id);if(existing.error)throw existing.error;if((existing.count??0)>0)throw new Error('Este serviço possui execuções lançadas e não pode ser excluído.');const r=await client.from('engineering_service_control_items').delete().eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('id',id).is('source_contract_service_id',null);if(r.error)throw r.error;
 }
+
+export async function deleteServiceControlEntryScoped(scope:{tenantId:string;companyId:string},controlId:string,id:string):Promise<void>{
+ const client=getSupabaseClient();
+ const r=await client.from('engineering_service_control_entries').delete().eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('control_id',controlId).eq('id',id).select('id');
+ if(r.error)throw r.error;
+ if(!r.data||r.data.length!==1)throw new Error('Lançamento não encontrado ou exclusão não autorizada.');
+}
