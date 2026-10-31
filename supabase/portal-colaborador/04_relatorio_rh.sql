@@ -17,7 +17,7 @@ begin
  if not exists (
   select 1 from public.company_memberships cm
   where cm.company_id = p_company_id and cm.user_id = (select auth.uid())
-    and cm.status = 'active' and cm.role in ('owner','admin','manager')
+    and cm.status = 'active' and cm.role in ('company_admin')
  ) and not exists (
   select 1 from public.tenant_memberships tm
   join public.companies c on c.tenant_id = tm.tenant_id
