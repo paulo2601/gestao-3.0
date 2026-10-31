@@ -113,6 +113,7 @@ export function usePlatformSession(): PlatformSession {
 
   useEffect(() => {
     let cancelled=false;
+    if(new URLSearchParams(window.location.search).get('recovery')==='1'||window.location.hash.includes('type=recovery')) { setStatus('anonymous'); return; }
     void (async()=>{
       try{
         const fresh=await requireLoginOnFreshOpen(authGateway);
