@@ -3,7 +3,7 @@ import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
-import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
+import { SupabaseAuthGateway } from '../infrastructure/SupabaseAuthGateway';
 
 export interface LoginPageProps {
   loading: boolean;
@@ -26,7 +26,7 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onBo
   async function requestRecovery(){
     if(!email.trim()){setValidationMessage('Informe o e-mail antes de solicitar a recuperação.');return;}
     setRecoveryBusy(true);setValidationMessage(null);setRecoveryNotice('');
-    try {const response=await getSupabaseClient().auth.resetPasswordForEmail(email.trim(),{redirectTo:'https://gestao-3-0.pauloroberto-87.workers.dev/'});if(response.error)throw new Error(response.error.message);setRecoveryNotice('Se o e-mail estiver cadastrado, você receberá um link para definir sua senha.');}
+    try {await new SupabaseAuthGateway().requestPasswordRecovery(email.trim());setRecoveryNotice('Se o e-mail estiver cadastrado, você receberá um link para definir sua senha.');}
     catch(e){setValidationMessage(e instanceof Error?e.message:'Não foi possível solicitar recuperação.');}
     finally{setRecoveryBusy(false);}
   }

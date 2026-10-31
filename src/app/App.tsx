@@ -1,6 +1,6 @@
 import { BrowserRouter } from 'react-router-dom';
 import { useState } from 'react';
-import { getSupabaseClient } from '../shared/infrastructure/supabase/client';
+import { SupabaseAuthGateway } from '../modules/platform/infrastructure/SupabaseAuthGateway';
 import { LoginPage } from '../modules/platform/ui/LoginPage';
 import { usePlatformSession } from '../modules/platform/ui/usePlatformSession';
 import { LoadingState } from '../shared/ui/Feedback';
@@ -17,12 +17,7 @@ function RecoveryPage(){
   if(password.length<8||password!==confirm){setMessage('Informe pelo menos 8 caracteres e confirme a senha.');return;}
   setBusy(true);
   try{
-   const client=getSupabaseClient();
-   const session=await client.auth.getSession();
-   if(!session.data.session)throw new Error('Link expirado. Solicite uma nova recuperação de senha.');
-   const result=await client.auth.updateUser({password});
-   if(result.error)throw new Error(result.error.message);
-   await client.auth.signOut();
+   await new SupabaseAuthGateway().updatePassword(password);
    window.location.replace('/');
   }catch(e){setMessage(e instanceof Error?e.message:'Não foi possível salvar a senha.');}
   finally{setBusy(false);}

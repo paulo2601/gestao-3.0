@@ -74,6 +74,19 @@ export class SupabaseAuthGateway implements AuthGateway {
     };
   }
 
+  async requestPasswordRecovery(email:string):Promise<void>{
+    const {error}=await getSupabaseClient().auth.resetPasswordForEmail(email,{redirectTo:'https://gestao-3-0.pauloroberto-87.workers.dev/'});
+    if(error)throw error;
+  }
+  async updatePassword(password:string):Promise<void>{
+    const client=getSupabaseClient();
+    const {data,error:sessionError}=await client.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!data.session)throw new Error('Link expirado. Solicite nova recuperação.');
+    const {error}=await client.auth.updateUser({password});
+    if(error)throw error;
+    await this.signOut();
+  }
   async signOut(): Promise<void> {
     const { error } = await getSupabaseClient().auth.signOut();
 
