@@ -35,6 +35,7 @@ export function getSupabaseClient(): SupabaseClient {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      experimental: { passkey: true },
     },
   });
 

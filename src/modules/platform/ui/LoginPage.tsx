@@ -4,6 +4,7 @@ import { Card } from '../../../shared/ui/Card';
 import { Feedback } from '../../../shared/ui/Feedback';
 import { Input } from '../../../shared/ui/Input';
 import { SupabaseAuthGateway } from '../infrastructure/SupabaseAuthGateway';
+import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 
 export interface LoginPageProps {
   loading: boolean;
@@ -21,6 +22,14 @@ export interface LoginPageProps {
 
 export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onBootstrapFirstOwner }: LoginPageProps) {
   const [setupMode, setSetupMode] = useState(false);
+  const [passkeyBusy,setPasskeyBusy]=useState(false);
+  const [passkeyError,setPasskeyError]=useState('');
+  async function signInWithPasskey(){
+    setPasskeyBusy(true);setPasskeyError('');
+    try{const {error}=await getSupabaseClient().auth.signInWithPasskey();if(error)throw error;}
+    catch(e){setPasskeyError(e instanceof Error?e.message:'Não foi possível autenticar com biometria.');}
+    finally{setPasskeyBusy(false);}
+  }
   const [recoveryNotice,setRecoveryNotice]=useState('');
   const [recoveryBusy,setRecoveryBusy]=useState(false);
   async function requestRecovery(){
@@ -93,6 +102,8 @@ export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onBo
             {validationMessage && <Feedback tone="danger" title="Confira os dados" message={validationMessage} />}
             {errorMessage && <Feedback tone="danger" title={setupMode ? 'Não foi possível criar o acesso' : 'Não foi possível entrar'} message={errorMessage} />}
             <Button type="submit" size="lg" disabled={loading} loading={loading}>{setupMode ? 'Criar primeiro acesso' : 'Entrar'}</Button>
+            {!setupMode && <Button type="button" variant="secondary" disabled={loading||passkeyBusy} onClick={()=>void signInWithPasskey()}>{passkeyBusy?'Aguardando biometria…':'Entrar com biometria / passkey'}</Button>}
+            {passkeyError&&<Feedback tone="danger" title="Acesso biométrico" message={passkeyError}/>}
             {!setupMode && <Button type="button" variant="tertiary" disabled={loading||recoveryBusy} onClick={()=>void requestRecovery()}>Definir ou recuperar senha</Button>}
             <Button type="button" variant="tertiary" disabled={loading} onClick={toggleSetupMode}>{setupMode ? 'Voltar para entrar' : 'Configurar primeiro acesso'}</Button>
           </form>
