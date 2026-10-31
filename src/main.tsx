@@ -34,9 +34,14 @@ async function ensureLatestBuild(): Promise<void> {
     if (!payload.version) return;
     localStorage.setItem(VERSION_KEY, payload.version);
     if (payload.version !== __BUILD_VERSION__) {
-      // Do not replace the active document while React is running.
-      // The next normal navigation/reopen will receive the new build.
-      window.dispatchEvent(new CustomEvent('gestao-update-available', { detail: { version: payload.version } }));
+      // Update automatically when the page is not being edited. Avoid losing unsaved forms.
+      const active = document.activeElement;
+      const editing = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || (active instanceof HTMLElement && active.isContentEditable);
+      if (!editing) {
+        window.location.reload();
+      } else {
+        window.dispatchEvent(new CustomEvent('gestao-update-available', { detail: { version: payload.version } }));
+      }
     }
   } catch {
     // Sem rede, mantém a versão aberta e tenta novamente quando o app voltar a ficar ativo.
