@@ -1,1 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="104" fill="#16477b"/><circle cx="256" cy="252" r="152" fill="none" stroke="white" stroke-width="28"/><path d="M256 142v117l82 49" fill="none" stroke="white" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><path d="M167 412h178" stroke="#82d9ff" stroke-width="24" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ponto Digital">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#05305e"/><stop offset=".52" stop-color="#064fba"/><stop offset="1" stop-color="#071b4b"/></linearGradient><linearGradient id="clock" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="#fff"/><stop offset=".58" stop-color="#e8f6ff"/><stop offset="1" stop-color="#3a9eff"/></linearGradient><linearGradient id="person" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#67b5ff"/></linearGradient><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="11"/></filter></defs>
+<rect width="512" height="512" rx="110" fill="url(#bg)"/>
+<rect x="13" y="13" width="486" height="486" rx="100" fill="none" stroke="#4cb9ff" stroke-opacity=".58" stroke-width="7"/>
+<path d="M356 127A163 163 0 1 0 298 414" fill="none" stroke="#009eff" stroke-width="38" stroke-linecap="round" opacity=".5" filter="url(#glow)"/>
+<path d="M357 127A164 164 0 1 0 299 414" fill="none" stroke="url(#clock)" stroke-width="32" stroke-linecap="round"/>
+<path d="M251 154v112h-73" fill="none" stroke="url(#clock)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="354" cy="292" r="54" fill="url(#person)"/>
+<path d="M266 416c4-54 36-84 88-84s84 30 88 84c2 12-8 22-21 22H287c-13 0-23-10-21-22Z" fill="url(#person)"/>
+</svg>
