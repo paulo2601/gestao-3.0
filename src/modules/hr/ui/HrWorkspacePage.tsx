@@ -1,3 +1,4 @@
+import {maskCpf,maskPhone} from './hrInputMasks';
 import { useEffect,useMemo,useState,useRef,useCallback } from 'react';
 import { BarChart3,CalendarCheck,Clock3,FileText,FolderUp,HardHat,ReceiptText,ShieldCheck,Upload,UsersRound,WalletCards } from 'lucide-react';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
@@ -42,8 +43,6 @@ endDate:string;
 days:string;
 notes:string;
 };
-const maskCpf=(v:string)=>{const d=v.replace(/\D/g,'').slice(0,11);return d.replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/(\d{3})(\d{1,2})$/,'$1-$2')};
-const maskPhone=(v:string)=>{const d=v.replace(/\D/g,'').slice(0,11);return d.length<=2?d:d.length<=6?`(${d.slice(0,2)}) ${d.slice(2)}`:`(${d.slice(0,2)}) ${d.slice(2,d.length===11?7:6)}-${d.slice(d.length===11?7:6)}`};
 const ALL_HR_COMPANIES='__all_hr_companies__';
 const tabs:Array<{ id:HrWorkspaceTab; label:string; icon:typeof BarChart3 }>=[
 { id:'dashboard',label:'Dashboard',icon:BarChart3 },{ id:'colaboradores',label:'Colaboradores',icon:UsersRound },{ id:'epis',label:'EPIs',icon:HardHat },{ id:'compliance',label:'ASO,NR e Férias',icon:ShieldCheck },{ id:'salarios',label:'Salários e pagamentos',icon:WalletCards },{ id:'presenca',label:'Presença e ponto',icon:CalendarCheck },{ id:'banco_horas',label:'Banco de horas',icon:Clock3 },{ id:'fechamento',label:'Fechamento quinzenal',icon:WalletCards },{ id:'relatorios',label:'Relatórios',icon:FileText },{ id:'recibos',label:'Recibos',icon:ReceiptText },{ id:'importacoes',label:'Importações',icon:Upload },{ id:'documentos',label:'Importações RH',icon:FolderUp },
