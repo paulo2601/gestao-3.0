@@ -160,14 +160,7 @@ export class SupabaseHrOperationsRepository implements HrOperationsRepository {
       p_bank_hours_enabled: input.bankHoursEnabled ?? false,
     });
     if (result.error) throw result.error;
-    if (input.email?.trim()) {
-      const inviteResult: unknown = await this.client.functions.invoke('employee-clock-invite', {
-        body: { employmentContractId },
-      });
-      if (typeof inviteResult === 'object' && inviteResult !== null && 'error' in inviteResult && inviteResult.error) {
-        throw new Error('Cadastro salvo; convite não enviado: ' + (inviteResult.error instanceof Error ? inviteResult.error.message : 'verifique as permissões do Supabase'));
-      }
-    }
+
   }
   async replaceFixedCompensationItems(scope: CompanyScope, employmentContractId: string, items: readonly {description:string;kind:'earning'|'deduction';destination:'advance'|'payment';valueType:'fixed'|'percent';value:number;recurring:boolean;active:boolean;affectsInss:boolean;affectsIrrf:boolean;affectsFgts:boolean}[]): Promise<void> {
     const remove=await this.client.from('hr_fixed_compensation_items').delete().eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('employment_contract_id',employmentContractId);
