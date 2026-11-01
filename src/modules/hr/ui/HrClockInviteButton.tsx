@@ -19,8 +19,8 @@ export function HrClockInviteButton({contractId,email,disabled}:{contractId:stri
       setConfirming(false);
     }
   }
-  return <div className="hr-clock-invite" style={{marginBottom:16}}>
-    {!confirming?<button type="button" disabled={disabled||sending||!email} onClick={()=>{setFeedback('');setConfirming(true);}} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:10,minHeight:48,padding:"12px 20px",borderRadius:12,border:"1px solid #0866dc",background:"#0866dc",color:"#fff",fontWeight:700,fontSize:15,boxShadow:"0 3px 10px #0866dc22",maxWidth:"100%"}}><Mail size={18}/> Enviar convite do Ponto Digital</button>:
+  return <div className="hr-clock-invite">
+    {!confirming?<button type="button" disabled={disabled||sending||!email} onClick={()=>{setFeedback('');setConfirming(true);}}><Mail size={18}/> Enviar convite do Ponto Digital</button>:
     <div role="group" aria-label="Confirmar convite">
       <p>Enviar convite para {email}? Alterações não salvas não serão incluídas.</p>
       <button type="button" disabled={disabled||sending} onClick={()=>void send()}>{sending?'Enviando...':'Confirmar envio'}</button>
