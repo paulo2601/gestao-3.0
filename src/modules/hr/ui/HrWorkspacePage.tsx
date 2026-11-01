@@ -42,6 +42,8 @@ type AttendancePeriodDraft = {
   notes: string;
 };
 
+const maskCpf=(v:string)=>{const d=v.replace(/\D/g,'').slice(0,11);return d.replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/(\d{3})(\d{1,2})$/,'$1-$2')};
+const maskPhone=(v:string)=>{const d=v.replace(/\D/g,'').slice(0,11);return d.length<=2?d:d.length<=6?`(${d.slice(0,2)}) ${d.slice(2)}`:`(${d.slice(0,2)}) ${d.slice(2,d.length===11?7:6)}-${d.slice(d.length===11?7:6)}`};
 const ALL_HR_COMPANIES = '__all_hr_companies__';
 const tabs: Array<{ id: HrWorkspaceTab; label: string; icon: typeof BarChart3 }> = [
   { id:'dashboard',label:'Dashboard',icon:BarChart3 },{ id:'colaboradores',label:'Colaboradores',icon:UsersRound },{ id:'epis',label:'EPIs',icon:HardHat },{ id:'compliance',label:'ASO, NR e Férias',icon:ShieldCheck },{ id:'salarios',label:'Salários e pagamentos',icon:WalletCards },{ id:'presenca',label:'Presença e ponto',icon:CalendarCheck },{ id:'banco_horas',label:'Banco de horas',icon:Clock3 },{ id:'fechamento',label:'Fechamento quinzenal',icon:WalletCards },{ id:'relatorios',label:'Relatórios',icon:FileText },{ id:'recibos',label:'Recibos',icon:ReceiptText },{ id:'importacoes',label:'Importações',icon:Upload },{ id:'documentos',label:'Importações RH',icon:FolderUp },
@@ -59,6 +61,7 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
  const [companyFilter,setCompanyFilter]=useState(()=>initialCompanyId&&companies.some(i=>i.id===initialCompanyId)?initialCompanyId:ALL_HR_COMPANIES);
  const [employeeSearch,setEmployeeSearch]=useState(''); const [employeeStatus,setEmployeeStatus]=useState('active');
  const [companyData,setCompanyData]=useState<CompanyData[]>([]); const [loading,setLoading]=useState(false); const [errorMessage,setErrorMessage]=useState<string|null>(null); const [refreshToken,setRefreshToken]=useState(0);
+ const [editSection,setEditSection]=useState<'pessoal'|'contrato'|'salario'|'resumo'>('pessoal');
  const [editingEmployee,setEditingEmployee]=useState<WorkspaceEmployee|null>(null); const [fixedItems,setFixedItems]=useState<FixedCompensationItem[]>([]); const [fixedDescription,setFixedDescription]=useState(''); const [fixedValue,setFixedValue]=useState(''); const [fixedKind,setFixedKind]=useState<'earning'|'deduction'>('earning'); const [newEmployeeStep,setNewEmployeeStep]=useState<1|2>(1); const [terminatingEmployee,setTerminatingEmployee]=useState<WorkspaceEmployee|null>(null); const [terminationDate,setTerminationDate]=useState(localToday); const [terminatingEmployeeSaving,setTerminatingEmployeeSaving]=useState(false); const [employeeDraft,setEmployeeDraft]=useState<EmployeeDraft|null>(null); const [savingEmployee,setSavingEmployee]=useState(false); const [employeeFeedback,setEmployeeFeedback]=useState<string|null>(null); const [creatingEmployee,setCreatingEmployee]=useState(false); const [newEmployeeDraft,setNewEmployeeDraft]=useState<EmployeeDraft|null>(null);
  const [attendanceDate,setAttendanceDate]=useState(localToday); const [attendance,setAttendance]=useState<AttendanceRecord[]>([]); const [attendanceLoading,setAttendanceLoading]=useState(false); const [attendanceFeedback,setAttendanceFeedback]=useState<string|null>(null); const [attendanceSearch,setAttendanceSearch]=useState('');
  const [documents,setDocuments]=useState<HrEmployeeDocument[]>([]); const [documentSaving,setDocumentSaving]=useState(false); const [documentFeedback,setDocumentFeedback]=useState<string|null>(null);
@@ -158,17 +161,17 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
   </Dialog>
 
   <Dialog open={Boolean(editingEmployee&&employeeDraft)} title="Editar colaborador" description={editingEmployee?`${editingEmployee.fullName} · ${editingEmployee.companyName}`:undefined} loading={savingEmployee} onClose={()=>{if(!savingEmployee){setEditingEmployee(null);setEmployeeDraft(null);setEmployeeFeedback(null);}}} onConfirm={()=>void saveEmployeeEdit()} confirmLabel="Salvar alterações">
-   {employeeDraft&&<div className="hr-workspace__edit-grid">
+   {employeeDraft&&<><nav className="hr-edit-tabs">{([["pessoal","Dados pessoais"],["contrato","Contrato / Vínculo"],["salario","Composição salarial"],["resumo","Resumo"]] as const).map(([key,label])=><button type="button" key={key} className={editSection===key?"is-active":""} onClick={()=>setEditSection(key)}>{label}</button>)}</nav><div className="hr-workspace__edit-grid">
     {employeeFeedback&&<div className="hr-workspace__edit-wide"><Feedback tone="danger" title="Não foi possível salvar" message={employeeFeedback}/></div>}
-    <Input label="Nome completo" value={employeeDraft.fullName} onChange={e=>setEmployeeDraft({...employeeDraft,fullName:e.target.value})}/>
-    <Select label="Empresa" value={employeeDraft.companyId} options={editCompanyOptions} onChange={e=>setEmployeeDraft({...employeeDraft,companyId:e.target.value,costCenterId:''})}/>
+    {editSection==="pessoal"&&<><Input label="Nome completo" value={employeeDraft.fullName} onChange={e=>setEmployeeDraft({...employeeDraft,fullName:e.target.value})}/>
+    </>}{editSection==="contrato"&&<><Select label="Empresa" value={employeeDraft.companyId} options={editCompanyOptions} onChange={e=>setEmployeeDraft({...employeeDraft,companyId:e.target.value,costCenterId:''})}/>
     <Input label="Função" value={employeeDraft.jobTitle} onChange={e=>setEmployeeDraft({...employeeDraft,jobTitle:e.target.value})}/>
     <Select label="Tipo de vínculo" value={employeeDraft.employmentType} options={employmentTypeOptions} onChange={e=>setEmployeeDraft({...employeeDraft,employmentType:e.target.value as EmploymentType})}/>
-    <Input label="CPF" value={employeeDraft.cpf} onChange={e=>setEmployeeDraft({...employeeDraft,cpf:e.target.value})}/>
-    <Input label="Telefone" value={employeeDraft.phone} onChange={e=>setEmployeeDraft({...employeeDraft,phone:e.target.value})}/>
+    </>}{editSection==="pessoal"&&<><Input label="CPF" value={maskCpf(employeeDraft.cpf)} onChange={e=>setEmployeeDraft({...employeeDraft,cpf:maskCpf(e.target.value)})}/>
+    <Input label="Telefone" value={maskPhone(employeeDraft.phone)} onChange={e=>setEmployeeDraft({...employeeDraft,phone:maskPhone(e.target.value)})}/>
     <Input label="E-mail" value={employeeDraft.email} onChange={e=>setEmployeeDraft({...employeeDraft,email:e.target.value})}/>
     <Input label="PIX" value={employeeDraft.pix} onChange={e=>setEmployeeDraft({...employeeDraft,pix:e.target.value})}/>
-    <Input label="Setor" value={employeeDraft.sector} onChange={e=>setEmployeeDraft({...employeeDraft,sector:e.target.value})}/>
+    </>}{editSection==="contrato"&&<><Input label="Setor" value={employeeDraft.sector} onChange={e=>setEmployeeDraft({...employeeDraft,sector:e.target.value})}/>
     <Input label="Encarregado" value={employeeDraft.supervisor} onChange={e=>setEmployeeDraft({...employeeDraft,supervisor:e.target.value})}/>
     <Input label="Jornada semanal" type="number" value={employeeDraft.weeklyHours} onChange={e=>setEmployeeDraft({...employeeDraft,weeklyHours:e.target.value})}/>
     <Select label="Banco de horas" value={employeeDraft.bankHoursEnabled} options={[{value:'yes',label:'Ativo'},{value:'no',label:'Inativo'}]} onChange={e=>setEmployeeDraft({...employeeDraft,bankHoursEnabled:e.target.value})}/>
@@ -176,8 +179,7 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
     <Select label="Obra / centro de custo" value={employeeDraft.costCenterId} options={editCostCenterOptions} onChange={e=>setEmployeeDraft({...employeeDraft,costCenterId:e.target.value})}/>
     <Input label="Data efetiva" type="date" value={employeeDraft.effectiveOn} onChange={e=>setEmployeeDraft({...employeeDraft,effectiveOn:e.target.value})} hint={editingEmployee&&employeeDraft.companyId!==editingEmployee.companyId?'A troca de empresa preserva o histórico anterior e cria um novo vínculo nesta data.':'Usada para alterações de salário ou obra.'}/>
     <Input label="Observações" value={employeeDraft.notes} onChange={e=>setEmployeeDraft({...employeeDraft,notes:e.target.value})}/>
-    <HrFixedCompensationEditor items={fixedItems} setItems={setFixedItems} description={fixedDescription} setDescription={setFixedDescription} valueText={fixedValue} setValueText={setFixedValue} kind={fixedKind} setKind={setFixedKind} employmentContractId={editingEmployee?.employmentContractId??''} baseSalary={Number(employeeDraft.baseSalary)||0} money={money}/>
-   </div>}
+    </>}{editSection==="salario"&&<HrFixedCompensationEditor items={fixedItems} setItems={setFixedItems} description={fixedDescription} setDescription={setFixedDescription} valueText={fixedValue} setValueText={setFixedValue} kind={fixedKind} setKind={setFixedKind} employmentContractId={editingEmployee?.employmentContractId??''} baseSalary={Number(employeeDraft.baseSalary)||0} money={money}/>}{editSection==="resumo"&&<div className="hr-edit-summary"><h3>{employeeDraft.fullName}</h3><p>{employeeDraft.jobTitle}</p><p>CPF: {maskCpf(employeeDraft.cpf)} · Telefone: {maskPhone(employeeDraft.phone)}</p><p>E-mail: {employeeDraft.email}</p><p>Salário: {money.format(Number(employeeDraft.baseSalary)||0)}</p><p>Itens fixos: {fixedItems.length}</p></div>}</div></>}
   </Dialog>
  </section>;
 }
