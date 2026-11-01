@@ -374,3 +374,19 @@ export async function saveClockAdjustment(input:{tenantId:string;companyId:strin
  const r=await getSupabaseClient().from('employee_clock_adjustments').upsert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,attendance_date:input.attendanceDate,punch_kind:input.punchKind,corrected_time:input.correctedTime,original_time:input.originalTime,reason:input.reason.trim()},{onConflict:'employment_contract_id,attendance_date,punch_kind'});
  if(r.error)throw r.error;
 }
+
+export type ClockCancellation={employment_contract_id:string;attendance_date:string;punch_kind:ClockPunchKind|'all';reason:string;cancelled_at:string};
+export async function listClockCancellations(ids:string[],start:string,end:string):Promise<ClockCancellation[]>{
+ if(!ids.length)return[];
+ const batches=Array.from({length:Math.ceil(ids.length/100)},(_,i)=>ids.slice(i*100,(i+1)*100));
+ const result=await Promise.all(batches.map(async batch=>{
+  const r=await getSupabaseClient().from('employee_clock_cancellations').select('employment_contract_id,attendance_date,punch_kind,reason,cancelled_at').in('employment_contract_id',batch).gte('attendance_date',start).lte('attendance_date',end);
+  if(r.error)throw r.error;return r.data as ClockCancellation[];
+ }));
+ return result.flat();
+}
+export async function cancelClockPunch(input:{tenantId:string;companyId:string;employmentContractId:string;attendanceDate:string;punchKind:ClockPunchKind|'all';reason:string}):Promise<void>{
+ if(input.reason.trim().length<5)throw new Error('Informe uma justificativa com pelo menos 5 caracteres.');
+ const r=await getSupabaseClient().from('employee_clock_cancellations').insert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,attendance_date:input.attendanceDate,punch_kind:input.punchKind,reason:input.reason.trim()});
+ if(r.error)throw r.error;
+}
