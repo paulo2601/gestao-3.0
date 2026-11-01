@@ -23,6 +23,7 @@ import { HrFortnightClosingSection } from './HrFortnightClosingSection';
 import { calculateInss, calculateIrrf, fixedTotals as compensationFixedTotals } from './hrCompensation';
 import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
 import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartMatches } from './hrWorkspaceHelpers';
+import { HrEmployeeSummary } from './HrEmployeeSummary';
 import { HrApprovedDashboard } from './HrApprovedDashboard';
 import './hr-workspace.css';
 import './hr-people-modern.css';
@@ -179,7 +180,7 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
     <Select label="Obra / centro de custo" value={employeeDraft.costCenterId} options={editCostCenterOptions} onChange={e=>setEmployeeDraft({...employeeDraft,costCenterId:e.target.value})}/>
     <Input label="Data efetiva" type="date" value={employeeDraft.effectiveOn} onChange={e=>setEmployeeDraft({...employeeDraft,effectiveOn:e.target.value})} hint={editingEmployee&&employeeDraft.companyId!==editingEmployee.companyId?'A troca de empresa preserva o histórico anterior e cria um novo vínculo nesta data.':'Usada para alterações de salário ou obra.'}/>
     <Input label="Observações" value={employeeDraft.notes} onChange={e=>setEmployeeDraft({...employeeDraft,notes:e.target.value})}/>
-    </>}{editSection==="salario"&&<HrFixedCompensationEditor items={fixedItems} setItems={setFixedItems} description={fixedDescription} setDescription={setFixedDescription} valueText={fixedValue} setValueText={setFixedValue} kind={fixedKind} setKind={setFixedKind} employmentContractId={editingEmployee?.employmentContractId??''} baseSalary={Number(employeeDraft.baseSalary)||0} money={money}/>}{editSection==="resumo"&&<div className="hr-edit-summary"><h3>{employeeDraft.fullName}</h3><p>{employeeDraft.jobTitle}</p><p>CPF: {maskCpf(employeeDraft.cpf)} · Telefone: {maskPhone(employeeDraft.phone)}</p><p>E-mail: {employeeDraft.email}</p><p>Salário: {money.format(Number(employeeDraft.baseSalary)||0)}</p><p>Itens fixos: {fixedItems.length}</p></div>}</div></>}
+    </>}{editSection==="salario"&&<HrFixedCompensationEditor items={fixedItems} setItems={setFixedItems} description={fixedDescription} setDescription={setFixedDescription} valueText={fixedValue} setValueText={setFixedValue} kind={fixedKind} setKind={setFixedKind} employmentContractId={editingEmployee?.employmentContractId??''} baseSalary={Number(employeeDraft.baseSalary)||0} money={money}/>}{editSection==="resumo"&&<HrEmployeeSummary name={employeeDraft.fullName} job={employeeDraft.jobTitle} company={editingEmployee?.companyName||''} work={editCostCenterOptions.find(x=>x.value===employeeDraft.costCenterId)?.label||''} employment={employmentTypeOptions.find(x=>x.value===employeeDraft.employmentType)?.label||''} effectiveOn={employeeDraft.effectiveOn} cpf={maskCpf(employeeDraft.cpf)} phone={maskPhone(employeeDraft.phone)} email={employeeDraft.email} salary={Number(employeeDraft.baseSalary)||0} items={fixedItems}/>}</div></>}
   </Dialog>
  </section>;
 }
