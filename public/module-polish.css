@@ -69,3 +69,15 @@
  .hr-workspace__top-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}.hr-workspace__top-filters .ui-field{min-height:90px;padding-left:54px}.hr-workspace__top-filters .ui-field::before{left:9px;width:35px;height:35px}.hr-workspace__top-filters .ui-input{font-size:.84rem!important}.hr-workspace__top-filters .ui-field__label{font-size:.66rem!important}
  .engineering-contracts-reference__kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}.engineering-contract-stat--count,.engineering-contract-stat--balance{grid-column:auto!important}.engineering-contracts-reference__kpis .ui-card::before{left:5px;top:8px;width:22px;height:22px;border-radius:7px;background-size:13px 13px}.engineering-contracts-reference__kpis .ui-card__header{padding-left:31px!important;padding-right:3px!important;padding-top:7px!important;padding-bottom:0!important}.engineering-contracts-reference__kpis .ui-card__content{padding-left:5px!important;padding-right:3px!important;padding-top:3px!important;padding-bottom:6px!important}.engineering-contracts-reference__kpis .ui-card__title{font-size:.58rem!important;white-space:nowrap}.engineering-contracts-reference__kpis strong{font-size:.63rem!important;letter-spacing:-.055em!important;white-space:nowrap}.engineering-contracts-reference__kpis span{font-size:.52rem!important;line-height:1.05!important;white-space:normal}
 }
+
+/* RH employee edit: approved mobile controls without inline styling */
+.hr-clock-invite{margin:0 0 16px;max-width:100%}
+.hr-clock-invite>button{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;max-width:100%;padding:12px 18px;border:1px solid #0866dc;border-radius:12px;background:#0866dc;color:#fff;font-size:15px;font-weight:700;box-shadow:0 3px 10px #0866dc22;white-space:normal;text-align:center;cursor:pointer}
+.hr-clock-invite>button:disabled{opacity:.55;cursor:not-allowed}
+.hr-clock-invite [role="group"]{display:flex;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid #c9d9ed;border-radius:12px;background:#f5f9ff}
+.hr-clock-invite [role="group"] p{flex-basis:100%;margin:0;color:#193554}
+.hr-clock-invite [role="group"] button{padding:10px 14px;border-radius:9px;border:1px solid #0866dc;background:#0866dc;color:#fff;font-weight:700}
+.hr-clock-invite [role="group"] button:last-child{background:#fff;color:#0866dc}
+.hr-edit-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:10px;padding:10px 2px 14px;scrollbar-width:thin;max-width:100%;scroll-snap-type:x proximity}
+.hr-edit-tabs>button{flex:0 0 auto;min-height:48px;padding:10px 17px;border:1px solid #0866dc;border-radius:13px;background:#0866dc;color:#fff;font-weight:700;white-space:nowrap;box-shadow:0 2px 7px #0a36601a;scroll-snap-align:start}
+.hr-edit-tabs>button.is-active{background:#fff;color:#0866dc}
