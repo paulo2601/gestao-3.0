@@ -161,7 +161,7 @@ return <section className="hr-workspace">
 </>}{editSection==="pessoal"&&<><Input label="CPF" value={maskCpf(employeeDraft.cpf)} onChange={e=>setEmployeeDraft({...employeeDraft,cpf:maskCpf(e.target.value)})}/>
 <Input label="Telefone" value={maskPhone(employeeDraft.phone)} onChange={e=>setEmployeeDraft({...employeeDraft,phone:maskPhone(e.target.value)})}/>
 <Input label="E-mail" value={employeeDraft.email} onChange={e=>setEmployeeDraft({...employeeDraft,email:e.target.value})}/>
-<Input label="PIX" value={employeeDraft.pix} onChange={e=>setEmployeeDraft({...employeeDraft,pix:e.target.value})}/><HrEmployeeAddress key={editingEmployee.employeeId} tenantId={editingEmployee.tenantId} employeeId={editingEmployee.employeeId} onSaveReady={registerAddressSave}/>
+<Input label="PIX" value={employeeDraft.pix} onChange={e=>setEmployeeDraft({...employeeDraft,pix:e.target.value})}/><HrEmployeeAddress key={editingEmployee!.employeeId} tenantId={editingEmployee!.tenantId} employeeId={editingEmployee!.employeeId} onSaveReady={registerAddressSave}/>
 </>}{editSection==="contrato"&&<><Input label="Setor" value={employeeDraft.sector} onChange={e=>setEmployeeDraft({...employeeDraft,sector:e.target.value})}/>
 <Input label="Encarregado" value={employeeDraft.supervisor} onChange={e=>setEmployeeDraft({...employeeDraft,supervisor:e.target.value})}/>
 <Input label="Jornada semanal" type="number" value={employeeDraft.weeklyHours} onChange={e=>setEmployeeDraft({...employeeDraft,weeklyHours:e.target.value})}/>
