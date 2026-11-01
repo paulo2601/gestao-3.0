@@ -1,0 +1,2 @@
+import {sendEmployeeClockInvite} from '../infrastructure/HrWorkspaceService';
+export function HrClockInviteButton({contractId,email,disabled}:{contractId:string;email:string;disabled:boolean}){return <button type="button" disabled={disabled||!email} onClick={()=>{if(!window.confirm('Enviar convite para o Ponto Digital? Alterações não salvas não serão incluídas.'))return;void sendEmployeeClockInvite(contractId).then(()=>window.alert('Convite solicitado.')).catch((e:unknown)=>window.alert('Convite não enviado: '+String(e)));}}>Enviar convite do Ponto Digital</button>}
