@@ -29,23 +29,23 @@ import { HrApprovedDashboard } from './HrApprovedDashboard';
 import './hr-workspace.css';
 import './hr-people-modern.css';
 type HrWorkspaceTab='dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
-type CompanyData={ company: CompanySummary; operations: HrOperationalSnapshot; overview: Awaited<ReturnType<ReturnType<typeof getHrBudgetRepository>['getOverview']>>; };
-type WorkspaceEmployee=HrEmployeeRow & { companyId: string; companyName: string; tenantId: string };
+type CompanyData={ company:CompanySummary; operations:HrOperationalSnapshot; overview:Awaited<ReturnType<ReturnType<typeof getHrBudgetRepository>['getOverview']>>; };
+type WorkspaceEmployee=HrEmployeeRow & { companyId:string; companyName:string; tenantId:string };
 type EmployeeDraft={ fullName:string; companyId:string; jobTitle:string; cpf:string; pix:string; phone:string; email:string; notes:string; employmentType:EmploymentType; sector:string; supervisor:string; weeklyHours:string; bankHoursEnabled:string; baseSalary:string; costCenterId:string; effectiveOn:string };
 type EpiDraft={ employmentContractId:string; epiName:string; quantity:string; deliveredOn:string; caNumber:string; notes:string; };
 type ComplianceDraft={ kind:'aso'|'nr'|'vacation'; employmentContractId:string; title:string; startsOn:string; endsOn:string; expiresOn:string; notes:string; };
 type AttendancePeriodDraft={
-employee: WorkspaceEmployee;
-status: 'medical_certificate' | 'vacation';
-startDate: string;
-endDate: string;
-days: string;
-notes: string;
+employee:WorkspaceEmployee;
+status:'medical_certificate' | 'vacation';
+startDate:string;
+endDate:string;
+days:string;
+notes:string;
 };
 const maskCpf=(v:string)=>{const d=v.replace(/\D/g,'').slice(0,11);return d.replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/(\d{3})(\d{1,2})$/,'$1-$2')};
 const maskPhone=(v:string)=>{const d=v.replace(/\D/g,'').slice(0,11);return d.length<=2?d:d.length<=6?`(${d.slice(0,2)}) ${d.slice(2)}`:`(${d.slice(0,2)}) ${d.slice(2,d.length===11?7:6)}-${d.slice(d.length===11?7:6)}`};
 const ALL_HR_COMPANIES='__all_hr_companies__';
-const tabs: Array<{ id: HrWorkspaceTab; label: string; icon: typeof BarChart3 }>=[
+const tabs:Array<{ id:HrWorkspaceTab; label:string; icon:typeof BarChart3 }>=[
 { id:'dashboard',label:'Dashboard',icon:BarChart3 },{ id:'colaboradores',label:'Colaboradores',icon:UsersRound },{ id:'epis',label:'EPIs',icon:HardHat },{ id:'compliance',label:'ASO,NR e Férias',icon:ShieldCheck },{ id:'salarios',label:'Salários e pagamentos',icon:WalletCards },{ id:'presenca',label:'Presença e ponto',icon:CalendarCheck },{ id:'banco_horas',label:'Banco de horas',icon:Clock3 },{ id:'fechamento',label:'Fechamento quinzenal',icon:WalletCards },{ id:'relatorios',label:'Relatórios',icon:FileText },{ id:'recibos',label:'Recibos',icon:ReceiptText },{ id:'importacoes',label:'Importações',icon:Upload },{ id:'documentos',label:'Importações RH',icon:FolderUp },
 ];
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -73,7 +73,7 @@ const competenceMonth=`${competence}-01`;
 useEffect(()=>{if(initialCompanyId&&companies.some(i=>i.id===initialCompanyId))setCompanyFilter(initialCompanyId);else if(initialCompanyId===undefined)setCompanyFilter(ALL_HR_COMPANIES);},[companies,initialCompanyId]);
 const visibleCompanies=useMemo(()=>companyFilter===ALL_HR_COMPANIES?companies:companies.filter(i=>i.id===companyFilter),[companies,companyFilter]);
 useEffect(()=>{let cancelled=false;const operationsRepository=getHrOperationsRepository();const budgetRepository=getHrBudgetRepository();setLoading(true);setErrorMessage(null);void Promise.all(visibleCompanies.map(async company=>{const scope={tenantId:company.tenantId,companyId:company.id};const [operations,overview]=await Promise.all([operationsRepository.getSnapshot(scope,competenceMonth),budgetRepository.getOverview({...scope,competenceMonth,year:Number(competenceMonth.slice(0,4))})]);return{company,operations,overview} satisfies CompanyData;})).then(data=>{if(!cancelled)setCompanyData(data);}).catch(()=>{if(!cancelled){setCompanyData([]);setErrorMessage('Não foi possível carregar os dados do RH para o filtro selecionado.');}}).finally(()=>{if(!cancelled)setLoading(false);});return()=>{cancelled=true;};},[visibleCompanies,competenceMonth,refreshToken]);
-const employees: WorkspaceEmployee[]=companyData.flatMap(({company,operations})=>operations.employees.map(item=>({...item,tenantId:company.tenantId,companyId:company.id,companyName:companyLabel(company)})));
+const employees:WorkspaceEmployee[]=companyData.flatMap(({company,operations})=>operations.employees.map(item=>({...item,tenantId:company.tenantId,companyId:company.id,companyName:companyLabel(company)})));
 const activeEmployees=employees.filter(i=>i.contractStatus==='active');
 const filteredEmployees=employees.filter(item=>{if(employeeStatus!=='all'&&item.contractStatus!==employeeStatus)return false;return smartMatches([item.fullName,item.jobTitle,item.costCenterName,item.cpf,item.sector,item.companyName],employeeSearch);});
 const works=new Set(activeEmployees.map(i=>normalizeSearch(i.costCenterName??'')).filter(Boolean)).size; const bankHours=activeEmployees.filter(i=>i.bankHoursEnabled).length;
@@ -122,7 +122,7 @@ return <section className="hr-workspace">
 <div className="hr-people-heading"><div><h2>Colaboradores</h2><p>Cadastro,gestão e vínculos dos colaboradores</p></div><Button size="sm" onClick={()=>openNewEmployee()}>+ Novo colaborador</Button></div>
 <div className="hr-people-stats">{[['Ativos',activeEmployees.length],['Desligados',employees.length-activeEmployees.length],['Total',employees.length],['Empresas',new Set(employees.map(e=>e.companyId)).size]].map(([label,count])=><div className="hr-people-stat" key={label}><span>{label}</span><strong>{count}</strong></div>)}</div>
 <Card><div className="hr-people-filters"><Input label="Buscar colaborador" placeholder="Nome,CPF,empresa,obra ou função..." value={employeeSearch} onChange={e=>setEmployeeSearch(e.target.value)}/><Select label="Status" value={employeeStatus} onChange={e=>setEmployeeStatus(e.target.value)} options={[{value:'active',label:'Ativos'},{value:'terminated',label:'Desligados'},{value:'all',label:'Todos'}]}/></div>
-{filteredEmployees.length===0?<p className="ui-muted">Nenhum colaborador encontrado.</p>:<div className="hr-people-table-wrap"><table className="hr-people-table"><thead><tr><th>Colaborador</th><th>Função / Cargo</th><th>Empresa / Obra</th><th>Salário</th><th>Situação</th><th style={{textAlign:'right'}}>Ações</th></tr></thead><tbody>{filteredEmployees.map(item=><tr key={`${item.companyId}:${item.employmentContractId}`}><td><div className="hr-people-person"><span className="hr-people-avatar" aria-hidden="true">{item.fullName.split(' ').filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()}</span><div><span className="hr-people-name">{item.fullName}</span><span className="hr-people-sub">{item.sector||'Colaborador'}</span></div></div></td><td><strong>{item.jobTitle}</strong></td><td><strong>{item.companyName}</strong><span className="hr-people-sub">{item.costCenterName??'Sem obra'}</span></td><td><strong>{money.format(item.baseSalary+fixedTotals(item).earnings-fixedTotals(item).deductions)}</strong><span className="hr-people-sub">Base: {money.format(item.baseSalary)}</span></td><td><span className={`hr-people-status ${item.contractStatus==='active'?'':'off'}`}><span className="hr-people-dot"/>{item.contractStatus==='active'?'Ativo':'Desligado'}</span></td><td><div className="hr-people-actions"><Button size="sm" variant="secondary" onClick={()=>openEmployee(item)}>Editar</Button>{item.contractStatus==='active'&&<Button size="sm" variant="secondary" onClick={()=>openTermination(item)}>Encerrar</Button>}</div></td></tr>)}</tbody></table></div>}
+{filteredEmployees.length===0?<p className="ui-muted">Nenhum colaborador encontrado.</p>:<div className="hr-people-table-wrap"><table className="hr-people-table"><thead><tr><th>Colaborador</th><th>Função / Cargo</th><th>Empresa / Obra</th><th>Salário</th><th>Situação</th><th style={{textAlign:'right'}}>Ações</th></tr></thead><tbody>{filteredEmployees.map(item=><tr key={`${item.companyId}:${item.employmentContractId}`}><td><div className="hr-people-person"><span className="hr-people-avatar" aria-hidden="true">{item.fullName.split(' ').filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()}</span><div><span className="hr-people-name">{item.fullName}</span><span className="hr-people-sub">{item.sector||'Colaborador'}</span></div></div></td><td><strong>{item.jobTitle}</strong></td><td><strong>{item.companyName}</strong><span className="hr-people-sub">{item.costCenterName??'Sem obra'}</span></td><td><strong>{money.format(item.baseSalary+fixedTotals(item).earnings-fixedTotals(item).deductions)}</strong><span className="hr-people-sub">Base:{money.format(item.baseSalary)}</span></td><td><span className={`hr-people-status ${item.contractStatus==='active'?'':'off'}`}><span className="hr-people-dot"/>{item.contractStatus==='active'?'Ativo':'Desligado'}</span></td><td><div className="hr-people-actions"><Button size="sm" variant="secondary" onClick={()=>openEmployee(item)}>Editar</Button>{item.contractStatus==='active'&&<Button size="sm" variant="secondary" onClick={()=>openTermination(item)}>Encerrar</Button>}</div></td></tr>)}</tbody></table></div>}
 <div className="hr-people-footer">Exibindo {filteredEmployees.length} de {employees.length} vínculos cadastrados</div>
 </Card>
 </div>}
