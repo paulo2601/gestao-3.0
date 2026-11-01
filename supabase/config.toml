@@ -14,5 +14,12 @@ enabled = true
 
 [auth]
 enabled = true
-site_url = "http://localhost:5173"
-additional_redirect_urls = ["http://localhost:5173"]
+site_url = "https://gestao-3-0.pauloroberto-87.workers.dev"
+additional_redirect_urls = [
+  "http://localhost:5173",
+  "http://localhost:5173/**",
+  "https://gestao-3-0.pauloroberto-87.workers.dev",
+  "https://gestao-3-0.pauloroberto-87.workers.dev/**",
+  "https://ponto-digital-github.pages.dev",
+  "https://ponto-digital-github.pages.dev/**"
+]
