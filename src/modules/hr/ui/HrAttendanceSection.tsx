@@ -51,18 +51,18 @@ export function HrAttendanceSection({date,setDate,search,setSearch,rows,employee
  const [reason,setReason]=useState('');
  const [saving,setSaving]=useState(false);
  const [clockRefresh,setClockRefresh]=useState(0);
- useEffect(()=>{let active=true;(async()=>{try{
+ useEffect(()=>{let active=true;void (async()=>{try{
  const ids=employees.map(e=>e.employmentContractId);
  const [events,adjustments]=await Promise.all([listClockReportEvents(ids,date,date),listClockAdjustments(ids,date,date)]);
  const data=new Map<string,Map<ClockPunchKind,string>>();
- for(const event of events){const local=new Date(event.captured_at).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo',hour12:false});if(local.slice(0,10)!==date)continue;const kind=event.punch_kind as ClockPunchKind;if(!['entry','lunch_out','lunch_in','exit'].includes(kind))continue;if(!data.has(event.employment_contract_id))data.set(event.employment_contract_id,new Map());data.get(event.employment_contract_id)!.set(kind,local.slice(11,16));}
+ for(const event of events){const local=new Date(event.captured_at).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo',hour12:false});if(local.slice(0,10)!==date)continue;const kind=event.punch_kind;if(kind!=='entry'&&kind!=='lunch_out'&&kind!=='lunch_in'&&kind!=='exit')continue;if(!data.has(event.employment_contract_id))data.set(event.employment_contract_id,new Map());data.get(event.employment_contract_id)!.set(kind,local.slice(11,16));}
  for(const a of adjustments){if(!data.has(a.employment_contract_id))data.set(a.employment_contract_id,new Map());data.get(a.employment_contract_id)!.set(a.punch_kind,a.corrected_time.slice(0,5));}
  if(active)setClockData(data);
  }catch(error){if(active)onFeedback(error instanceof Error?error.message:'Erro ao carregar marcações.');}})();return()=>{active=false};},[date,employees,clockRefresh,onFeedback]);
  const punchKinds:ClockPunchKind[]=['entry','lunch_out','lunch_in','exit'];
  const punchLabels:Record<ClockPunchKind,string>={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída'};
  function editPunch(employee:Employee,kind:ClockPunchKind){setEditing({employee,kind});setCorrectedTime(clockData.get(employee.employmentContractId)?.get(kind)??'');setReason('');}
- async function saveCorrection(){if(!editing)return;const {employee,kind}=editing;const existing=clockData.get(employee.employmentContractId)??new Map();
+ async function saveCorrection(){if(!editing)return;const {employee,kind}=editing;const existing=clockData.get(employee.employmentContractId)??new Map<ClockPunchKind,string>();
  const proposed=new Map(existing);proposed.set(kind,correctedTime);
  const values=punchKinds.map(k=>proposed.get(k)).filter((v):v is string=>Boolean(v));
  if(values.some((v,i)=>i>0&&v<values[i-1]!)){onFeedback('Os horários devem seguir a ordem da jornada.');return;}
