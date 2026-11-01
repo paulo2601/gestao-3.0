@@ -24,9 +24,29 @@ const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFO
   }catch(e){message(e.message);el('mark').disabled=false}
  };
  el('history').onclick=()=>{
-  el('main').innerHTML='<h2>Meus registros</h2><div id="rows"></div><button id="back">Voltar</button><p id="message"></p>';
-  for(const v of all){const d=document.createElement('div');d.className='row';d.textContent=labels[v.punch_kind]+' — '+new Date(v.captured_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+(v.offline?' (offline)':'');el('rows').append(d)}
-  el('back').onclick=home;
+  el('main').innerHTML='<div class="day-heading"><div class="eyebrow">HISTÓRICO DE JORNADA</div><h2>Meus registros</h2><p>Consulte suas marcações por dia.</p></div><div class="history-filters"><label for="history-month">Mês</label><input id="history-month" type="month"></div><div id="history-summary" class="history-summary"></div><div id="history-days" class="history-days"></div><button id="back">Voltar</button><p id="message" role="status" aria-live="polite"></p>';
+  const dateFmt=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const timeFmt=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const filter=el('history-month');filter.value=day(new Date().toISOString()).slice(0,7);
+  function renderHistory(){
+   const selected=filter.value;
+   const records=all.filter(v=>day(v.captured_at).startsWith(selected));
+   const groups=new Map();
+   for(const v of records){const date=day(v.captured_at);if(!groups.has(date))groups.set(date,[]);groups.get(date).push(v)}
+   const container=el('history-days');container.replaceChildren();
+   el('history-summary').textContent=groups.size+' dia(s) com marcações · '+records.length+' registro(s)';
+   if(!groups.size){const empty=document.createElement('p');empty.className='history-empty';empty.textContent='Nenhuma marcação encontrada neste mês.';container.append(empty);return}
+   for(const [date,items] of [...groups].sort((a,b)=>b[0].localeCompare(a[0]))){
+    const card=document.createElement('details');card.className='history-day';card.open=date===day(new Date().toISOString());
+    const heading=document.createElement('summary');const name=document.createElement('strong');name.textContent=dateFmt.format(new Date(date+'T12:00:00-03:00'));const count=document.createElement('span');count.textContent=items.length+' de 4 marcações';heading.append(name,count);card.append(heading);
+    const byKind=new Map(items.map(v=>[v.punch_kind,v]));
+    for(const kind of kinds){const v=byKind.get(kind);const row=document.createElement('div');row.className='history-record';const label=document.createElement('span');label.textContent=labels[kind];const status=document.createElement('strong');status.className=v?'history-time':'history-pending';status.textContent=v?timeFmt.format(new Date(v.captured_at))+(v.offline?' · offline':''):'Pendente';row.append(label,status);card.append(row)}
+    const entry=byKind.get('entry'),lunchOut=byKind.get('lunch_out'),lunchIn=byKind.get('lunch_in'),exit=byKind.get('exit');
+    if(entry&&exit){let minutes=(new Date(exit.captured_at)-new Date(entry.captured_at))/60000;if(lunchOut&&lunchIn)minutes-=(new Date(lunchIn.captured_at)-new Date(lunchOut.captured_at))/60000;if(minutes>=0){const total=document.createElement('div');total.className='history-total';total.textContent='Horas registradas: '+Math.floor(minutes/60)+'h '+String(Math.floor(minutes%60)).padStart(2,'0')+'min';card.append(total)}}
+    container.append(card);
+   }
+  }
+  filter.onchange=renderHistory;renderHistory();el('back').onclick=home;
  };
  el('help').onclick=()=>{
   el('main').innerHTML='<h2>Ajuda</h2><p>Registre cada marcação na ordem. O horário é capturado automaticamente e enviado ao RH.</p><button id="back">Voltar</button><p id="message"></p>';
