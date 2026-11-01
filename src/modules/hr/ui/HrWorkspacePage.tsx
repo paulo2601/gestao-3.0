@@ -23,6 +23,7 @@ import { HrFortnightClosingSection } from './HrFortnightClosingSection';
 import { calculateInss, calculateIrrf, fixedTotals as compensationFixedTotals } from './hrCompensation';
 import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
 import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartMatches } from './hrWorkspaceHelpers';
+import { HrApprovedDashboard } from './HrApprovedDashboard';
 import './hr-workspace.css';
 import './hr-people-modern.css';
 
@@ -116,19 +117,7 @@ export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly
   <Card className="hr-workspace__hero" title="RH" actions={<Button size="sm" onClick={openNewEmployee}>＋ Novo colaborador</Button>} />
   <nav className="hr-workspace__tabs" aria-label="Módulos do RH">{tabs.map(({id,label,icon:Icon})=><button key={id} type="button" className={tab===id?'is-active':''} onClick={()=>setTab(id)}><Icon size={20}/><span>{label}</span></button>)}</nav>
   {loading&&<Card><p className="ui-muted">Carregando dados do RH...</p></Card>}{errorMessage&&<Card><Feedback tone="danger" title="Erro ao carregar RH" message={errorMessage}/></Card>}
-  {!loading&&!errorMessage&&tab==='dashboard'&&<div className="hr-workspace__content hr-approved-dashboard">
-    <div className="hr-approved-intro"><div><h2>RH – Visão geral</h2><p>Equipe, custos e operação em tempo real.</p></div><Button onClick={openNewEmployee}>＋ Novo colaborador</Button></div>
-    <div className="hr-approved-kpis">
-      <div className="hr-approved-kpi active"><UsersRound/><strong>{activeEmployees.length}</strong><span>Colaboradores ativos</span></div>
-      <div className="hr-approved-kpi total"><UsersRound/><strong>{employees.length}</strong><span>Total cadastrado</span></div>
-      <div className="hr-approved-kpi terminated"><UsersRound/><strong>{employees.length-activeEmployees.length}</strong><span>Desligados</span></div>
-      <div className="hr-approved-kpi works"><HardHat/><strong>{works}</strong><span>Obras com equipe</span></div>
-    </div>
-    <div className="hr-approved-payroll"><div><WalletCards/><span>Folha base mensal<strong>{money.format(monthlyPayroll)}</strong></span></div><div><WalletCards/><span>Líquido estimado a pagar<strong>{money.format(estimatedNetPayroll)}</strong></span></div></div>
-    <div className="hr-approved-payroll-details"><span>Acréscimos <strong>{money.format(monthlyFixedEarnings)}</strong></span><span>Descontos <strong>{money.format(monthlyFixedDeductions)}</strong></span><span>INSS <strong>{money.format(estimatedInss)}</strong></span><span>IRRF <strong>{money.format(estimatedIrrf)}</strong></span></div>
-    <div className="hr-approved-panels"><Card title="Equipe"><div className="hr-approved-lines"><div>Total cadastrado <strong>{employees.length}</strong></div><div>Ativos <strong>{activeEmployees.length}</strong></div><div>Desligados <strong>{employees.length-activeEmployees.length}</strong></div></div></Card><Card title="Distribuição da equipe por obra"><div className="hr-approved-lines">{[...new Set(activeEmployees.map(item=>item.costCenterName).filter((name):name is string=>Boolean(name)))].map(name=><div key={name}>{name}<strong>{activeEmployees.filter(item=>item.costCenterName===name).length}</strong></div>)}{works===0&&<p>Nenhuma equipe alocada.</p>}</div></Card><Card title="Operação"><div className="hr-approved-lines"><div>Obras com equipe <strong>{works}</strong></div><div>Banco de horas <strong>{bankHours}</strong></div><div>Empresas na visão <strong>{visibleCompanies.length}</strong></div></div></Card><Card title="Equipe por situação"><div className="hr-approved-situation"><div className="hr-approved-donut" style={{background:`conic-gradient(#16a34a 0 ${employees.length?activeEmployees.length/employees.length*100:0}%, #ef4444 0 100%)`}}><span>{activeEmployees.length}<small>Ativos</small></span></div><div><p>Ativos: {employees.length?(activeEmployees.length/employees.length*100).toFixed(1):'0'}%</p><p>Desligados: {employees.length?((employees.length-activeEmployees.length)/employees.length*100).toFixed(1):'0'}%</p></div></div></Card></div>
-    <Card title="Ações rápidas"><div className="hr-approved-actions"><button type="button" onClick={()=>setTab('colaboradores')}>Colaboradores</button><button type="button" onClick={()=>setTab('presenca')}>Presença e ponto</button><button type="button" onClick={()=>setTab('importacoes')}>Importar folha</button><button type="button" onClick={()=>setTab('relatorios')}>Exportar relatório</button></div></Card>
-  </div>}
+  {!loading&&!errorMessage&&tab==='dashboard'&&<HrApprovedDashboard activeEmployees={activeEmployees} employees={employees} works={works} bankHours={bankHours} visibleCompaniesCount={visibleCompanies.length} monthlyPayroll={monthlyPayroll} estimatedNetPayroll={estimatedNetPayroll} monthlyFixedEarnings={monthlyFixedEarnings} monthlyFixedDeductions={monthlyFixedDeductions} estimatedInss={estimatedInss} estimatedIrrf={estimatedIrrf} onNewEmployee={openNewEmployee} onNavigate={setTab}/>}
   {!loading&&!errorMessage&&tab==='colaboradores'&&<div className="hr-workspace__content hr-people-modern">
     <div className="hr-people-heading"><div><h2>Colaboradores</h2><p>Cadastro, gestão e vínculos dos colaboradores</p></div><Button size="sm" onClick={()=>openNewEmployee()}>+ Novo colaborador</Button></div>
     <div className="hr-people-stats">{[['Ativos',activeEmployees.length],['Desligados',employees.length-activeEmployees.length],['Total',employees.length],['Empresas',new Set(employees.map(e=>e.companyId)).size]].map(([label,count])=><div className="hr-people-stat" key={label}><span>{label}</span><strong>{count}</strong></div>)}</div>
