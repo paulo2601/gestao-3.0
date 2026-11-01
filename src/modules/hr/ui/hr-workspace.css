@@ -83,3 +83,11 @@
 @media(max-width:380px){.hr-approved-payroll{grid-template-columns:1fr}.hr-approved-payroll>div+div{border-left:0;border-top:1px solid #ffffff80;padding:12px 0 0}.hr-approved-kpi{padding:13px}}
 
 .hr-approved-donut{position:relative}.hr-approved-donut svg{position:absolute;inset:0;width:100%;height:100%}.hr-approved-donut>span{position:relative;z-index:1}
+
+.hr-edit-tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 18px;padding:4px}
+.hr-edit-tabs button{appearance:none;border:1px solid #b7cbe7;border-radius:12px;background:#f5f9ff;color:#14325d;font:inherit;font-weight:700;font-size:14px;padding:14px 9px;cursor:pointer;white-space:normal;line-height:1.3;box-shadow:0 2px 6px #0a316010}
+.hr-edit-tabs button.is-active{background:#0864e6;border-color:#0864e6;color:white;box-shadow:0 4px 12px #0864e633}
+.hr-edit-tabs button:focus-visible{outline:3px solid #80b7ff;outline-offset:2px}
+.hr-edit-summary{grid-column:1/-1;background:#eff6ff;border:1px solid #d1e3fb;border-radius:16px;padding:20px;overflow-wrap:anywhere}
+.hr-edit-summary h3{margin:0 0 10px;color:#102b50}.hr-edit-summary p{margin:8px 0}
+@media(max-width:760px){.hr-edit-tabs{display:flex;overflow-x:auto;gap:7px;scrollbar-width:thin;scroll-snap-type:x proximity}.hr-edit-tabs button{flex:0 0 auto;min-width:125px;max-width:190px;scroll-snap-align:start;font-size:13px;padding:12px 10px}}
