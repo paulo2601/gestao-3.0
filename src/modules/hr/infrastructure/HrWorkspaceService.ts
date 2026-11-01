@@ -346,3 +346,15 @@ export async function loadHrAddress(tenantId:string,employeeId:string){const {da
 export async function saveHrAddress(tenantId:string,employeeId:string,address:HrAddressFields){const {error}=await getSupabaseClient().from('employee_profiles').update({...address,postal_code:address.postal_code.replace(/\D/g,'')}).eq('tenant_id',tenantId).eq('employee_id',employeeId).select('employee_id').single();if(error)throw error;}
 
 export async function sendEmployeeClockInvite(employmentContractId:string):Promise<void>{const response:unknown=await getSupabaseClient().functions.invoke<unknown>('employee-clock-invite',{body:{employmentContractId}});if(typeof response!=='object'||response===null||!('error' in response))throw new Error('Resposta inválida ao solicitar convite.');if(response.error){const issue:unknown=response.error;const message=issue instanceof Error?issue.message:typeof issue==='string'?issue:'Falha desconhecida ao enviar convite do Ponto Digital.';throw new Error(message);}}
+
+export type ClockReportEvent={employment_contract_id:string;punch_kind:string;captured_at:string};
+export async function listClockReportEvents(contractIds:string[],startDate:string,endDate:string):Promise<ClockReportEvent[]>{
+ if(!contractIds.length)return[];
+ const start=new Date(startDate+'T00:00:00-03:00').toISOString();
+ const end=new Date(new Date(endDate+'T00:00:00-03:00').getTime()+86400000).toISOString();
+ const results=await Promise.all(Array.from({length:Math.ceil(contractIds.length/100)},(_,i)=>contractIds.slice(i*100,(i+1)*100)).map(async ids=>{
+  const result=await getSupabaseClient().from('employee_clock_events').select('employment_contract_id,punch_kind,captured_at').in('employment_contract_id',ids).gte('captured_at',start).lt('captured_at',end).order('captured_at',{ascending:true}).limit(10000);
+  if(result.error)throw result.error;return result.data??[];
+ }));
+ return results.flat();
+}
