@@ -3,18 +3,30 @@ const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFO
  const today=day(new Date().toISOString());
  const current=all.filter(x=>day(x.captured_at)===today);
  const next=kinds.find(k=>!current.some(x=>x.punch_kind===k));
- el('main').innerHTML='<div class="day-heading"><div class="eyebrow">MINHA JORNADA</div><h2>Registrar ponto</h2><p id="clock-date"></p></div><div id="rows" class="punch-list"></div><button id="mark"></button><div class="secondary-actions"><button id="history">Meus registros</button><button id="help">Ajuda</button></div><button id="logout">Sair da conta</button><p id="message" role="status" aria-live="polite"></p>';
+ const formatMinutes=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')+' h';
+ const duration=items=>{const m=new Map(items.map(v=>[v.punch_kind,v]));if(!m.has('entry')||!m.has('exit'))return null;let n=(new Date(m.get('exit').captured_at)-new Date(m.get('entry').captured_at))/60000;if(m.has('lunch_out')&&m.has('lunch_in'))n-=(new Date(m.get('lunch_in').captured_at)-new Date(m.get('lunch_out').captured_at))/60000;return n>=0?Math.floor(n):null};
+ const month=new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'}).slice(0,7);
+ const previous=new Date(month+'-01T12:00:00Z');previous.setUTCMonth(previous.getUTCMonth()-1);
+ const previousMonth=previous.toISOString().slice(0,7);
+ const byDate=new Map();for(const v of all){const d=day(v.captured_at);if(!byDate.has(d))byDate.set(d,[]);byDate.get(d).push(v)}
+ const monthData=[...byDate].filter(([d])=>d.startsWith(previousMonth));
+ const completed=monthData.map(([,items])=>duration(items)).filter(n=>n!==null);
+ const worked=completed.reduce((a,b)=>a+b,0);
+ const todayMinutes=duration(current);
+ const interval=(()=>{const a=current.find(v=>v.punch_kind==='lunch_out'),b=current.find(v=>v.punch_kind==='lunch_in');return a&&b?Math.max(0,Math.floor((new Date(b.captured_at)-new Date(a.captured_at))/60000)):null})();
+ el('main').className='clock-home';
+ el('main').innerHTML='<div class="clock-profile"><div class="clock-avatar">◉</div><div><strong>Meu ponto digital</strong><small>Registro de jornada</small></div></div><div class="clock-datebar"><span id="clock-date"></span><strong id="live-clock"></strong></div><section class="clock-frequency"><h2>▣ Resumo da frequência <small id="frequency-month"></small></h2><div class="clock-metrics"><div class="metric green"><span>▣</span><small>Dias trabalhados</small><strong id="freq-days"></strong></div><div class="metric red"><span>⊠</span><small>Faltas</small><strong>—</strong></div><div class="metric amber"><span>◷</span><small>Atrasos</small><strong>—</strong></div><div class="metric purple"><span>▣</span><small>Horas trabalhadas</small><strong id="freq-hours"></strong></div><div class="metric cyan"><span>◇</span><small>Banco de horas</small><strong>—</strong></div></div><p class="frequency-note">Faltas, atrasos e banco de horas dependem da apuração oficial do RH.</p></section><div class="clock-section-title"><h2>Minha Jornada – Hoje</h2><span id="clock-state"></span></div><div id="rows" class="clock-rows"></div><button id="mark"></button><div class="clock-totals"><div><small>Horas do dia</small><strong id="today-total"></strong></div><div><small>Intervalo</small><strong id="today-break"></strong></div><div><small>Horas extras</small><strong>—</strong></div></div><div class="secondary-actions"><button id="history">☷ Meus registros</button><button id="help">ⓘ Ajuda</button></div><button id="logout">⇥ Sair da conta</button><p id="message" role="status" aria-live="polite"></p>';
  el('clock-date').textContent=new Intl.DateTimeFormat('pt-BR',{dateStyle:'full',timeZone:'America/Sao_Paulo'}).format(new Date());
+ el('frequency-month').textContent='– '+new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'}).format(previous);
+ el('freq-days').textContent=String(completed.length);
+ el('freq-hours').textContent=formatMinutes(worked);
+ el('today-total').textContent=todayMinutes===null?'—':formatMinutes(todayMinutes);
+ el('today-break').textContent=interval===null?'—':formatMinutes(interval);
+ el('clock-state').textContent=next?'● Em andamento':'✓ Jornada concluída';
+ const tick=()=>{const clock=el('live-clock');if(clock)clock.textContent=new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})};tick();clearInterval(window.pontoClockInterval);window.pontoClockInterval=setInterval(tick,1000);
  const rows=el('rows');
- for(const k of kinds){
-  const v=current.find(x=>x.punch_kind===k);
-  const d=document.createElement('div');d.className='punch-row';
-  const label=document.createElement('span');label.className='punch-label';label.textContent=labels[k];
-  const status=document.createElement('span');status.className='punch-status '+(v?'done':'pending');
-  status.textContent=v?new Date(v.captured_at).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}):'Pendente';
-  d.append(label,status);rows.append(d);
- }
- el('mark').textContent=next?'Registrar '+labels[next]:'Jornada registrada';
+ for(const k of kinds){const v=current.find(x=>x.punch_kind===k);const row=document.createElement('div');row.className='clock-row';const symbol=document.createElement('span');symbol.className='clock-symbol '+k;symbol.textContent={entry:'↪',lunch_out:'♜',lunch_in:'↶',exit:'⇥'}[k];const label=document.createElement('strong');label.textContent=labels[k];const time=document.createElement('span');time.className='clock-time';time.textContent=v?new Date(v.captured_at).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}):'--:--';const status=document.createElement('small');status.className=v?'clock-done':'clock-pending';status.textContent=v?'✓ Registrado':'◷ Pendente';row.append(symbol,label,time,status);rows.append(row)}
+ el('mark').textContent=next?'◷ Registrar '+labels[next]:'✓ Jornada registrada';
  el('mark').disabled=!next;
  el('mark').onclick=async()=>{
   el('mark').disabled=true;
