@@ -1,0 +1,7 @@
+import type { FixedCompensationItem } from '../application/HrOperationsRepository';
+type Props={name:string;job:string;company:string;work:string;employment:string;effectiveOn:string;cpf:string;phone:string;email:string;salary:number;items:FixedCompensationItem[]};
+const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+export function HrEmployeeSummary({name,job,company,work,employment,effectiveOn,cpf,phone,email,salary,items}:Props){
+ const total=(kind:'earning'|'deduction')=>items.filter(x=>x.kind===kind).reduce((sum,x)=>sum+(x.valueType==='percent'?salary*x.value/100:x.value),0);
+ return <section className="hr-edit-summary hr-edit-summary--approved"><header><h3>Resumo do colaborador</h3></header><div className="hr-edit-summary__person"><div><strong>{name}</strong><small>{job}</small></div><span className="hr-edit-summary__status">Ativo</span></div><div className="hr-edit-summary__facts">{[['Empresa',company],['Obra / centro de custo',work],['Vínculo',employment],['Data efetiva',effectiveOn],['CPF',cpf],['Telefone',phone],['E-mail',email]].map(([label,value])=><div key={label}><small>{label}</small><strong>{value||'Não informado'}</strong></div>)}</div><div className="hr-edit-summary__salary"><h4>Composição salarial</h4><div>Salário de carteira <strong>{money.format(salary)}</strong></div><div>Acréscimos fixos <strong>{money.format(total('earning'))}</strong></div><div>Descontos fixos <strong>{money.format(total('deduction'))}</strong></div></div></section>;
+}
