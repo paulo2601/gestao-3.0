@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
-import { BarChart3, CalendarCheck, Clock3, FileText, FolderUp, HardHat, ReceiptText, ShieldCheck, Upload, UsersRound, WalletCards } from 'lucide-react';
+import { useEffect,useMemo,useState,useRef,useCallback } from 'react';
+import { BarChart3,CalendarCheck,Clock3,FileText,FolderUp,HardHat,ReceiptText,ShieldCheck,Upload,UsersRound,WalletCards } from 'lucide-react';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
-import type { EmploymentType, FixedCompensationItem, HrEmployeeRow, HrOperationalSnapshot } from '../application/HrOperationsRepository';
-import { getHrBudgetRepository, getHrOperationsRepository } from '../infrastructure/createHrRepositories';
-import { closeBankHourCompetence, listAttendanceForDate, listBankHourMovements, listEmployeeDocuments, listEpiDeliveries, listHrComplianceRecords, saveAttendance, saveAttendanceBatch, saveAttendancePeriod, saveBankHourMovement, saveEpiDelivery, saveHrComplianceRecord, transferEmployeeCompany, uploadEmployeeDocument, openEmployeeDocument, type AttendanceRecord, type AttendanceStatus, type HrBankHourMovement, type HrEmployeeDocument, type HrEpiDelivery } from '../infrastructure/HrWorkspaceService';
+import type { EmploymentType,FixedCompensationItem,HrEmployeeRow,HrOperationalSnapshot } from '../application/HrOperationsRepository';
+import { getHrBudgetRepository,getHrOperationsRepository } from '../infrastructure/createHrRepositories';
+import { closeBankHourCompetence,listAttendanceForDate,listBankHourMovements,listEmployeeDocuments,listEpiDeliveries,listHrComplianceRecords,saveAttendance,saveAttendanceBatch,saveAttendancePeriod,saveBankHourMovement,saveEpiDelivery,saveHrComplianceRecord,transferEmployeeCompany,uploadEmployeeDocument,openEmployeeDocument,type AttendanceRecord,type AttendanceStatus,type HrBankHourMovement,type HrEmployeeDocument,type HrEpiDelivery } from '../infrastructure/HrWorkspaceService';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { Dialog } from '../../../shared/ui/Dialog';
@@ -14,27 +14,27 @@ import { currentHrCompetence } from './useHrBudgetOverview';
 import { HrComplianceSection } from './HrComplianceSection';
 import { HrEpiSection } from './HrEpiSection';
 import { HrAttendanceSection } from './HrAttendanceSection';
-import { HrBankHoursSection, type BankDraft } from './HrBankHoursSection';
-import { HrReceiptsSection, HrReportsSection } from './HrReportsSection';
-import { HrDocumentsSection, HrImportsSection } from './HrImportsSection';
+import { HrBankHoursSection,type BankDraft } from './HrBankHoursSection';
+import { HrReceiptsSection,HrReportsSection } from './HrReportsSection';
+import { HrDocumentsSection,HrImportsSection } from './HrImportsSection';
 import { HrEmployeeForm } from './HrEmployeeForm';
 import { HrFixedCompensationEditor } from './HrFixedCompensationEditor';
 import { HrFortnightClosingSection } from './HrFortnightClosingSection';
-import { calculateInss, calculateIrrf, fixedTotals as compensationFixedTotals } from './hrCompensation';
+import { calculateInss,calculateIrrf,fixedTotals as compensationFixedTotals } from './hrCompensation';
 import type { HrComplianceRecord } from '../infrastructure/HrWorkspaceService';
-import { addDays, companyLabel, localToday, messageFrom, normalizeSearch, smartMatches } from './hrWorkspaceHelpers';
+import { addDays,companyLabel,localToday,messageFrom,normalizeSearch,smartMatches } from './hrWorkspaceHelpers';
 import { HrEmployeeAddress } from './HrEmployeeAddress';
 import { HrEmployeeSummary } from './HrEmployeeSummary';
 import { HrApprovedDashboard } from './HrApprovedDashboard';
 import './hr-workspace.css';
 import './hr-people-modern.css';
-type HrWorkspaceTab = 'dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
-type CompanyData = { company: CompanySummary; operations: HrOperationalSnapshot; overview: Awaited<ReturnType<ReturnType<typeof getHrBudgetRepository>['getOverview']>>; };
-type WorkspaceEmployee = HrEmployeeRow & { companyId: string; companyName: string; tenantId: string };
-type EmployeeDraft = { fullName:string; companyId:string; jobTitle:string; cpf:string; pix:string; phone:string; email:string; notes:string; employmentType:EmploymentType; sector:string; supervisor:string; weeklyHours:string; bankHoursEnabled:string; baseSalary:string; costCenterId:string; effectiveOn:string };
-type EpiDraft = { employmentContractId:string; epiName:string; quantity:string; deliveredOn:string; caNumber:string; notes:string; };
-type ComplianceDraft = { kind:'aso'|'nr'|'vacation'; employmentContractId:string; title:string; startsOn:string; endsOn:string; expiresOn:string; notes:string; };
-type AttendancePeriodDraft = {
+type HrWorkspaceTab='dashboard' | 'colaboradores' | 'epis' | 'compliance' | 'salarios' | 'presenca' | 'banco_horas' | 'fechamento' | 'relatorios' | 'recibos' | 'importacoes' | 'documentos';
+type CompanyData={ company: CompanySummary; operations: HrOperationalSnapshot; overview: Awaited<ReturnType<ReturnType<typeof getHrBudgetRepository>['getOverview']>>; };
+type WorkspaceEmployee=HrEmployeeRow & { companyId: string; companyName: string; tenantId: string };
+type EmployeeDraft={ fullName:string; companyId:string; jobTitle:string; cpf:string; pix:string; phone:string; email:string; notes:string; employmentType:EmploymentType; sector:string; supervisor:string; weeklyHours:string; bankHoursEnabled:string; baseSalary:string; costCenterId:string; effectiveOn:string };
+type EpiDraft={ employmentContractId:string; epiName:string; quantity:string; deliveredOn:string; caNumber:string; notes:string; };
+type ComplianceDraft={ kind:'aso'|'nr'|'vacation'; employmentContractId:string; title:string; startsOn:string; endsOn:string; expiresOn:string; notes:string; };
+type AttendancePeriodDraft={
 employee: WorkspaceEmployee;
 status: 'medical_certificate' | 'vacation';
 startDate: string;
@@ -44,12 +44,12 @@ notes: string;
 };
 const maskCpf=(v:string)=>{const d=v.replace(/\D/g,'').slice(0,11);return d.replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/(\d{3})(\d{1,2})$/,'$1-$2')};
 const maskPhone=(v:string)=>{const d=v.replace(/\D/g,'').slice(0,11);return d.length<=2?d:d.length<=6?`(${d.slice(0,2)}) ${d.slice(2)}`:`(${d.slice(0,2)}) ${d.slice(2,d.length===11?7:6)}-${d.slice(d.length===11?7:6)}`};
-const ALL_HR_COMPANIES = '__all_hr_companies__';
-const tabs: Array<{ id: HrWorkspaceTab; label: string; icon: typeof BarChart3 }> = [
-{ id:'dashboard',label:'Dashboard',icon:BarChart3 },{ id:'colaboradores',label:'Colaboradores',icon:UsersRound },{ id:'epis',label:'EPIs',icon:HardHat },{ id:'compliance',label:'ASO, NR e Férias',icon:ShieldCheck },{ id:'salarios',label:'Salários e pagamentos',icon:WalletCards },{ id:'presenca',label:'Presença e ponto',icon:CalendarCheck },{ id:'banco_horas',label:'Banco de horas',icon:Clock3 },{ id:'fechamento',label:'Fechamento quinzenal',icon:WalletCards },{ id:'relatorios',label:'Relatórios',icon:FileText },{ id:'recibos',label:'Recibos',icon:ReceiptText },{ id:'importacoes',label:'Importações',icon:Upload },{ id:'documentos',label:'Importações RH',icon:FolderUp },
+const ALL_HR_COMPANIES='__all_hr_companies__';
+const tabs: Array<{ id: HrWorkspaceTab; label: string; icon: typeof BarChart3 }>=[
+{ id:'dashboard',label:'Dashboard',icon:BarChart3 },{ id:'colaboradores',label:'Colaboradores',icon:UsersRound },{ id:'epis',label:'EPIs',icon:HardHat },{ id:'compliance',label:'ASO,NR e Férias',icon:ShieldCheck },{ id:'salarios',label:'Salários e pagamentos',icon:WalletCards },{ id:'presenca',label:'Presença e ponto',icon:CalendarCheck },{ id:'banco_horas',label:'Banco de horas',icon:Clock3 },{ id:'fechamento',label:'Fechamento quinzenal',icon:WalletCards },{ id:'relatorios',label:'Relatórios',icon:FileText },{ id:'recibos',label:'Recibos',icon:ReceiptText },{ id:'importacoes',label:'Importações',icon:Upload },{ id:'documentos',label:'Importações RH',icon:FolderUp },
 ];
-const money = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
-const employmentTypeOptions = [
+const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const employmentTypeOptions=[
 { value:'clt',label:'CLT' },{ value:'pj',label:'PJ' },{ value:'autonomo',label:'Autônomo' },{ value:'temporario',label:'Temporário' },{ value:'estagio',label:'Estágio' },{ value:'prestador',label:'Prestador' },{ value:'outro',label:'Outro' },
 ];
 export function HrWorkspacePage({companies,initialCompanyId}:{companies:readonly CompanySummary[];initialCompanyId?:string}){
@@ -119,9 +119,9 @@ return <section className="hr-workspace">
 {loading&&<Card><p className="ui-muted">Carregando dados do RH...</p></Card>}{errorMessage&&<Card><Feedback tone="danger" title="Erro ao carregar RH" message={errorMessage}/></Card>}
 {!loading&&!errorMessage&&tab==='dashboard'&&<HrApprovedDashboard activeEmployees={activeEmployees} employees={employees} works={works} bankHours={bankHours} visibleCompaniesCount={visibleCompanies.length} monthlyPayroll={monthlyPayroll} estimatedNetPayroll={estimatedNetPayroll} monthlyFixedEarnings={monthlyFixedEarnings} monthlyFixedDeductions={monthlyFixedDeductions} estimatedInss={estimatedInss} estimatedIrrf={estimatedIrrf} onNewEmployee={openNewEmployee} onNavigate={setTab}/>}
 {!loading&&!errorMessage&&tab==='colaboradores'&&<div className="hr-workspace__content hr-people-modern">
-<div className="hr-people-heading"><div><h2>Colaboradores</h2><p>Cadastro, gestão e vínculos dos colaboradores</p></div><Button size="sm" onClick={()=>openNewEmployee()}>+ Novo colaborador</Button></div>
+<div className="hr-people-heading"><div><h2>Colaboradores</h2><p>Cadastro,gestão e vínculos dos colaboradores</p></div><Button size="sm" onClick={()=>openNewEmployee()}>+ Novo colaborador</Button></div>
 <div className="hr-people-stats">{[['Ativos',activeEmployees.length],['Desligados',employees.length-activeEmployees.length],['Total',employees.length],['Empresas',new Set(employees.map(e=>e.companyId)).size]].map(([label,count])=><div className="hr-people-stat" key={label}><span>{label}</span><strong>{count}</strong></div>)}</div>
-<Card><div className="hr-people-filters"><Input label="Buscar colaborador" placeholder="Nome, CPF, empresa, obra ou função..." value={employeeSearch} onChange={e=>setEmployeeSearch(e.target.value)}/><Select label="Status" value={employeeStatus} onChange={e=>setEmployeeStatus(e.target.value)} options={[{value:'active',label:'Ativos'},{value:'terminated',label:'Desligados'},{value:'all',label:'Todos'}]}/></div>
+<Card><div className="hr-people-filters"><Input label="Buscar colaborador" placeholder="Nome,CPF,empresa,obra ou função..." value={employeeSearch} onChange={e=>setEmployeeSearch(e.target.value)}/><Select label="Status" value={employeeStatus} onChange={e=>setEmployeeStatus(e.target.value)} options={[{value:'active',label:'Ativos'},{value:'terminated',label:'Desligados'},{value:'all',label:'Todos'}]}/></div>
 {filteredEmployees.length===0?<p className="ui-muted">Nenhum colaborador encontrado.</p>:<div className="hr-people-table-wrap"><table className="hr-people-table"><thead><tr><th>Colaborador</th><th>Função / Cargo</th><th>Empresa / Obra</th><th>Salário</th><th>Situação</th><th style={{textAlign:'right'}}>Ações</th></tr></thead><tbody>{filteredEmployees.map(item=><tr key={`${item.companyId}:${item.employmentContractId}`}><td><div className="hr-people-person"><span className="hr-people-avatar" aria-hidden="true">{item.fullName.split(' ').filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()}</span><div><span className="hr-people-name">{item.fullName}</span><span className="hr-people-sub">{item.sector||'Colaborador'}</span></div></div></td><td><strong>{item.jobTitle}</strong></td><td><strong>{item.companyName}</strong><span className="hr-people-sub">{item.costCenterName??'Sem obra'}</span></td><td><strong>{money.format(item.baseSalary+fixedTotals(item).earnings-fixedTotals(item).deductions)}</strong><span className="hr-people-sub">Base: {money.format(item.baseSalary)}</span></td><td><span className={`hr-people-status ${item.contractStatus==='active'?'':'off'}`}><span className="hr-people-dot"/>{item.contractStatus==='active'?'Ativo':'Desligado'}</span></td><td><div className="hr-people-actions"><Button size="sm" variant="secondary" onClick={()=>openEmployee(item)}>Editar</Button>{item.contractStatus==='active'&&<Button size="sm" variant="secondary" onClick={()=>openTermination(item)}>Encerrar</Button>}</div></td></tr>)}</tbody></table></div>}
 <div className="hr-people-footer">Exibindo {filteredEmployees.length} de {employees.length} vínculos cadastrados</div>
 </Card>
