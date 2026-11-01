@@ -358,3 +358,19 @@ export async function listClockReportEvents(contractIds:string[],startDate:strin
  }));
  return results.flat();
 }
+
+export type ClockPunchKind='entry'|'lunch_out'|'lunch_in'|'exit';
+export type ClockAdjustment={employment_contract_id:string;attendance_date:string;punch_kind:ClockPunchKind;corrected_time:string;original_time:string|null};
+export async function listClockAdjustments(ids:string[],start:string,end:string):Promise<ClockAdjustment[]>{
+ if(!ids.length)return[];
+ const results=await Promise.all(Array.from({length:Math.ceil(ids.length/100)},(_,i)=>ids.slice(i*100,(i+1)*100)).map(async batch=>{
+ const r=await getSupabaseClient().from('employee_clock_adjustments').select('employment_contract_id,attendance_date,punch_kind,corrected_time,original_time').in('employment_contract_id',batch).gte('attendance_date',start).lte('attendance_date',end).limit(10000);
+ if(r.error)throw r.error;return r.data as ClockAdjustment[];}));
+ return results.flat();
+}
+export async function saveClockAdjustment(input:{tenantId:string;companyId:string;employmentContractId:string;attendanceDate:string;punchKind:ClockPunchKind;correctedTime:string;originalTime:string|null;reason:string}):Promise<void>{
+ if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(input.correctedTime))throw new Error('Horário inválido.');
+ if(input.reason.trim().length<5)throw new Error('Informe uma justificativa com pelo menos 5 caracteres.');
+ const r=await getSupabaseClient().from('employee_clock_adjustments').upsert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,attendance_date:input.attendanceDate,punch_kind:input.punchKind,corrected_time:input.correctedTime,original_time:input.originalTime,reason:input.reason.trim()},{onConflict:'employment_contract_id,attendance_date,punch_kind'});
+ if(r.error)throw r.error;
+}
