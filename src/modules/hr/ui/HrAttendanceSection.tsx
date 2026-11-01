@@ -45,6 +45,9 @@ async function openAttendanceReport(date:string,employees:Employee[]){
 
 export function HrAttendanceSection({date,setDate,search,setSearch,rows,employees,loading,feedback,onAllPresent,onChange,onRowsChange,onFeedback}:{date:string;setDate:(v:string)=>void;search:string;setSearch:(v:string)=>void;rows:AttendanceRecord[];employees:Employee[];loading:boolean;feedback:string|null;onAllPresent:()=>void;onChange:(employee:Employee,status:AttendanceStatus)=>void;onRowsChange:(rows:AttendanceRecord[])=>void;onFeedback:(message:string)=>void}){
  const [showRegistered,setShowRegistered]=useState(false);
+ const [expandedEmployee,setExpandedEmployee]=useState<string|null>(null);
+ const [registeredSearch,setRegisteredSearch]=useState('');
+ const [registeredPage,setRegisteredPage]=useState(1);
  const [clockData,setClockData]=useState<Map<string,Map<ClockPunchKind,string>>>(new Map());
  const [editing,setEditing]=useState<{employee:Employee;kind:ClockPunchKind}|null>(null);
  const [correctedTime,setCorrectedTime]=useState('');
