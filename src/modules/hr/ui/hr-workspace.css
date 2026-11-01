@@ -115,3 +115,8 @@
 .hr-clock-card__punch strong{font-variant-numeric:tabular-nums}
 .hr-clock-pagination{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap;font-size:12px}
 @media(max-width:480px){.hr-clock-card__punch{font-size:12px;gap:5px}.hr-clock-card__head{padding:10px}.hr-clock-pagination{justify-content:center}}
+
+.hr-clock-card__punch{grid-template-columns:minmax(0,1fr) auto auto auto}
+.hr-clock-card__punch .ui-button{min-width:0}
+.hr-clock-cancel-dialog{display:grid;gap:12px}
+@media(max-width:480px){.hr-clock-card__punch{grid-template-columns:minmax(0,1fr) auto auto;gap:5px}.hr-clock-card__punch strong{grid-column:2 / -1;grid-row:1}.hr-clock-card__punch button{grid-row:2}}
