@@ -23,30 +23,61 @@ const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFO
    await home();message('Marcação confirmada no servidor');
   }catch(e){message(e.message);el('mark').disabled=false}
  };
+
  el('history').onclick=()=>{
-  el('main').innerHTML='<div class="day-heading"><div class="eyebrow">HISTÓRICO DE JORNADA</div><h2>Meus registros</h2><p>Consulte suas marcações por dia.</p></div><div class="history-filters"><label for="history-month">Mês</label><input id="history-month" type="month"></div><div id="history-summary" class="history-summary"></div><div id="history-days" class="history-days"></div><button id="back">Voltar</button><p id="message" role="status" aria-live="polite"></p>';
-  const dateFmt=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  const timeFmt=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const filter=el('history-month');filter.value=day(new Date().toISOString()).slice(0,7);
-  function renderHistory(){
-   const selected=filter.value;
-   const records=all.filter(v=>day(v.captured_at).startsWith(selected));
-   const groups=new Map();
-   for(const v of records){const date=day(v.captured_at);if(!groups.has(date))groups.set(date,[]);groups.get(date).push(v)}
-   const container=el('history-days');container.replaceChildren();
-   el('history-summary').textContent=groups.size+' dia(s) com marcações · '+records.length+' registro(s)';
-   if(!groups.size){const empty=document.createElement('p');empty.className='history-empty';empty.textContent='Nenhuma marcação encontrada neste mês.';container.append(empty);return}
-   for(const [date,items] of [...groups].sort((a,b)=>b[0].localeCompare(a[0]))){
-    const card=document.createElement('details');card.className='history-day';card.open=date===day(new Date().toISOString());
-    const heading=document.createElement('summary');const name=document.createElement('strong');name.textContent=dateFmt.format(new Date(date+'T12:00:00-03:00'));const count=document.createElement('span');count.textContent=items.length+' de 4 marcações';heading.append(name,count);card.append(heading);
-    const byKind=new Map(items.map(v=>[v.punch_kind,v]));
-    for(const kind of kinds){const v=byKind.get(kind);const row=document.createElement('div');row.className='history-record';const label=document.createElement('span');label.textContent=labels[kind];const status=document.createElement('strong');status.className=v?'history-time':'history-pending';status.textContent=v?timeFmt.format(new Date(v.captured_at))+(v.offline?' · offline':''):'Pendente';row.append(label,status);card.append(row)}
-    const entry=byKind.get('entry'),lunchOut=byKind.get('lunch_out'),lunchIn=byKind.get('lunch_in'),exit=byKind.get('exit');
-    if(entry&&exit){let minutes=(new Date(exit.captured_at)-new Date(entry.captured_at))/60000;if(lunchOut&&lunchIn)minutes-=(new Date(lunchIn.captured_at)-new Date(lunchOut.captured_at))/60000;if(minutes>=0){const total=document.createElement('div');total.className='history-total';total.textContent='Horas registradas: '+Math.floor(minutes/60)+'h '+String(Math.floor(minutes%60)).padStart(2,'0')+'min';card.append(total)}}
-    container.append(card);
+  const fmt=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const tf=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const monthFmt=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'});
+  const now=day(new Date().toISOString()).slice(0,7);
+  let selected=now,mode='day',expanded=day(new Date().toISOString());
+  const clock=v=>{const n=Math.max(0,Math.floor(v));return String(Math.floor(n/60)).padStart(2,'0')+'h'+String(n%60).padStart(2,'0')};
+  const duration=items=>{const m=new Map(items.map(x=>[x.punch_kind,x]));const e=m.get('entry'),o=m.get('lunch_out'),i=m.get('lunch_in'),x=m.get('exit');if(!e||!x)return null;let t=(new Date(x.captured_at)-new Date(e.captured_at))/60000;if(o&&i)t-=(new Date(i.captured_at)-new Date(o.captured_at))/60000;return Number.isFinite(t)&&t>=0?Math.floor(t):null};
+  const records=all.reduce((m,v)=>{const d=day(v.captured_at);if(!m.has(d))m.set(d,[]);m.get(d).push(v);return m},new Map());
+  const node=(tag,cls,txt)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(txt!==undefined)x.textContent=txt;return x};
+  el('main').className='history-screen';
+  el('main').innerHTML='<div class="history-toolbar"><button type="button" id="hist-back" aria-label="Voltar">‹</button><div class="history-brand"><strong>Ponto Digital</strong><small>Meus registros</small></div><button type="button" id="hist-period">▣ Período</button><button type="button" id="hist-filter" aria-label="Filtrar">☷</button></div><div class="history-tabs"><button data-mode="day" class="active">▣ Por dia</button><button data-mode="month">▥ Por mês</button><button data-mode="competence">◇ Por competência</button></div><div class="history-navigation"><button id="hist-prev" aria-label="Período anterior">‹</button><strong id="hist-title"></strong><button id="hist-next" aria-label="Próximo período">›</button></div><div id="hist-list"></div><div id="hist-detail"></div><div id="hist-stats"></div><input id="hist-picker" type="month" aria-label="Escolher mês" hidden><p id="message" role="status"></p>';
+  const picker=el('hist-picker');picker.value=selected;
+  function changeMonth(delta){const [y,m]=selected.split('-').map(Number);const d=new Date(Date.UTC(y,m-1+delta,1));selected=d.toISOString().slice(0,7);picker.value=selected;expanded='';render()}
+  function render(){
+   const [y,m]=selected.split('-').map(Number);el('hist-title').textContent=monthFmt.format(new Date(Date.UTC(y,m-1,1)));
+   document.querySelectorAll('.history-tabs button').forEach(b=>{b.classList.toggle('active',b.dataset.mode===mode);b.setAttribute('aria-pressed',String(b.dataset.mode===mode))});
+   const dates=[...records.keys()].filter(d=>d.startsWith(selected)).sort().reverse();
+   const list=el('hist-list');list.replaceChildren();const detail=el('hist-detail');detail.replaceChildren();
+   const totals=dates.map(d=>duration(records.get(d))).filter(v=>v!==null);
+   const sum=totals.reduce((a,b)=>a+b,0);
+   if(!dates.length)list.append(node('p','history-empty','Nenhuma marcação encontrada neste período.'));
+   for(const d of dates){
+    const items=records.get(d),mins=duration(items),date=new Date(d+'T12:00:00-03:00');
+    const label=fmt.format(date);const card=node('button','history-list-card'+(expanded===d?' selected':''));card.type='button';
+    const dateBox=node('span','history-datebox');dateBox.append(node('small','',new Intl.DateTimeFormat('pt-BR',{weekday:'short'}).format(date).replace('.','').toUpperCase()),node('strong','',d.slice(8)));
+    const info=node('span','history-list-info');info.append(node('strong','',label.charAt(0).toUpperCase()+label.slice(1)),node('small','',items.length+' marcações'));
+    card.append(dateBox,info,node('span','history-hour'+(mins===null?' incomplete':''),mins===null?'Pendente':clock(mins)),node('span','history-chevron',expanded===d?'⌄':'›'));
+    card.onclick=()=>{expanded=expanded===d?'':d;render()};
+    list.append(card);
    }
+   if(mode==='day'&&expanded&&dates.includes(expanded)){
+    const items=records.get(expanded),mins=duration(items),byKind=new Map(items.map(v=>[v.punch_kind,v]));
+    const box=node('section','history-detail-card');
+    const head=node('div','history-detail-head');const left=node('div','');left.append(node('strong','',fmt.format(new Date(expanded+'T12:00:00-03:00'))),node('small','',items.length+' marcações registradas'));head.append(left,node('strong','history-hour',mins===null?'Pendente':clock(mins)));box.append(head);
+    const symbols={entry:'↪',lunch_out:'♜',lunch_in:'↶',exit:'⇥'};
+    for(const k of kinds){const v=byKind.get(k),row=node('div','history-detail-row');row.append(node('span','history-kind-icon '+k,symbols[k]),node('strong','history-kind-label',labels[k]),node('strong','history-kind-time',v?tf.format(new Date(v.captured_at)):'—'),node('span',v?'history-ok':'history-wait',v?'✓ Registrado':'Pendente'));box.append(row)}
+    if(mins!==null&&mins===0)box.append(node('div','history-note','Marcação de curta duração. O cálculo considera os horários registrados.'));
+    detail.append(box);
+   }
+   const stats=node('div','history-stats');
+   const values=[['Total do período',dates.length+' dias'],['Total trabalhado',clock(sum)],['Média diária',totals.length?clock(Math.floor(sum/totals.length)):'00h00']];
+   for(const [label,value] of values){const item=node('div','history-stat');item.append(node('small','',label),node('strong','',value));stats.append(item)}
+   el('hist-stats').replaceChildren(stats);
+   if(mode==='month'){detail.replaceChildren();list.prepend(node('div','history-mode-note','Resumo mensal das jornadas registradas.'))}
+   if(mode==='competence'){detail.replaceChildren();list.prepend(node('div','history-mode-note','Competência: '+selected.split('-').reverse().join('/')+' · '+dates.length+' dias registrados'))}
   }
-  filter.onchange=renderHistory;renderHistory();el('back').onclick=home;
+  el('hist-back').onclick=()=>{el('main').className='';home()};
+  el('hist-prev').onclick=()=>changeMonth(-1);el('hist-next').onclick=()=>changeMonth(1);
+  el('hist-period').onclick=()=>{picker.showPicker?picker.showPicker():picker.click()};
+  el('hist-filter').onclick=()=>{picker.showPicker?picker.showPicker():picker.click()};
+  picker.onchange=()=>{if(picker.value){selected=picker.value;expanded='';render()}};
+  document.querySelectorAll('.history-tabs button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;render()});
+  render();
  };
  el('help').onclick=()=>{
   el('main').innerHTML='<h2>Ajuda</h2><p>Registre cada marcação na ordem. O horário é capturado automaticamente e enviado ao RH.</p><button id="back">Voltar</button><p id="message"></p>';
