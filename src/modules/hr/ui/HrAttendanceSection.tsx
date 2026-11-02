@@ -99,7 +99,7 @@ export function HrAttendanceSection({date,setDate,search,setSearch,rows,employee
  for(const c of cancellations){
   const id=c.employment_contract_id;
   if(!removed.has(id))removed.set(id,new Set());
-  for(const kind of punchKinds){
+  for(const kind of (['entry','lunch_out','lunch_in','exit'] as ClockPunchKind[])){
    if(c.punch_kind!==kind&&c.punch_kind!=='all')continue;
    if(!data.get(id)?.has(kind))removed.get(id)!.add(kind);
   }
