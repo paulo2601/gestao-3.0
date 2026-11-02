@@ -1,11 +1,25 @@
 const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFOCSIvSbWifFCy6DjIg_9QJeYd38';let session=null,account=null;const el=id=>document.getElementById(id);const labels={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída'};const kinds=Object.keys(labels);const day=iso=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));async function api(path,method='GET',data){const r=await fetch(U+path,{method,headers:{apikey:K,'Content-Type':'application/json',...(session?{Authorization:'Bearer '+session.access_token}:{})},...(data?{body:JSON.stringify(data)}:{})});if(!r.ok){const d=await r.json().catch(()=>({}));throw Error(d.msg||d.message||d.error_description||'Falha HTTP '+r.status)}return r.status===204?null:r.text().then(t=>t?JSON.parse(t):null)}function message(t){el('message').textContent=t}const SESSION_KEY='ponto-digital-session-v1';
 function saveSession(value){if(value?.refresh_token){localStorage.setItem(SESSION_KEY,JSON.stringify({refresh_token:value.refresh_token}));}}
 function clearSession(){localStorage.removeItem(SESSION_KEY);session=null;account=null;}
-async function loadAccount(){const a=await api('/rest/v1/employee_clock_accounts?select=*&user_id=eq.'+encodeURIComponent(session.user.id));if(a.length!==1||!a[0].enabled)throw Error('Conta ainda não habilitada pelo RH');account=a[0];}
-async function restoreSession(){let stored;try{stored=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{clearSession();return}if(!stored?.refresh_token)return;try{session=await api('/auth/v1/token?grant_type=refresh_token','POST',{refresh_token:stored.refresh_token});saveSession(session);await loadAccount();await home()}catch(err){if(/401|403|invalid|expired|revoked|refresh.token|Conta ainda não habilitada/i.test(err.message)){clearSession()}else{session=null;account=null;message('Não foi possível restaurar a sessão. Verifique a conexão e tente novamente.')}}}
-async function events(){return await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100')}async function home(){
+
+// Fila offline por colaborador: IDs fixos permitem reenvio idempotente.
+const OFFLINE_KEY='ponto-digital-offline-v1',ACCOUNT_KEY='ponto-digital-account-v1',EVENTS_KEY='ponto-digital-events-v1';
+const getJson=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}};
+const offlineQueue=()=>getJson(OFFLINE_KEY,[]);
+const saveQueue=q=>localStorage.setItem(OFFLINE_KEY,JSON.stringify(q));
+const cachedEvents=()=>getJson(EVENTS_KEY,[]);
+const cacheAccount=()=>{if(account&&session?.user?.id)localStorage.setItem(ACCOUNT_KEY,JSON.stringify({user_id:session.user.id,account}))};
+let syncing=false;
+async function syncPending(){if(syncing||!navigator.onLine||!session?.access_token||!account)return;syncing=true;try{const pending=offlineQueue();for(const record of pending){if(record.user_id!==session.user.id||record.employment_contract_id!==account.employment_contract_id)continue;try{await api('/rest/v1/employee_clock_events?on_conflict=id','POST',record);saveQueue(offlineQueue().filter(item=>item.id!==record.id))}catch(error){if(/409|duplicate|already exists/i.test(error.message)){saveQueue(offlineQueue().filter(item=>item.id!==record.id));continue}console.warn('Ponto offline aguardando sincronização:',error);break}}}finally{syncing=false}}
+function offlineAccount(){const cached=getJson(ACCOUNT_KEY,null);if(!cached?.account?.enabled)return false;account=cached.account;session={user:{id:cached.user_id},access_token:null};return true}
+window.addEventListener('online',()=>{void (async()=>{if(!session?.access_token){await restoreSession();return}await syncPending();if(account)await home()})().catch(console.warn)});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&session?.access_token)void syncPending()});
+async function loadAccount(){const a=await api('/rest/v1/employee_clock_accounts?select=*&user_id=eq.'+encodeURIComponent(session.user.id));if(a.length!==1||!a[0].enabled)throw Error('Conta ainda não habilitada pelo RH');account=a[0];cacheAccount();}
+async function restoreSession(){let stored;try{stored=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{clearSession();return}if(!stored?.refresh_token)return;try{session=await api('/auth/v1/token?grant_type=refresh_token','POST',{refresh_token:stored.refresh_token});saveSession(session);await loadAccount();await syncPending();await home()}catch(err){if(/401|403|invalid|expired|revoked|refresh.token|Conta ainda não habilitada/i.test(err.message)){clearSession()}else if(offlineAccount()){await home();message('Modo offline: as marcações serão sincronizadas quando houver internet.')}else{session=null;account=null;message('Conecte-se à internet ao menos uma vez para ativar o modo offline.')}}}
+async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.access_token){try{remote=await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100');localStorage.setItem(EVENTS_KEY,JSON.stringify(remote))}catch(error){console.warn('Histórico offline:',error)}}const pending=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account.employment_contract_id);return [...pending.map(v=>({...v,pending_sync:true})),...remote.filter(v=>!pending.some(p=>p.id===v.id))]}async function home(){
  const all=await events();
  const today=day(new Date().toISOString());
+ if(navigator.onLine&&session?.access_token)void syncPending();
  let mySchedule=null;
  try{
   const schedules=await api('/rest/v1/employee_work_schedules?select=effective_on,weekdays,tolerance_minutes&employment_contract_id=eq.'+encodeURIComponent(account.employment_contract_id)+'&effective_on=lte.'+today+'&order=effective_on.desc&limit=1');
@@ -47,15 +61,18 @@ async function events(){return await api('/rest/v1/employee_clock_events?select=
  el('clock-today-status').textContent=next?'Próxima: '+labels[next]:'4 marcações concluídas';
  const tick=()=>{const clock=el('live-clock');if(clock)clock.textContent=new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})};tick();clearInterval(window.pontoClockInterval);window.pontoClockInterval=setInterval(tick,1000);
  const rows=el('rows');
- for(const k of kinds){const v=current.find(x=>x.punch_kind===k);const row=document.createElement('div');row.className='clock-row '+(v?'is-done':'is-pending');const symbol=document.createElement('span');symbol.className='clock-symbol '+k;symbol.textContent={entry:'↪',lunch_out:'♜',lunch_in:'↶',exit:'⇥'}[k];const label=document.createElement('strong');label.textContent=labels[k];const time=document.createElement('span');time.className='clock-time';time.textContent=v?new Date(v.captured_at).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}):'--:--';const status=document.createElement('small');status.className=v?'clock-done':'clock-pending';status.textContent=v?'✓ Registrado':'◷ Pendente';row.append(symbol,label,time,status);rows.append(row)}
+ for(const k of kinds){const v=current.find(x=>x.punch_kind===k);const row=document.createElement('div');row.className='clock-row '+(v?'is-done':'is-pending');const symbol=document.createElement('span');symbol.className='clock-symbol '+k;symbol.textContent={entry:'↪',lunch_out:'♜',lunch_in:'↶',exit:'⇥'}[k];const label=document.createElement('strong');label.textContent=labels[k];const time=document.createElement('span');time.className='clock-time';time.textContent=v?new Date(v.captured_at).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}):'--:--';const status=document.createElement('small');status.className=v?'clock-done':'clock-pending';status.textContent=v?(v.pending_sync?'◷ A sincronizar':'✓ Registrado'):'◷ Pendente';row.append(symbol,label,time,status);rows.append(row)}
  el('mark').textContent=next?'◉ Bater ponto':'✓ Jornada registrada';el('mark').setAttribute('aria-label',next?'Registrar '+labels[next]:'Jornada registrada');
  el('mark').disabled=!next;
  el('mark').onclick=async()=>{
   el('mark').disabled=true;
+  const record={id:crypto.randomUUID(),user_id:session.user.id,employment_contract_id:account.employment_contract_id,punch_kind:next,captured_at:new Date().toISOString(),device_id:localStorage.getItem('ponto_device')||(()=>{const id=crypto.randomUUID();localStorage.setItem('ponto_device',id);return id})(),offline:false};
   try{
-   await api('/rest/v1/employee_clock_events','POST',{id:crypto.randomUUID(),user_id:session.user.id,employment_contract_id:account.employment_contract_id,punch_kind:next,captured_at:new Date().toISOString(),device_id:localStorage.getItem('ponto_device')||(()=>{const id=crypto.randomUUID();localStorage.setItem('ponto_device',id);return id})(),offline:false});
-   await home();message('Marcação confirmada no servidor');
-  }catch(e){message(e.message);el('mark').disabled=false}
+   // Persistir primeiro: a marcação sobrevive ao fechamento do aplicativo.
+   const queue=offlineQueue();queue.push(record);saveQueue(queue);
+   if(navigator.onLine&&session.access_token)await syncPending();
+   await home();message(offlineQueue().some(item=>item.id===record.id)?'Ponto salvo neste aparelho. Aguardando sincronização.':'Marcação confirmada no servidor');
+  }catch(e){message('Não foi possível concluir: '+e.message);el('mark').disabled=false}
  };
 
  el('history').onclick=()=>{
@@ -119,7 +136,7 @@ async function events(){return await api('/rest/v1/employee_clock_events?select=
  };
  el('logout').onclick=async()=>{const token=session?.access_token;clearSession();if(token){try{await fetch(U+'/auth/v1/logout',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+token}})}catch{}}location.replace(location.pathname)};
 }
-el('login').onsubmit=async e=>{e.preventDefault();try{session=await api('/auth/v1/token?grant_type=password','POST',{email:el('email').value,password:el('password').value});await loadAccount();saveSession(session);await home()}catch(err){message(err.message)}};const h=new URLSearchParams(location.hash.slice(1));if(h.has('access_token')&&['invite','recovery'].includes(h.get('type'))){session={access_token:h.get('access_token')};el('login').innerHTML='<h2>Definir senha</h2><input id="newpass" type="password" minlength="8" placeholder="Nova senha" required><button>Salvar senha</button>';el('login').onsubmit=async e=>{e.preventDefault();try{await api('/auth/v1/user','PUT',{password:el('newpass').value});location.replace(location.pathname)}catch(err){message(err.message)}}}
+el('login').onsubmit=async e=>{e.preventDefault();try{session=await api('/auth/v1/token?grant_type=password','POST',{email:el('email').value,password:el('password').value});await loadAccount();saveSession(session);await syncPending();await home()}catch(err){message(err.message)}};const h=new URLSearchParams(location.hash.slice(1));if(h.has('access_token')&&['invite','recovery'].includes(h.get('type'))){session={access_token:h.get('access_token')};el('login').innerHTML='<h2>Definir senha</h2><input id="newpass" type="password" minlength="8" placeholder="Nova senha" required><button>Salvar senha</button>';el('login').onsubmit=async e=>{e.preventDefault();try{await api('/auth/v1/user','PUT',{password:el('newpass').value});location.replace(location.pathname)}catch(err){message(err.message)}}}
 
 // Fluxo independente de recuperação de senha do Ponto Digital.
 if(!new URLSearchParams(location.hash.slice(1)).has('access_token')){
