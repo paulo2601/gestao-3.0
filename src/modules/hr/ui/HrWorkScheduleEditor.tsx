@@ -1,6 +1,6 @@
 import './hr-work-schedule.css';
 import {useEffect,useState} from 'react';
-import {getSupabaseClient} from '../../../shared/infrastructure/supabase/client';
+import {loadEmployeeWorkSchedule,saveEmployeeWorkSchedule} from '../infrastructure/HrWorkspaceService';
 
 type Day={active:boolean;entry:string;lunchOut:string;lunchIn:string;exit:string};
 const labels=['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
@@ -10,11 +10,11 @@ const minutes=(v:string)=>Number(v.slice(0,2))*60+Number(v.slice(3,5));
 export function HrWorkScheduleEditor({contractId,tenantId,companyId}:{contractId:string;tenantId:string;companyId:string}){
  const [days,setDays]=useState<Day[]>(initial);const [effectiveOn,setEffectiveOn]=useState(()=>[new Date().getFullYear(),String(new Date().getMonth()+1).padStart(2,'0'),String(new Date().getDate()).padStart(2,'0')].join('-'));const [loading,setLoading]=useState(true);
  const [loadFailed,setLoadFailed]=useState(false);const [saving,setSaving]=useState(false);const [message,setMessage]=useState('');const [reviewRequired,setReviewRequired]=useState(true);
- useEffect(()=>{let active=true;setLoading(true);setLoadFailed(false);setMessage('');getSupabaseClient().from('employee_work_schedules').select('effective_on,weekdays,review_required').eq('employment_contract_id',contractId).eq('tenant_id',tenantId).eq('company_id',companyId).order('effective_on',{ascending:false}).limit(1).maybeSingle().then(({data,error})=>{if(!active)return;if(error){setLoadFailed(true);setMessage('Não foi possível carregar a jornada: '+error.message);}else if(data){const saved=data.weekdays as Day[];if(Array.isArray(saved)&&saved.length===7)setDays(saved);setEffectiveOn(data.effective_on);setReviewRequired(data.review_required);}setLoading(false);});return()=>{active=false};},[contractId,tenantId,companyId]);
+ useEffect(()=>{let active=true;setLoading(true);setLoadFailed(false);setMessage('');loadEmployeeWorkSchedule(contractId,tenantId,companyId).then(data=>{if(!active)return;if(data){const saved=data.weekdays as Day[];if(Array.isArray(saved)&&saved.length===7)setDays(saved);setEffectiveOn(data.effective_on);setReviewRequired(data.review_required);}setLoading(false);}).catch(error=>{if(!active)return;setLoadFailed(true);setMessage('Não foi possível carregar a jornada: '+(error instanceof Error?error.message:String(error)));setLoading(false);});return()=>{active=false};},[contractId,tenantId,companyId]);
  const change=(index:number,patch:Partial<Day>)=>setDays(previous=>previous.map((day,i)=>i===index?{...day,...patch}:day));
  async function save(){setMessage('');if(loadFailed){setMessage('Não é possível salvar sem carregar o histórico da jornada.');return;}if(!/^\d{4}-\d{2}-\d{2}$/.test(effectiveOn)){setMessage('Informe a data de vigência.');return}
  for(let i=0;i<7;i++){const d=days[i];if(!d.active)continue;if(![d.entry,d.lunchOut,d.lunchIn,d.exit].every(validTime)||!(minutes(d.entry)<minutes(d.lunchOut)&&minutes(d.lunchOut)<minutes(d.lunchIn)&&minutes(d.lunchIn)<minutes(d.exit))){setMessage('Revise os horários de '+labels[i]+'.');return}}
- setSaving(true);try{const {error}=await getSupabaseClient().from('employee_work_schedules').upsert({tenant_id:tenantId,company_id:companyId,employment_contract_id:contractId,effective_on:effectiveOn,weekdays:days,review_required:reviewRequired},{onConflict:'employment_contract_id,effective_on'});if(error)throw error;setMessage('Jornada salva com sucesso.');}catch(error){setMessage('Erro ao salvar jornada: '+(error instanceof Error?error.message:String(error)))}finally{setSaving(false)}}
+ setSaving(true);try{await saveEmployeeWorkSchedule({tenantId,companyId,contractId,effectiveOn,weekdays:days,reviewRequired});setMessage('Jornada salva com sucesso.');}catch(error){setMessage('Erro ao salvar jornada: '+(error instanceof Error?error.message:String(error)))}finally{setSaving(false)}}
  return <section className="hr-work-schedule">
  <h3>Jornada de trabalho</h3><p>Defina os quatro horários de cada dia. Os registros reais do ponto não serão alterados.</p>
  {loading?<p>Carregando jornada...</p>:loadFailed?<p role="alert">{message}</p>:<><label className="hr-work-schedule__effective">Vigência a partir de <input type="date" value={effectiveOn} onChange={e=>setEffectiveOn(e.target.value)}/></label>
