@@ -51,7 +51,7 @@ async function applyClockCorrections(records){
   const corrected=corrections.get(localDate+'|'+record.punch_kind);
   if(!corrected||record.pending_sync)return record;
   const hhmm=String(corrected).slice(0,5);
-  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(hhmm))return record;
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm))return record;
   return {...record,original_captured_at:record.captured_at,captured_at:localDate+'T'+hhmm+':00-03:00',corrected_by_hr:true};
  });
 }
