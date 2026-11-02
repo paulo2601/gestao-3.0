@@ -1,3 +1,4 @@
+import './hr-work-schedule.css';
 import {useEffect,useState} from 'react';
 import {getSupabaseClient} from '../../../shared/infrastructure/supabase/client';
 
