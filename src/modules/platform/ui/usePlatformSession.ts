@@ -28,32 +28,6 @@ export interface PlatformSession {
 }
 
 const ACCESS_CACHE_VERSION = 'v1';
-const APP_OPEN_KEY = 'gestao-app-open-v1';
-async function requireLoginOnFreshOpen(authGateway:SupabaseAuthGateway):Promise<boolean>{
-  try{
-    if(window.sessionStorage.getItem(APP_OPEN_KEY)==='active')return false;
-    // Fresh app context: require an explicit identity check before showing data.
-    // Preserve the existing session for passkey users; closing the app is not "Sair".
-    // Existing passkeys may predate the local preference flag.
-    let preferPasskey=window.localStorage.getItem('gestao.biometric.unlock')==='enabled';
-    if(!preferPasskey){
-      try{
-        const current=await authGateway.getCurrentUser();
-        if(current && (await authGateway.listPasskeys()).length>0){
-          window.localStorage.setItem('gestao.biometric.unlock','enabled');
-          preferPasskey=true;
-        }
-      }catch{/* unavailable offline or no authenticated session */}
-    }
-    if(!preferPasskey)await authGateway.signOutLocal();
-    window.sessionStorage.setItem(APP_OPEN_KEY,'active');
-    return true;
-  }catch{
-    // If storage is blocked, fail closed: do not silently unlock a persisted session.
-    await authGateway.signOutLocal();
-    return true;
-  }
-}
 function companyStorageKey(userId: string): string { return `gestao.activeCompanyId:${userId}`; }
 function accessStorageKey(userId: string): string { return `gestao.accessContexts:${ACCESS_CACHE_VERSION}:${userId}`; }
 function readStoredContexts(userId: string): readonly AccessContext[] {
@@ -135,10 +109,7 @@ export function usePlatformSession(): PlatformSession {
     if(new URLSearchParams(window.location.search).get('recovery')==='1'||window.location.hash.includes('type=recovery')) { setStatus('anonymous'); return; }
     void (async()=>{
       try{
-        const fresh=await requireLoginOnFreshOpen(authGateway);
-        if(cancelled)return;
-        if(fresh){setUser(null);setContexts([]);setActiveCompanyId(null);setStatus('anonymous');return;}
-        await hydrateAccess();
+        // Restore the existing Supabase session without forcing a fresh login.\n        if(cancelled)return;\n        await hydrateAccess();
       }catch{if(!cancelled){setErrorMessage('Não foi possível iniciar a sessão.');setStatus('error');}}
     })();
     return()=>{cancelled=true;};
