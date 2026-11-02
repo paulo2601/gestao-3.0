@@ -59,7 +59,7 @@ async function applyClockCorrections(records){
   !!c.cancelled_at&&new Date(record.captured_at).getTime()<=new Date(c.cancelled_at).getTime()
  ));
  const corrections=new Map(adjustments.map(a=>[a.attendance_date+'|'+a.punch_kind,a.corrected_time]));
- return records.map(record=>{
+ const updated=records.map(record=>{
   const localDate=day(record.captured_at);
   const corrected=corrections.get(localDate+'|'+record.punch_kind);
   if(!corrected||record.pending_sync)return record;
@@ -67,6 +67,17 @@ async function applyClockCorrections(records){
   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm))return record;
   return {...record,original_captured_at:record.captured_at,captured_at:localDate+'T'+hhmm+':00-03:00',corrected_by_hr:true};
  });
+ // Uma marcação esquecida aprovada não possui evento bruto: exibir registro virtual
+ // sem gravar batida fictícia no histórico imutável.
+ for(const adjustment of adjustments){
+  const date=adjustment.attendance_date,kind=adjustment.punch_kind;
+  const hhmm=String(adjustment.corrected_time||'').slice(0,5);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!kinds.includes(kind)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm))continue;
+  if(updated.some(record=>day(record.captured_at)===date&&record.punch_kind===kind))continue;
+  if(cancellations.some(c=>c.attendance_date===date&&(c.punch_kind==='all'||c.punch_kind===kind)))continue;
+  updated.push({id:'rh-adjustment-'+date+'-'+kind,employment_contract_id:account.employment_contract_id,punch_kind:kind,captured_at:date+'T'+hhmm+':00-03:00',corrected_by_hr:true,approved_adjustment:true});
+ }
+ return updated.sort((a,b)=>new Date(b.captured_at).getTime()-new Date(a.captured_at).getTime());
 }
 async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.access_token){try{remote=await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100');localStorage.setItem(EVENTS_KEY,JSON.stringify(remote))}catch(error){console.warn('Histórico offline:',error)}}const pending=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account.employment_contract_id);return applyClockCorrections([...pending.map(v=>({...v,pending_sync:true})),...remote.filter(v=>!pending.some(p=>p.id===v.id))])}async function home(){
  const all=await events();
