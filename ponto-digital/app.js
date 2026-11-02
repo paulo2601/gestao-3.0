@@ -6,6 +6,14 @@ async function restoreSession(){let stored;try{stored=JSON.parse(localStorage.ge
 async function events(){return await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100')}async function home(){
  const all=await events();
  const today=day(new Date().toISOString());
+ let mySchedule=null;
+ try{
+  const schedules=await api('/rest/v1/employee_work_schedules?select=effective_on,weekdays,tolerance_minutes&employment_contract_id=eq.'+encodeURIComponent(account.employment_contract_id)+'&effective_on=lte.'+today+'&order=effective_on.desc&limit=1');
+  mySchedule=schedules?.[0]??null;
+ }catch(error){console.warn('Jornada não disponível para consulta:',error);}
+ const weekday=(new Date(today+'T12:00:00Z').getUTCDay()+6)%7;
+ const planned=mySchedule?.weekdays?.[weekday];
+ const plannedText=planned?(planned.active?'Horário previsto: '+planned.entry+'–'+planned.lunchOut+' / '+planned.lunchIn+'–'+planned.exit:'Folga prevista'):'Jornada prevista não cadastrada';
  const current=all.filter(x=>day(x.captured_at)===today);
  const next=kinds.find(k=>!current.some(x=>x.punch_kind===k));
  const formatMinutes=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')+' h';
@@ -27,6 +35,7 @@ async function events(){return await api('/rest/v1/employee_clock_events?select=
  const interval=(()=>{const a=current.find(v=>v.punch_kind==='lunch_out'),b=current.find(v=>v.punch_kind==='lunch_in');return a&&b?Math.max(0,Math.floor((new Date(b.captured_at)-new Date(a.captured_at))/60000)):null})();
  el('main').className='clock-home';
  el('main').innerHTML='<div class="clock-profile"><div class="clock-avatar">◉</div><div><strong>Meu ponto digital</strong><small>Registro de jornada</small></div></div><div class="clock-datebar"><span id="clock-date"></span><strong id="live-clock"></strong></div><section class="clock-frequency"><h2>▣ Resumo da frequência <small id="frequency-month"></small></h2><div class="clock-metrics"><div class="metric green"><span>▣</span><small>Dias trabalhados</small><strong id="freq-days"></strong></div><div class="metric red"><span>⊠</span><small>Faltas</small><strong>—</strong></div><div class="metric amber"><span>◷</span><small>Atrasos</small><strong>—</strong></div><div class="metric purple"><span>▣</span><small>Horas trabalhadas</small><strong id="freq-hours"></strong></div><div class="metric cyan"><span>◇</span><small>Banco de horas</small><strong>—</strong></div></div><p class="frequency-note">Faltas, atrasos e banco de horas dependem da apuração oficial do RH.</p></section><div class="clock-section-title"><h2>Minha Jornada – Últimos dias</h2><span id="clock-state"></span></div><div class="clock-recent-days">'+(preview||'<p class="clock-recent-empty">Nenhuma jornada registrada ainda.</p>')+'</div><div class="clock-today-toggle"><strong>Marcação de hoje</strong><span id="clock-today-status"></span></div><div id="rows" class="clock-rows"></div><button id="mark"></button><div class="clock-totals"><div><small>Horas do dia</small><strong id="today-total"></strong></div><div><small>Intervalo</small><strong id="today-break"></strong></div><div><small>Horas extras</small><strong>—</strong></div></div><div class="secondary-actions"><button id="history">☷ Meus registros</button><button id="help">ⓘ Ajuda</button></div><button id="logout">⇥ Sair da conta</button><p id="message" role="status" aria-live="polite"></p>';
+ const scheduleNote=document.createElement('p');scheduleNote.className='frequency-note';scheduleNote.textContent=plannedText;el('main').querySelector('.clock-profile')?.after(scheduleNote);
  el('clock-date').textContent=new Intl.DateTimeFormat('pt-BR',{dateStyle:'full',timeZone:'America/Sao_Paulo'}).format(new Date());
  el('frequency-month').textContent='– '+new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'}).format(previous);
  el('freq-days').textContent=String(completed.length);
