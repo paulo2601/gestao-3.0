@@ -48,12 +48,16 @@ async function applyClockCorrections(records){
  const cancelKey='ponto-digital-cancellations-'+(session?.user?.id||'offline');
  let cancellations=getJson(cancelKey,[]);
  if(navigator.onLine&&session?.access_token){
-  try{cancellations=await api('/rest/v1/rpc/ponto_digital_my_cancellations','POST',{});localStorage.setItem(cancelKey,JSON.stringify(cancellations))}
+  try{cancellations=await api('/rest/v1/rpc/ponto_digital_my_cancellations_v2','POST',{});localStorage.setItem(cancelKey,JSON.stringify(cancellations))}
   catch(error){console.warn('Cancelamentos do RH indisponíveis:',error)}
  }
- const cancelled=new Set(cancellations.map(c=>c.attendance_date+'|'+c.punch_kind));
- const cancelledDays=new Set(cancellations.filter(c=>c.punch_kind==='all').map(c=>c.attendance_date));
- records=records.filter(record=>record.pending_sync||(!cancelledDays.has(day(record.captured_at))&&!cancelled.has(day(record.captured_at)+'|'+record.punch_kind)));
+ // Uma exclusão do RH cancela apenas as batidas anteriores à exclusão.
+ // Novas marcações posteriores devem aparecer e ser aceitas normalmente.
+ records=records.filter(record=>record.pending_sync||!cancellations.some(c=>
+  c.attendance_date===day(record.captured_at)&&
+  (c.punch_kind==='all'||c.punch_kind===record.punch_kind)&&
+  !!c.cancelled_at&&new Date(record.captured_at).getTime()<=new Date(c.cancelled_at).getTime()
+ ));
  const corrections=new Map(adjustments.map(a=>[a.attendance_date+'|'+a.punch_kind,a.corrected_time]));
  return records.map(record=>{
   const localDate=day(record.captured_at);
