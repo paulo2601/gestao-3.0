@@ -147,3 +147,19 @@
  .hr-approved-kpi{padding:10px;min-height:74px}
  .hr-approved-kpi span{font-size:12px}
 }
+
+/* Cadastro RH: layout aprovado em celular */
+.hr-edit-tabs--approved{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;overflow:visible}
+.hr-edit-tabs--approved button{min-width:0;max-width:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;white-space:normal;overflow-wrap:anywhere;text-align:center}
+.hr-edit-tabs__icon{font-size:21px;line-height:1}
+.hr-address--approved{background:#fff;border-color:#cbdff8;gap:10px}
+.hr-address__cep{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+.hr-address__cep button{min-height:43px;padding:0 14px;border:0;border-radius:9px;background:#0864e6;color:white;font-weight:700}
+.hr-address__city-state{display:grid;grid-template-columns:minmax(0,1fr) 60px;gap:8px}
+.hr-address__city-state input{min-width:0}
+.hr-edit-summary__status.is-terminated{background:#e2e8f0;color:#475569}
+.hr-edit-summary__address{margin-top:10px;padding:12px;border-radius:12px;background:#eaf3ff;color:#17395e}
+.hr-edit-summary__address p{margin:5px 0 0}
+.hr-fixed-comp__add{display:flex;justify-content:center;margin:14px 0}
+.hr-fixed-comp__item button{border:1px solid #b7cbe7;border-radius:7px;padding:6px;background:#eef5ff;color:#17477f;cursor:pointer}
+@media(max-width:760px){.hr-edit-tabs--approved{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;overflow:visible}.hr-edit-tabs--approved button{flex:auto;min-width:0;max-width:none;padding:9px 2px;font-size:10px}.hr-address__row{grid-template-columns:repeat(2,minmax(0,1fr))}.hr-address input{min-width:0;padding:10px}.hr-fixed-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.hr-fixed-stats>div:first-child{grid-column:auto}.hr-fixed-stats>div{padding:8px 4px;text-align:center;gap:5px;font-size:11px}.hr-fixed-stats strong{font-size:clamp(11px,3vw,16px)}.hr-fixed-comp__list{overflow-x:auto}.hr-edit-summary__facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
