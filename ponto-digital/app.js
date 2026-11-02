@@ -45,6 +45,15 @@ async function applyClockCorrections(records){
   try{adjustments=await api('/rest/v1/rpc/ponto_digital_my_adjustments','POST',{});localStorage.setItem(cacheKey,JSON.stringify(adjustments))}
   catch(error){console.warn('Correções do RH indisponíveis:',error)}
  }
+ const cancelKey='ponto-digital-cancellations-'+(session?.user?.id||'offline');
+ let cancellations=getJson(cancelKey,[]);
+ if(navigator.onLine&&session?.access_token){
+  try{cancellations=await api('/rest/v1/rpc/ponto_digital_my_cancellations','POST',{});localStorage.setItem(cancelKey,JSON.stringify(cancellations))}
+  catch(error){console.warn('Cancelamentos do RH indisponíveis:',error)}
+ }
+ const cancelled=new Set(cancellations.map(c=>c.attendance_date+'|'+c.punch_kind));
+ const cancelledDays=new Set(cancellations.filter(c=>c.punch_kind==='all').map(c=>c.attendance_date));
+ records=records.filter(record=>record.pending_sync||(!cancelledDays.has(day(record.captured_at))&&!cancelled.has(day(record.captured_at)+'|'+record.punch_kind)));
  const corrections=new Map(adjustments.map(a=>[a.attendance_date+'|'+a.punch_kind,a.corrected_time]));
  return records.map(record=>{
   const localDate=day(record.captured_at);
