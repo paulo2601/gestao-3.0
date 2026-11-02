@@ -38,7 +38,24 @@ window.addEventListener('online',()=>{void (async()=>{if(!session?.access_token)
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&session?.access_token)void syncPending()});
 async function loadAccount(){const a=await api('/rest/v1/employee_clock_accounts?select=*&user_id=eq.'+encodeURIComponent(session.user.id));if(a.length!==1||!a[0].enabled)throw Error('Conta ainda não habilitada pelo RH');account=a[0];try{const name=await api('/rest/v1/rpc/ponto_digital_my_name','POST',{});if(typeof name==='string'&&name.trim())account.full_name=name.trim()}catch(error){console.warn('Nome do colaborador indisponível:',error)}cacheAccount();}
 async function restoreSession(){let stored;try{stored=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{clearSession();return}if(!stored?.refresh_token)return;try{session=await api('/auth/v1/token?grant_type=refresh_token','POST',{refresh_token:stored.refresh_token});saveSession(session);await loadAccount();await syncPending();await home()}catch(err){if(/401|403|invalid|expired|revoked|refresh.token|Conta ainda não habilitada/i.test(err.message)){clearSession()}else if(offlineAccount()){await home();message('Modo offline: as marcações serão sincronizadas quando houver internet.')}else{session=null;account=null;message('Conecte-se à internet ao menos uma vez para ativar o modo offline.')}}}
-async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.access_token){try{remote=await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100');localStorage.setItem(EVENTS_KEY,JSON.stringify(remote))}catch(error){console.warn('Histórico offline:',error)}}const pending=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account.employment_contract_id);return [...pending.map(v=>({...v,pending_sync:true})),...remote.filter(v=>!pending.some(p=>p.id===v.id))]}async function home(){
+async function applyClockCorrections(records){
+ const cacheKey='ponto-digital-adjustments-'+(session?.user?.id||'offline');
+ let adjustments=getJson(cacheKey,[]);
+ if(navigator.onLine&&session?.access_token){
+  try{adjustments=await api('/rest/v1/rpc/ponto_digital_my_adjustments','POST',{});localStorage.setItem(cacheKey,JSON.stringify(adjustments))}
+  catch(error){console.warn('Correções do RH indisponíveis:',error)}
+ }
+ const corrections=new Map(adjustments.map(a=>[a.attendance_date+'|'+a.punch_kind,a.corrected_time]));
+ return records.map(record=>{
+  const localDate=day(record.captured_at);
+  const corrected=corrections.get(localDate+'|'+record.punch_kind);
+  if(!corrected||record.pending_sync)return record;
+  const hhmm=String(corrected).slice(0,5);
+  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(hhmm))return record;
+  return {...record,original_captured_at:record.captured_at,captured_at:localDate+'T'+hhmm+':00-03:00',corrected_by_hr:true};
+ });
+}
+async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.access_token){try{remote=await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100');localStorage.setItem(EVENTS_KEY,JSON.stringify(remote))}catch(error){console.warn('Histórico offline:',error)}}const pending=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account.employment_contract_id);return applyClockCorrections([...pending.map(v=>({...v,pending_sync:true})),...remote.filter(v=>!pending.some(p=>p.id===v.id))])}async function home(){
  const all=await events();
  const today=day(new Date().toISOString());
  if(navigator.onLine&&session?.access_token)void syncPending();
