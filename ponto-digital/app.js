@@ -161,4 +161,4 @@ if(!new URLSearchParams(location.hash.slice(1)).has('access_token')){
 }
 
 // Restaurar a sessão apenas na abertura normal; convites e recuperação têm prioridade.
-if(!new URLSearchParams(location.hash.slice(1)).has('access_token')){restoreSession()}
+if(!new URLSearchParams(location.hash.slice(1)).has('access_token')){void restoreSession().finally(()=>document.documentElement.classList.remove('ponto-restoring'))}else{document.documentElement.classList.remove('ponto-restoring')}
