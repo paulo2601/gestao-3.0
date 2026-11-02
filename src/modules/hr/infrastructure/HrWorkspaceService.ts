@@ -420,3 +420,23 @@ export function scheduleForDate(versions:WorkScheduleVersion[],contractId:string
  return versions.filter(v=>v.employment_contract_id===contractId&&v.effective_on<=date)
   .sort((a,b)=>b.effective_on.localeCompare(a.effective_on))[0]??null;
 }
+
+/** Persistência de jornada isolada da camada visual. */
+export async function loadEmployeeWorkSchedule(contractId:string,tenantId:string,companyId:string){
+ const {data,error}=await getSupabaseClient().from('employee_work_schedules')
+ .select('effective_on,weekdays,review_required')
+ .eq('employment_contract_id',contractId).eq('tenant_id',tenantId).eq('company_id',companyId)
+ .order('effective_on',{ascending:false}).limit(1).maybeSingle();
+ if(error)throw error;
+ return data;
+}
+export async function saveEmployeeWorkSchedule(input:{
+ tenantId:string;companyId:string;contractId:string;effectiveOn:string;
+ weekdays:import('../domain/assessScheduledDay').ScheduleDay[];reviewRequired:boolean
+}){
+ const {error}=await getSupabaseClient().from('employee_work_schedules').upsert({
+ tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.contractId,
+ effective_on:input.effectiveOn,weekdays:input.weekdays,review_required:input.reviewRequired
+ },{onConflict:'employment_contract_id,effective_on'});
+ if(error)throw error;
+}
