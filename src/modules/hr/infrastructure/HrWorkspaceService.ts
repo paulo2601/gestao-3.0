@@ -369,7 +369,7 @@ export async function listClockAdjustments(ids:string[],start:string,end:string)
  return results.flat();
 }
 export async function saveClockAdjustment(input:{tenantId:string;companyId:string;employmentContractId:string;attendanceDate:string;punchKind:ClockPunchKind;correctedTime:string;originalTime:string|null;reason:string}):Promise<void>{
- if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(input.correctedTime))throw new Error('Horário inválido.');
+ if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(input.correctedTime))throw new Error('Horário inválido.');
  if(input.reason.trim().length<5)throw new Error('Informe uma justificativa com pelo menos 5 caracteres.');
  const r=await getSupabaseClient().from('employee_clock_adjustments').upsert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,attendance_date:input.attendanceDate,punch_kind:input.punchKind,corrected_time:input.correctedTime,original_time:input.originalTime,reason:input.reason.trim()},{onConflict:'employment_contract_id,attendance_date,punch_kind'});
  if(r.error)throw r.error;
