@@ -15,6 +15,6 @@ export function assessEmployeePunches(
  if(!applicable)return null;
  const day=applicable.weekdays[weekdayIndex(date)];
  if(!day)return null;
- const normalized:PunchTimes={entry:punches.entry,lunchOut:punches.lunch_out,lunchIn:punches.lunch_in,exit:punches.exit};
+ const normalized:PunchTimes={entry:punches.entry??null,lunchOut:punches.lunch_out??null,lunchIn:punches.lunch_in??null,exit:punches.exit??null};
  return assessScheduledDay(day,normalized,applicable.tolerance_minutes);
 }
