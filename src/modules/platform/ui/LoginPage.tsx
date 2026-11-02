@@ -20,7 +20,7 @@ export interface LoginPageProps {
   }) => Promise<void>;
 }
 
-export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onSignInWithPasskey, onBootstrapFirstOwner }: LoginPageProps) {
+export function LoginPage({ loading, errorMessage, noticeMessage, onSignIn, onBootstrapFirstOwner }: LoginPageProps) {
   const [setupMode, setSetupMode] = useState(false);
   const [recoveryNotice,setRecoveryNotice]=useState('');
   const [recoveryBusy,setRecoveryBusy]=useState(false);
