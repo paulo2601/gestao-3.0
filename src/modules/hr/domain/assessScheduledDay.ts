@@ -2,7 +2,7 @@
 export type ScheduleDay = {active:boolean;entry:string;lunchOut:string;lunchIn:string;exit:string};
 export type PunchTimes = {entry?:string|null;lunchOut?:string|null;lunchIn?:string|null;exit?:string|null};
 export type DayAssessment = {status:'rest'|'incomplete'|'complete';scheduledMinutes:number;workedMinutes:number|null;lateMinutes:number|null;earlyExitMinutes:number|null;extraMinutes:number|null;requiresReview:boolean};
-const toMinutes=(time:string):number|null=>{if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))return null;const [h,m]=time.split(':').map(Number);return h*60+m;};
+const toMinutes=(time:string):number|null=>{if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))return null;const [h=0,m=0]=time.split(':').map(Number);return h*60+m;};
 export function assessScheduledDay(day:ScheduleDay,punches:PunchTimes,toleranceMinutes=5):DayAssessment{
  const scheduled=[day.entry,day.lunchOut,day.lunchIn,day.exit].map(toMinutes);
  const scheduledMinutes=scheduled.every(v=>v!==null)?Math.max(0,(scheduled[1]!-scheduled[0]!)+(scheduled[3]!-scheduled[2]!)):0;
