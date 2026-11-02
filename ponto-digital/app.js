@@ -218,8 +218,8 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
    event.preventDefault();const submit=el('correction-submit');submit.disabled=true;
    try{
     const date=el('correction-date').value,kind=el('correction-kind').value,time=el('correction-time').value,reason=el('correction-reason').value.trim();
-    if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||date>day(new Date().toISOString()))throw Error('Informe uma data válida, até hoje.');
-    if(!kinds.includes(kind)||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(time)||reason.length<10)throw Error('Confira o horário e informe uma justificativa de pelo menos 10 caracteres.');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>day(new Date().toISOString()))throw Error('Informe uma data válida, até hoje.');
+    if(!kinds.includes(kind)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)||reason.length<10)throw Error('Confira o horário e informe uma justificativa de pelo menos 10 caracteres.');
     const existing=await events();
     if(existing.some(item=>day(item.captured_at)===date&&item.punch_kind===kind))throw Error('Esta marcação já está registrada. Solicite ao RH uma revisão do horário existente.');
     await api('/rest/v1/employee_clock_correction_requests','POST',{user_id:session.user.id,employment_contract_id:account.employment_contract_id,attendance_date:date,punch_kind:kind,requested_time:time,reason,status:'pending'});
