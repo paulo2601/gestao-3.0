@@ -440,3 +440,51 @@ export async function saveEmployeeWorkSchedule(input:{
  },{onConflict:'employment_contract_id,effective_on'});
  if(error)throw error;
 }
+
+
+/** Solicitações do Ponto Digital: leitura administrativa sujeita ao RLS do Supabase. */
+export type ClockCorrectionRequest = {
+  id:string;
+  user_id:string;
+  employment_contract_id:string;
+  attendance_date:string;
+  punch_kind:ClockPunchKind;
+  requested_time:string;
+  reason:string;
+  status:'pending'|'approved'|'rejected';
+  created_at:string;
+  decided_at:string|null;
+  decided_by:string|null;
+  decision_reason:string|null;
+  approved_time:string|null;
+};
+
+export async function listClockCorrectionRequests(contractIds:string[],startDate:string,endDate:string):Promise<ClockCorrectionRequest[]> {
+  if(!contractIds.length)return [];
+  const client=getSupabaseClient();
+  const groups=await Promise.all(Array.from({length:Math.ceil(contractIds.length/100)},(_,i)=>contractIds.slice(i*100,(i+1)*100)).map(async ids=>{
+    const result=await client.from('employee_clock_correction_requests')
+      .select('id,user_id,employment_contract_id,attendance_date,punch_kind,requested_time,reason,status,created_at,decided_at,decided_by,decision_reason,approved_time')
+      .in('employment_contract_id',ids)
+      .gte('attendance_date',startDate)
+      .lte('attendance_date',endDate)
+      .order('created_at',{ascending:false})
+      .limit(10000);
+    if(result.error)throw result.error;
+    return (result.data??[]) as ClockCorrectionRequest[];
+  }));
+  return groups.flat().sort((a,b)=>b.created_at.localeCompare(a.created_at));
+}
+
+/** A aprovação deve ocorrer somente na função SQL transacional, nunca via UPDATE direto do navegador. */
+export async function decideClockCorrectionRequest(input:{requestId:string;decision:'approved'|'rejected';reason:string;approvedTime?:string}):Promise<void>{
+  if(input.reason.trim().length<5)throw new Error('Informe a justificativa da decisão.');
+  if(input.decision==='approved'&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(input.approvedTime??''))throw new Error('Informe um horário válido.');
+  const result=await getSupabaseClient().rpc('hr_decide_clock_correction_request',{
+    p_request_id:input.requestId,
+    p_decision:input.decision,
+    p_reason:input.reason.trim(),
+    p_approved_time:input.decision==='approved'?input.approvedTime:null,
+  });
+  if(result.error)throw result.error;
+}
