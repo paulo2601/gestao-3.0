@@ -1,3 +1,25 @@
+
+const PUSH_VAPID_PUBLIC='BBZlKacKv54II_CyjsjImbYcA9mfPK3WEut18aAISsy7HanNtUftmVx_2KsG_r5EwipNUZh_G0gF4BbZDj5RwQY';
+function pushKey(s){const b=atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4));return Uint8Array.from(b,c=>c.charCodeAt(0))}
+async function enablePontoNotifications(){
+ if(!session?.access_token||!account?.enabled)throw Error('Entre na sua conta para ativar os avisos.');
+ if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))throw Error('Este navegador não oferece notificações push.');
+ const permission=await Notification.requestPermission();
+ if(permission!=='granted')throw Error('Permissão de notificações não concedida.');
+ const reg=await navigator.serviceWorker.ready;
+ const subscription=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKey(PUSH_VAPID_PUBLIC)});
+ const json=subscription.toJSON();
+ await api('/rest/v1/employee_clock_push_subscriptions?on_conflict=endpoint','POST',{user_id:session.user.id,endpoint:subscription.endpoint,p256dh:json.keys.p256dh,auth:json.keys.auth,enabled:true});
+ localStorage.setItem('ponto-push-enabled','1');
+ return true;
+}
+async function renderPontoNotificationButton(){
+ const parent=document.querySelector('.secondary-actions');if(!parent||!session?.access_token)return;
+ const button=document.createElement('button');button.type='button';button.id='push-opt-in';button.textContent='🔔 Ativar lembretes de ponto';parent.after(button);
+ try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub&&Notification.permission==='granted'){button.textContent='🔔 Lembretes ativados';button.disabled=true}}catch{}
+ button.onclick=async()=>{button.disabled=true;try{await enablePontoNotifications();button.textContent='🔔 Lembretes ativados'}catch(e){button.disabled=false;alert(e.message)}};
+}
+
 const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFOCSIvSbWifFCy6DjIg_9QJeYd38';let session=null,account=null;const el=id=>document.getElementById(id);const labels={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída'};const kinds=Object.keys(labels);const day=iso=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));async function api(path,method='GET',data){const r=await fetch(U+path,{method,headers:{apikey:K,'Content-Type':'application/json',...(session?{Authorization:'Bearer '+session.access_token}:{})},...(data?{body:JSON.stringify(data)}:{})});if(!r.ok){const d=await r.json().catch(()=>({}));throw Error(d.msg||d.message||d.error_description||'Falha HTTP '+r.status)}return r.status===204?null:r.text().then(t=>t?JSON.parse(t):null)}function message(t){el('message').textContent=t}const SESSION_KEY='ponto-digital-session-v1';
 function saveSession(value){if(value?.refresh_token){localStorage.setItem(SESSION_KEY,JSON.stringify({refresh_token:value.refresh_token}));}}
 function clearSession(){localStorage.removeItem(SESSION_KEY);session=null;account=null;}
@@ -134,6 +156,7 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
   el('main').innerHTML='<h2>Ajuda</h2><p>Registre cada marcação na ordem. O horário é capturado automaticamente e enviado ao RH.</p><button id="back">Voltar</button><p id="message"></p>';
   el('back').onclick=home;
  };
+ void renderPontoNotificationButton();
  el('logout').onclick=async()=>{const token=session?.access_token;clearSession();if(token){try{await fetch(U+'/auth/v1/logout',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+token}})}catch{}}location.replace(location.pathname)};
 }
 el('login').onsubmit=async e=>{e.preventDefault();try{session=await api('/auth/v1/token?grant_type=password','POST',{email:el('email').value,password:el('password').value});await loadAccount();saveSession(session);await syncPending();await home()}catch(err){message(err.message)}};const h=new URLSearchParams(location.hash.slice(1));if(h.has('access_token')&&['invite','recovery'].includes(h.get('type'))){session={access_token:h.get('access_token')};el('login').innerHTML='<h2>Definir senha</h2><input id="newpass" type="password" minlength="8" placeholder="Nova senha" required><button>Salvar senha</button>';el('login').onsubmit=async e=>{e.preventDefault();try{await api('/auth/v1/user','PUT',{password:el('newpass').value});location.replace(location.pathname)}catch(err){message(err.message)}}}
