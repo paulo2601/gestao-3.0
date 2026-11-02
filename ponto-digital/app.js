@@ -32,7 +32,7 @@ const saveQueue=q=>localStorage.setItem(OFFLINE_KEY,JSON.stringify(q));
 const cachedEvents=()=>getJson(EVENTS_KEY,[]);
 const cacheAccount=()=>{if(account&&session?.user?.id)localStorage.setItem(ACCOUNT_KEY,JSON.stringify({user_id:session.user.id,account}))};
 let syncing=false;
-async function syncPending(){if(syncing||!navigator.onLine||!session?.access_token||!account)return;syncing=true;try{const pending=offlineQueue();for(const record of pending){if(record.user_id!==session.user.id||record.employment_contract_id!==account.employment_contract_id)continue;try{await api('/rest/v1/employee_clock_events?on_conflict=id','POST',record);saveQueue(offlineQueue().filter(item=>item.id!==record.id))}catch(error){if(/409|duplicate|already exists/i.test(error.message)){saveQueue(offlineQueue().filter(item=>item.id!==record.id));continue}console.warn('Ponto offline aguardando sincronização:',error);break}}}finally{syncing=false}}
+async function syncPending(){if(syncing||!navigator.onLine||!session?.access_token||!account)return;syncing=true;try{const pending=offlineQueue();for(const record of pending){if(record.user_id!==session.user.id||record.employment_contract_id!==account.employment_contract_id)continue;try{await api('/rest/v1/employee_clock_events?on_conflict=id','POST',record);saveQueue(offlineQueue().filter(item=>item.id!==record.id));localStorage.removeItem('ponto-last-sync-error')}catch(error){if(/409|duplicate|already exists/i.test(error.message)){saveQueue(offlineQueue().filter(item=>item.id!==record.id));continue}console.warn('Ponto offline aguardando sincronização:',error);localStorage.setItem('ponto-last-sync-error',String(error.message||error));break}}}finally{syncing=false}}
 function offlineAccount(){const cached=getJson(ACCOUNT_KEY,null);if(!cached?.account?.enabled)return false;account=cached.account;session={user:{id:cached.user_id},access_token:null};return true}
 window.addEventListener('online',()=>{void (async()=>{if(!session?.access_token){await restoreSession();return}await syncPending();if(account)await home()})().catch(console.warn)});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&session?.access_token)void syncPending()});
@@ -123,7 +123,7 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
    // Persistir primeiro: a marcação sobrevive ao fechamento do aplicativo.
    const queue=offlineQueue();queue.push(record);saveQueue(queue);
    if(navigator.onLine&&session.access_token)await syncPending();
-   await home();message(offlineQueue().some(item=>item.id===record.id)?'Ponto salvo neste aparelho. Aguardando sincronização.':'Marcação confirmada no servidor');
+   await home();message(offlineQueue().some(item=>item.id===record.id)?'Marcação guardada neste aparelho, mas NÃO confirmada no servidor. '+(localStorage.getItem('ponto-last-sync-error')||'Aguardando conexão ou sincronização.'):'Marcação confirmada no servidor');
   }catch(e){message('Não foi possível concluir: '+e.message);el('mark').disabled=false}
  };
 
