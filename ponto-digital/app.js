@@ -54,11 +54,11 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
  const next=kinds.find(k=>!current.some(x=>x.punch_kind===k));
  const formatMinutes=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')+' h';
  const duration=items=>{const m=new Map(items.map(v=>[v.punch_kind,v]));if(!m.has('entry')||!m.has('exit'))return null;let n=(new Date(m.get('exit').captured_at)-new Date(m.get('entry').captured_at))/60000;if(m.has('lunch_out')&&m.has('lunch_in'))n-=(new Date(m.get('lunch_in').captured_at)-new Date(m.get('lunch_out').captured_at))/60000;return n>=0?Math.floor(n):null};
- const month=new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'}).slice(0,7);
+ const month=day(new Date().toISOString()).slice(0,7);
  const previous=new Date(month+'-01T12:00:00Z');previous.setUTCMonth(previous.getUTCMonth()-1);
  const previousMonth=previous.toISOString().slice(0,7);
  const byDate=new Map();for(const v of all){const d=day(v.captured_at);if(!byDate.has(d))byDate.set(d,[]);byDate.get(d).push(v)}
- const monthData=[...byDate].filter(([d])=>d.startsWith(previousMonth));
+ const monthData=[...byDate].filter(([d])=>d.startsWith(month));
  const completed=monthData.map(([,items])=>duration(items)).filter(n=>n!==null);
  const worked=completed.reduce((a,b)=>a+b,0);
  const recentDays=[...byDate.entries()].sort(([a],[b])=>b.localeCompare(a)).slice(0,4);
@@ -74,7 +74,7 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
  const scheduleNote=document.createElement('p');scheduleNote.className='frequency-note';scheduleNote.textContent=plannedText;el('main').querySelector('.clock-action-card')?.after(scheduleNote);
  el('clock-date').textContent=new Intl.DateTimeFormat('pt-BR',{dateStyle:'full',timeZone:'America/Sao_Paulo'}).format(new Date());
  const name=(account?.full_name||account?.employee_name||session?.user?.user_metadata?.full_name||session?.user?.user_metadata?.name||'').trim().split(/\s+/)[0];el('clock-greeting').textContent=name?'Olá, '+name+'!':'Olá!';
- el('frequency-month').textContent='– '+new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'}).format(previous);
+ el('frequency-month').textContent='– '+new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(month+'-01T12:00:00Z'));
  el('freq-days').textContent=String(completed.length);
  el('freq-hours').textContent=formatMinutes(worked);
  el('today-total').textContent=todayMinutes===null?'—':formatMinutes(todayMinutes);
