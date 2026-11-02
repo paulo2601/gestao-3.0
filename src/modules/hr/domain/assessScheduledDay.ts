@@ -11,8 +11,8 @@ export function assessScheduledDay(day:ScheduleDay,punches:PunchTimes,toleranceM
  if(scheduled.some(v=>v===null)||actual.some(v=>v===null)||!(actual[0]!<=actual[1]!&&actual[1]!<=actual[2]!&&actual[2]!<=actual[3]!))
  return {status:'incomplete',scheduledMinutes,workedMinutes:null,lateMinutes:null,earlyExitMinutes:null,extraMinutes:null,requiresReview:true};
  const workedMinutes=(actual[1]!-actual[0]!)+(actual[3]!-actual[2]!);
- const lateMinutes=Math.max(0,actual[0]!-scheduled[0]!);
- const earlyExitMinutes=Math.max(0,scheduled[3]!-actual[3]!);
- const extraMinutes=Math.max(0,workedMinutes-scheduledMinutes);
+ const lateMinutes=Math.max(0,actual[0]!-scheduled[0]!)+Math.max(0,actual[2]!-scheduled[2]!);
+ const earlyExitMinutes=Math.max(0,scheduled[1]!-actual[1]!)+Math.max(0,scheduled[3]!-actual[3]!);
+ const extraMinutes=Math.max(0,scheduled[0]!-actual[0]!)+Math.max(0,actual[1]!-scheduled[1]!)+Math.max(0,scheduled[2]!-actual[2]!)+Math.max(0,actual[3]!-scheduled[3]!);
  return {status:'complete',scheduledMinutes,workedMinutes,lateMinutes,earlyExitMinutes,extraMinutes,requiresReview:lateMinutes>toleranceMinutes||earlyExitMinutes>toleranceMinutes||extraMinutes>0};
 }
