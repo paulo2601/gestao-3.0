@@ -71,7 +71,7 @@ async function applyClockCorrections(records){
 async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.access_token){try{remote=await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100');localStorage.setItem(EVENTS_KEY,JSON.stringify(remote))}catch(error){console.warn('Histórico offline:',error)}}const pending=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account.employment_contract_id);return applyClockCorrections([...pending.map(v=>({...v,pending_sync:true})),...remote.filter(v=>!pending.some(p=>p.id===v.id))])}async function home(){
  const all=await events();
  const today=day(new Date().toISOString());
- if(navigator.onLine&&session?.access_token)void syncPending();
+ if(navigator.onLine&&session?.access_token)await syncPending();
  let mySchedule=null;
  try{
   const schedules=await api('/rest/v1/employee_work_schedules?select=effective_on,weekdays,tolerance_minutes&employment_contract_id=eq.'+encodeURIComponent(account.employment_contract_id)+'&effective_on=lte.'+today+'&order=effective_on.desc&limit=1');
