@@ -6,7 +6,8 @@ for select to authenticated using (
  exists (
   select 1 from public.employment_contracts c
   where c.id=employment_contract_id
-    and app_private.can_manage_company(c.tenant_id,c.company_id)
+    and app_private.can_edit_company(c.tenant_id,c.company_id)
+    and public.platform_module_allowed(c.tenant_id,'rh')
  )
 );
 
@@ -28,6 +29,8 @@ begin
  where id=p_request_id for update;
  if not found then raise exception 'Solicitação não encontrada'; end if;
  if v_request.status<>'pending' then raise exception 'Solicitação já analisada'; end if;
+ if v_request.user_id is distinct from (select a.user_id from public.employee_clock_accounts a where a.employment_contract_id=v_request.employment_contract_id and a.enabled=true limit 1)
+ then raise exception 'Vínculo de colaborador inválido'; end if;
  select * into v_contract from public.employment_contracts where id=v_request.employment_contract_id;
  if not found or not (app_private.can_edit_company(v_contract.tenant_id,v_contract.company_id) and public.platform_module_allowed(v_contract.tenant_id,'rh'))
  then raise exception 'Acesso negado'; end if;
