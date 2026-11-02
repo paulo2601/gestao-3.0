@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {weekdayIndex,assessEmployeePunches} from './assessEmployeePunches';
 import type {WorkScheduleVersion} from '../infrastructure/HrWorkspaceService';
-const weekday={active:true,entry:'07:00',lunchOut:'12:00',lunchIn:'13:00',exit:'17:00'};
+const weekday:WorkScheduleVersion['weekdays'][number]={active:true,entry:'07:00',lunchOut:'12:00',lunchIn:'13:00',exit:'17:00'};
 const versions:WorkScheduleVersion[]=[
  {employment_contract_id:'c',effective_on:'2026-01-01',weekdays:Array(7).fill(weekday),tolerance_minutes:5,review_required:true},
  {employment_contract_id:'c',effective_on:'2026-11-02',weekdays:Array(7).fill({...weekday,entry:'08:00'}),tolerance_minutes:5,review_required:true}
