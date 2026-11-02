@@ -390,3 +390,33 @@ export async function cancelClockPunch(input:{tenantId:string;companyId:string;e
  const r=await getSupabaseClient().from('employee_clock_cancellations').insert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,attendance_date:input.attendanceDate,punch_kind:input.punchKind,reason:input.reason.trim()});
  if(r.error)throw r.error;
 }
+
+
+/** Busca versões de jornada aplicáveis ao período, sem alterar registros históricos. */
+export type WorkScheduleVersion={
+ employment_contract_id:string;
+ effective_on:string;
+ weekdays:import('../domain/assessScheduledDay').ScheduleDay[];
+ tolerance_minutes:number;
+ review_required:boolean;
+};
+export async function listWorkSchedulesForPeriod(
+ contractIds:string[],startDate:string,endDate:string
+):Promise<WorkScheduleVersion[]>{
+ if(!contractIds.length)return [];
+ const client=getSupabaseClient();
+ const groups=await Promise.all(Array.from({length:Math.ceil(contractIds.length/100)},(_,i)=>contractIds.slice(i*100,(i+1)*100)).map(async ids=>{
+  const {data,error}=await client.from('employee_work_schedules')
+   .select('employment_contract_id,effective_on,weekdays,tolerance_minutes,review_required')
+   .in('employment_contract_id',ids).lte('effective_on',endDate)
+   .order('effective_on',{ascending:false}).limit(10000);
+  if(error)throw error;
+  return (data??[]) as WorkScheduleVersion[];
+ }));
+ // Inclui versões anteriores ao início, necessárias para apurar os primeiros dias do período.
+ return groups.flat().filter(row=>row.effective_on<=endDate);
+}
+export function scheduleForDate(versions:WorkScheduleVersion[],contractId:string,date:string){
+ return versions.filter(v=>v.employment_contract_id===contractId&&v.effective_on<=date)
+  .sort((a,b)=>b.effective_on.localeCompare(a.effective_on))[0]??null;
+}
