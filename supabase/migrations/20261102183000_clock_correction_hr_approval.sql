@@ -29,7 +29,7 @@ begin
  if not found then raise exception 'Solicitação não encontrada'; end if;
  if v_request.status<>'pending' then raise exception 'Solicitação já analisada'; end if;
  select * into v_contract from public.employment_contracts where id=v_request.employment_contract_id;
- if not found or not app_private.can_manage_company(v_contract.tenant_id,v_contract.company_id)
+ if not found or not (app_private.can_edit_company(v_contract.tenant_id,v_contract.company_id) and public.platform_module_allowed(v_contract.tenant_id,'rh'))
  then raise exception 'Acesso negado'; end if;
  if p_decision='approved' then
    if coalesce(p_approved_time,'') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
@@ -37,13 +37,13 @@ begin
    v_time:=p_approved_time::time;
    insert into public.employee_clock_adjustments(
     tenant_id,company_id,employment_contract_id,attendance_date,punch_kind,
-    corrected_time,original_time,reason
+    corrected_time,original_time,reason,changed_by
    ) values (
     v_contract.tenant_id,v_contract.company_id,v_request.employment_contract_id,
     v_request.attendance_date,v_request.punch_kind,v_time,null,
-    'Solicitação '||v_request.id::text||': '||btrim(p_reason)
+    'Solicitação '||v_request.id::text||': '||btrim(p_reason),auth.uid()
    ) on conflict (employment_contract_id,attendance_date,punch_kind)
-   do update set corrected_time=excluded.corrected_time,reason=excluded.reason;
+   do update set corrected_time=excluded.corrected_time,reason=excluded.reason,changed_by=auth.uid();
  end if;
  update public.employee_clock_correction_requests
  set status=p_decision,decided_at=now(),decided_by=auth.uid(),
