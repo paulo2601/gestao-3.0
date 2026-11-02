@@ -59,7 +59,7 @@ async function applyClockCorrections(records){
   !!c.cancelled_at&&new Date(record.captured_at).getTime()<=new Date(c.cancelled_at).getTime()
  ));
  const corrections=new Map(adjustments.map(a=>[a.attendance_date+'|'+a.punch_kind,a.corrected_time]));
- return records.map(record=>{
+ const updated=records.map(record=>{
   const localDate=day(record.captured_at);
   const corrected=corrections.get(localDate+'|'+record.punch_kind);
   if(!corrected||record.pending_sync)return record;
@@ -67,6 +67,17 @@ async function applyClockCorrections(records){
   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm))return record;
   return {...record,original_captured_at:record.captured_at,captured_at:localDate+'T'+hhmm+':00-03:00',corrected_by_hr:true};
  });
+ // Uma marcação esquecida aprovada não possui evento bruto: exibir registro virtual
+ // sem gravar batida fictícia no histórico imutável.
+ for(const adjustment of adjustments){
+  const date=adjustment.attendance_date,kind=adjustment.punch_kind;
+  const hhmm=String(adjustment.corrected_time||'').slice(0,5);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!kinds.includes(kind)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm))continue;
+  if(updated.some(record=>day(record.captured_at)===date&&record.punch_kind===kind))continue;
+  if(cancellations.some(c=>c.attendance_date===date&&(c.punch_kind==='all'||c.punch_kind===kind)))continue;
+  updated.push({id:'rh-adjustment-'+date+'-'+kind,employment_contract_id:account.employment_contract_id,punch_kind:kind,captured_at:date+'T'+hhmm+':00-03:00',corrected_by_hr:true,approved_adjustment:true});
+ }
+ return updated.sort((a,b)=>new Date(b.captured_at).getTime()-new Date(a.captured_at).getTime());
 }
 async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.access_token){try{remote=await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100');localStorage.setItem(EVENTS_KEY,JSON.stringify(remote))}catch(error){console.warn('Histórico offline:',error)}}const pending=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account.employment_contract_id);return applyClockCorrections([...pending.map(v=>({...v,pending_sync:true})),...remote.filter(v=>!pending.some(p=>p.id===v.id))])}async function home(){
  const all=await events();
@@ -185,6 +196,48 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
  el('help').onclick=()=>{
   el('main').innerHTML='<h2>Ajuda</h2><p>Registre cada marcação na ordem. O horário é capturado automaticamente e enviado ao RH.</p><button id="back">Voltar</button><p id="message"></p>';
   el('back').onclick=home;
+ };
+
+ // Solicitações não alteram a marcação original: dependem de aprovação do RH.
+ const correctionButton=document.createElement('button');
+ correctionButton.type='button';
+ correctionButton.id='request-correction';
+ correctionButton.textContent='✎ Solicitar correção de ponto';
+ correctionButton.style.cssText='background:#fff;color:#14518d;border:1px solid #b7cee9;margin:10px 0';
+ document.querySelector('.secondary-actions')?.after(correctionButton);
+ correctionButton.onclick=async()=>{
+  if(!navigator.onLine||!session?.access_token){alert('Conecte-se à internet para solicitar uma correção.');return}
+  el('main').className='correction-screen';
+  el('main').innerHTML='<h2>Solicitar correção de ponto</h2><p>Informe a marcação esquecida. O RH analisará a solicitação antes de atualizar sua jornada.</p><form id="correction-form"><label>Data<input id="correction-date" type="date" required></label><label>Marcação<select id="correction-kind" required style="width:100%;padding:13px;border:1px solid #bdcee0;border-radius:8px"><option value="entry">Entrada</option><option value="lunch_out">Saída para almoço</option><option value="lunch_in">Retorno do almoço</option><option value="exit">Saída final</option></select></label><label>Horário esquecido<input id="correction-time" type="time" required></label><label>Justificativa<textarea id="correction-reason" minlength="10" maxlength="1000" required style="box-sizing:border-box;width:100%;min-height:100px;padding:12px;border:1px solid #bdcee0;border-radius:8px" placeholder="Explique por que não registrou o ponto"></textarea></label><button type="submit" id="correction-submit">Enviar solicitação ao RH</button></form><button id="correction-back" type="button" style="background:#eef3f9;color:#14518d">Voltar</button><h3>Minhas solicitações</h3><div id="correction-list" aria-live="polite">Carregando...</div><p id="message" role="status"></p>';
+  const dateInput=el('correction-date');dateInput.value=day(new Date().toISOString());dateInput.max=dateInput.value;
+  el('correction-back').onclick=home;
+  const renderRequests=async()=>{
+   try{
+    const rows=await api('/rest/v1/employee_clock_correction_requests?select=attendance_date,punch_kind,requested_time,status,decision_reason,created_at&order=created_at.desc&limit=30');
+    const list=el('correction-list');if(!list)return;
+    list.replaceChildren();
+    if(!rows?.length){list.textContent='Nenhuma solicitação registrada.';return}
+    for(const item of rows){
+     const card=document.createElement('div');card.className='row';card.style.display='block';
+     const title=document.createElement('strong');title.textContent=item.attendance_date.split('-').reverse().join('/')+' · '+(labels[item.punch_kind]||item.punch_kind)+' · '+String(item.requested_time).slice(0,5);
+     const detail=document.createElement('p');detail.textContent=({pending:'Aguardando RH',approved:'Aprovada',rejected:'Rejeitada'}[item.status]||item.status)+(item.decision_reason?' — '+item.decision_reason:'');
+     card.append(title,detail);list.append(card);
+    }
+   }catch(error){if(el('correction-list'))el('correction-list').textContent='Não foi possível carregar solicitações: '+error.message}
+  };
+  el('correction-form').onsubmit=async event=>{
+   event.preventDefault();const submit=el('correction-submit');submit.disabled=true;
+   try{
+    const date=el('correction-date').value,kind=el('correction-kind').value,time=el('correction-time').value,reason=el('correction-reason').value.trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>day(new Date().toISOString()))throw Error('Informe uma data válida, até hoje.');
+    if(!kinds.includes(kind)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)||reason.length<10)throw Error('Confira o horário e informe uma justificativa de pelo menos 10 caracteres.');
+    const existing=await events();
+    if(existing.some(item=>day(item.captured_at)===date&&item.punch_kind===kind))throw Error('Esta marcação já está registrada. Solicite ao RH uma revisão do horário existente.');
+    await api('/rest/v1/employee_clock_correction_requests','POST',{user_id:session.user.id,employment_contract_id:account.employment_contract_id,attendance_date:date,punch_kind:kind,requested_time:time,reason,status:'pending'});
+    message('Solicitação enviada. Aguarde a análise do RH.');el('correction-reason').value='';await renderRequests();
+   }catch(error){message('Não foi possível enviar: '+error.message)}finally{submit.disabled=false}
+  };
+  await renderRequests();
  };
  void renderPontoNotificationButton();
  el('logout').onclick=async()=>{const token=session?.access_token;clearSession();if(token){try{await fetch(U+'/auth/v1/logout',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+token}})}catch{}}location.replace(location.pathname)};

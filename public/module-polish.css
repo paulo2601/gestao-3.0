@@ -81,3 +81,8 @@
 .hr-edit-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:10px;padding:10px 2px 14px;scrollbar-width:thin;max-width:100%;scroll-snap-type:x proximity}
 .hr-edit-tabs>button{flex:0 0 auto;min-height:48px;padding:10px 17px;border:1px solid #0866dc;border-radius:13px;background:#0866dc;color:#fff;font-weight:700;white-space:nowrap;box-shadow:0 2px 7px #0a36601a;scroll-snap-align:start}
 .hr-edit-tabs>button.is-active{background:#fff;color:#0866dc}
+
+/* Solicitações de correção de ponto - RH */
+.hr-clock-correction-list{display:grid;gap:12px}
+.hr-clock-correction-card{border:1px solid #cbd5e1;border-radius:10px;padding:12px;display:grid;gap:6px}
+.hr-clock-correction-decision{border:1px solid #94a3b8;border-radius:10px;padding:12px;display:grid;gap:10px}
