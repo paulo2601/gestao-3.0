@@ -109,7 +109,9 @@ export function usePlatformSession(): PlatformSession {
     if(new URLSearchParams(window.location.search).get('recovery')==='1'||window.location.hash.includes('type=recovery')) { setStatus('anonymous'); return; }
     void (async()=>{
       try{
-        // Restore the existing Supabase session without forcing a fresh login.\n        if(cancelled)return;\n        await hydrateAccess();
+        // Restore the existing Supabase session without forcing a fresh login.
+        if(cancelled)return;
+        await hydrateAccess();
       }catch{if(!cancelled){setErrorMessage('Não foi possível iniciar a sessão.');setStatus('error');}}
     })();
     return()=>{cancelled=true;};
