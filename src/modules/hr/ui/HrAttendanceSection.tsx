@@ -151,7 +151,7 @@ export function HrAttendanceSection({date,setDate,search,setSearch,rows,employee
  }
 
  const activeRows=useMemo(()=>rows.filter(row=>{const removed=cancelled.get(row.employmentContractId);if(!removed?.size)return true;return (clockData.get(row.employmentContractId)?.size??0)>0;}),[rows,cancelled,clockData]);
- const registeredIds=useMemo(()=>new Set(activeRows.map(row=>row.employmentContractId)),[activeRows]);
+ const registeredIds=useMemo(()=>{const ids=new Set(activeRows.map(row=>row.employmentContractId));for(const [contractId,punches] of clockData){if(punches.size>0)ids.add(contractId);}return ids;},[activeRows,clockData]);
  const pendingEmployees=useMemo(()=>employees.filter(employee=>!registeredIds.has(employee.employmentContractId)),[employees,registeredIds]);
  const registeredEmployees=employees.filter(employee=>registeredIds.has(employee.employmentContractId));
  const byContract=useMemo(()=>new Map(activeRows.map(row=>[row.employmentContractId,row])),[activeRows]);
