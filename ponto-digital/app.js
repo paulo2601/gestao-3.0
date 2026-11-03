@@ -7,7 +7,9 @@ async function enablePontoNotifications(){
  const permission=await Notification.requestPermission();
  if(permission!=='granted')throw Error('Permissão de notificações não concedida.');
  const reg=await navigator.serviceWorker.ready;
- const subscription=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKey(PUSH_VAPID_PUBLIC)});
+ const existing=await reg.pushManager.getSubscription();
+ if(existing){const current=existing.options?.applicationServerKey;const expected=pushKey(PUSH_VAPID_PUBLIC);if(!current||current.byteLength!==expected.byteLength||Array.from(new Uint8Array(current)).some((b,i)=>b!==expected[i]))await existing.unsubscribe();}
+ const subscription=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKey(PUSH_VAPID_PUBLIC)});
  const json=subscription.toJSON();
  await api('/rest/v1/employee_clock_push_subscriptions?on_conflict=endpoint','POST',{user_id:session.user.id,endpoint:subscription.endpoint,p256dh:json.keys.p256dh,auth:json.keys.auth,enabled:true});
  localStorage.setItem('ponto-push-enabled','1');
@@ -16,7 +18,7 @@ async function enablePontoNotifications(){
 async function renderPontoNotificationButton(){
  const parent=document.querySelector('.secondary-actions');if(!parent||!session?.access_token)return;
  const button=document.createElement('button');button.type='button';button.id='push-opt-in';button.textContent='🔔 Ativar lembretes de ponto';parent.after(button);
- try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub&&Notification.permission==='granted'){button.textContent='🔔 Lembretes ativados';button.disabled=true}}catch{}
+ try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub&&Notification.permission==='granted'){const current=sub.options?.applicationServerKey;const expected=pushKey(PUSH_VAPID_PUBLIC);const matching=current&&current.byteLength===expected.byteLength&&!Array.from(new Uint8Array(current)).some((b,i)=>b!==expected[i]);if(matching){button.textContent='🔔 Lembretes ativados';button.disabled=true}else{button.textContent='🔔 Renovar lembretes de ponto'}}}}catch{}
  button.onclick=async()=>{button.disabled=true;try{await enablePontoNotifications();button.textContent='🔔 Lembretes ativados'}catch(e){button.disabled=false;alert(e.message)}};
 }
 
