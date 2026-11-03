@@ -18,7 +18,7 @@ async function enablePontoNotifications(){
 async function renderPontoNotificationButton(){
  const parent=document.querySelector('.secondary-actions');if(!parent||!session?.access_token)return;
  const button=document.createElement('button');button.type='button';button.id='push-opt-in';button.textContent='🔔 Ativar lembretes de ponto';parent.after(button);
- try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub&&Notification.permission==='granted'){const current=sub.options?.applicationServerKey;const expected=pushKey(PUSH_VAPID_PUBLIC);const matching=current&&current.byteLength===expected.byteLength&&!Array.from(new Uint8Array(current)).some((b,i)=>b!==expected[i]);if(matching){button.textContent='🔔 Lembretes ativados';button.disabled=true}else{button.textContent='🔔 Renovar lembretes de ponto'}}}}catch{}
+ try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub&&Notification.permission==='granted'){const current=sub.options?.applicationServerKey;const expected=pushKey(PUSH_VAPID_PUBLIC);const matching=current&&current.byteLength===expected.byteLength&&!Array.from(new Uint8Array(current)).some((b,i)=>b!==expected[i]);if(matching){button.textContent='🔔 Lembretes ativados';button.disabled=true}else{button.textContent='🔔 Renovar lembretes de ponto'}}}catch{}
  button.onclick=async()=>{button.disabled=true;try{await enablePontoNotifications();button.textContent='🔔 Lembretes ativados'}catch(e){button.disabled=false;alert(e.message)}};
 }
 
