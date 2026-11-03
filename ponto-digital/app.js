@@ -257,7 +257,8 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
   };
   await renderRequests();
  };
- void renderPontoNotificationButton();
+ // Notificações temporariamente desativadas para isolar falha de inicialização.
+ // A assinatura push existente não é apagada; registros de ponto permanecem intactos.
  el('logout').onclick=async()=>{const token=session?.access_token;clearSession();if(token){try{await fetch(U+'/auth/v1/logout',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+token}})}catch{}}location.replace(location.pathname)};
 }
 el('login').onsubmit=async e=>{e.preventDefault();try{session=await api('/auth/v1/token?grant_type=password','POST',{email:el('email').value,password:el('password').value});await loadAccount();saveSession(session);await syncPending();await home()}catch(err){message(err.message)}};const h=new URLSearchParams(location.hash.slice(1));if(h.has('access_token')&&['invite','recovery'].includes(h.get('type'))){session={access_token:h.get('access_token')};el('login').innerHTML='<h2>Definir senha</h2><input id="newpass" type="password" minlength="8" placeholder="Nova senha" required><button>Salvar senha</button>';el('login').onsubmit=async e=>{e.preventDefault();try{await api('/auth/v1/user','PUT',{password:el('newpass').value});location.replace(location.pathname)}catch(err){message(err.message)}}}
