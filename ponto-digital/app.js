@@ -92,7 +92,18 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
  const planned=mySchedule?.weekdays?.[weekday];
  const plannedText=planned?(planned.active?'Horário previsto: '+planned.entry+'–'+planned.lunchOut+' / '+planned.lunchIn+'–'+planned.exit:'Folga prevista'):'Jornada prevista não cadastrada';
  const current=all.filter(x=>day(x.captured_at)===today);
- const next=kinds.find(k=>!current.some(x=>x.punch_kind===k));
+ const pendingKinds=kinds.filter(k=>!current.some(x=>x.punch_kind===k));
+ // Prefer the nearest scheduled punch, not merely the first missing punch.
+ // A forgotten punch stays pending and may be corrected through the RH workflow.
+ const scheduleTimes=planned?.active?{entry:planned.entry,lunch_out:planned.lunchOut,lunch_in:planned.lunchIn,exit:planned.exit}:null;
+ const minutesOf=value=>{const match=/^([01]\\d|2[0-3]):([0-5]\\d)/.exec(String(value||''));return match?Number(match[1])*60+Number(match[2]):null};
+ const nowLocal=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+ const nowMinutes=minutesOf(nowLocal);
+ const ranked=pendingKinds.map(kind=>({kind,minutes:minutesOf(scheduleTimes?.[kind])})).filter(item=>item.minutes!==null);
+ ranked.sort((a,b)=>Math.abs(a.minutes-nowMinutes)-Math.abs(b.minutes-nowMinutes));
+ const next=ranked.length?ranked[0].kind:pendingKinds[0];
+ const firstPending=pendingKinds[0];
+ const needsConfirmation=Boolean(next&&firstPending!==next);
  const formatMinutes=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')+' h';
  const duration=items=>{const m=new Map(items.map(v=>[v.punch_kind,v]));if(!m.has('entry')||!m.has('exit'))return null;let n=(new Date(m.get('exit').captured_at)-new Date(m.get('entry').captured_at))/60000;if(m.has('lunch_out')&&m.has('lunch_in'))n-=(new Date(m.get('lunch_in').captured_at)-new Date(m.get('lunch_out').captured_at))/60000;return n>=0?Math.floor(n):null};
  const month=day(new Date().toISOString()).slice(0,7);
@@ -128,6 +139,11 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
  el('mark').textContent=next?'◉ Bater ponto':'✓ Jornada registrada';el('mark').setAttribute('aria-label',next?'Registrar '+labels[next]:'Jornada registrada');
  el('mark').disabled=!next;
  el('mark').onclick=async()=>{
+  if(needsConfirmation){
+   const missed=pendingKinds.filter(kind=>kind!==next&&kinds.indexOf(kind)<kinds.indexOf(next));
+   const explanation=missed.length?'\\nMarcações anteriores ainda pendentes: '+missed.map(kind=>labels[kind]).join(', ')+'.':'';
+   if(!window.confirm('Confirmar '+labels[next]+' às '+nowLocal+'?'+explanation+'\\nO horário será registrado agora e não será preenchido retroativamente.'))return;
+  }
   el('mark').disabled=true;
   const record={id:crypto.randomUUID(),user_id:session.user.id,employment_contract_id:account.employment_contract_id,punch_kind:next,captured_at:new Date().toISOString(),device_id:localStorage.getItem('ponto_device')||(()=>{const id=crypto.randomUUID();localStorage.setItem('ponto_device',id);return id})(),offline:false};
   try{
