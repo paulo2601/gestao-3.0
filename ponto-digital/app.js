@@ -82,14 +82,16 @@ async function applyClockCorrections(records){
  return updated.sort((a,b)=>new Date(b.captured_at).getTime()-new Date(a.captured_at).getTime());
 }
 async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.access_token){try{remote=await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100');localStorage.setItem(EVENTS_KEY,JSON.stringify(remote))}catch(error){console.warn('Histórico offline:',error)}}const pending=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account.employment_contract_id);return applyClockCorrections([...pending.map(v=>({...v,pending_sync:true})),...remote.filter(v=>!pending.some(p=>p.id===v.id))])}async function home(){
- const all=await events();
  const today=day(new Date().toISOString());
+ // Histórico e jornada são independentes: consultar em paralelo reduz o tempo de abertura.
+ const [all,mySchedule]=await Promise.all([
+  events(),
+  (async()=>{try{
+   const schedules=await api('/rest/v1/employee_work_schedules?select=effective_on,weekdays,tolerance_minutes&employment_contract_id=eq.'+encodeURIComponent(account.employment_contract_id)+'&effective_on=lte.'+today+'&order=effective_on.desc&limit=1');
+   return schedules?.[0]??null;
+  }catch(error){console.warn('Jornada não disponível para consulta:',error);return null}})()
+ ]);
  if(navigator.onLine&&session?.access_token)await syncPending();
- let mySchedule=null;
- try{
-  const schedules=await api('/rest/v1/employee_work_schedules?select=effective_on,weekdays,tolerance_minutes&employment_contract_id=eq.'+encodeURIComponent(account.employment_contract_id)+'&effective_on=lte.'+today+'&order=effective_on.desc&limit=1');
-  mySchedule=schedules?.[0]??null;
- }catch(error){console.warn('Jornada não disponível para consulta:',error);}
  const weekday=(new Date(today+'T12:00:00Z').getUTCDay()+6)%7;
  const planned=mySchedule?.weekdays?.[weekday];
  const plannedText=planned?(planned.active?'Horário previsto: '+planned.entry+'–'+planned.lunchOut+' / '+planned.lunchIn+'–'+planned.exit:'Folga prevista'):'Jornada prevista não cadastrada';
