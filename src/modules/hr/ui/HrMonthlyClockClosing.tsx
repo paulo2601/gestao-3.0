@@ -43,11 +43,12 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
     for(let n=1;n<=lastDay;n++){
      const date=month+'-'+String(n).padStart(2,'0');
      const version=versions.filter(v=>v.employment_contract_id===id&&v.effective_on<=date).sort((a,b)=>b.effective_on.localeCompare(a.effective_on))[0];
-     if(!version)continue;
-     hasSchedule=true;
-     const schedule=version.weekdays[weekdayIndex(date)];
-     if(!schedule?.active)continue;
-     const parse=(v:string)=>{const [h=0,m=0]=v.split(':').map(Number);return h*60+m;};
+     const punch=punchMap.get(id+'|'+date);
+      const recorded=Boolean(punch&&Object.values(punch).some(Boolean));
+      if(!version){if(recorded){const raw=rawWorked(punch??{});if(raw!==null)worked+=raw;else incomplete++;days.push({date,scheduled:0,worked:raw,status:raw===null?'Ponto incompleto · sem jornada':'Sem jornada cadastrada',difference:null});}continue;}
+      hasSchedule=true;
+      const schedule=version.weekdays[weekdayIndex(date)];
+      if(!schedule?.active){if(recorded){const raw=rawWorked(punch??{});if(raw!==null)worked+=raw;else incomplete++;days.push({date,scheduled:0,worked:raw,status:'Registro em folga · revisar',difference:null});}continue;}
      const scheduled=Math.max(0,parse(schedule.lunchOut)-parse(schedule.entry)+parse(schedule.exit)-parse(schedule.lunchIn));
      planned+=scheduled;
      const result=byKey.get(id+'|'+date);
