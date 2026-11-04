@@ -1004,3 +1004,143 @@
 .measurement-unit-redesign .aup-footer{background:#fff!important;border-top:1px solid #dce5f0!important;padding:12px 24px!important}
 @media(max-width:900px){.measurement-redesign .approved-measurement-origin-modal__summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-redesign .approved-measurement-origin-modal__summary .ams-origin{grid-column:1/-1!important}.measurement-redesign .approved-measurement-origin-modal__toolbar{grid-template-columns:repeat(2,minmax(0,1fr))!important}.measurement-redesign .measurement-origin-filters__search{grid-column:1/-1!important}.measurement-unit-redesign .aup-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:640px){.measurement-redesign .approved-measurement-origin-modal__summary{padding:10px!important;gap:8px!important}.measurement-redesign .approved-measurement-origin-modal__toolbar{padding:10px!important;gap:8px!important}.measurement-redesign .approved-measurement-origin-modal__table-card{margin:0 10px 8px!important}.measurement-redesign .ams-table tbody td{padding:9px!important}.measurement-redesign .approved-measurement-origin-modal__footer{padding:10px!important}.measurement-unit-redesign .aup-header{padding:12px!important}.measurement-unit-redesign .aup-summary{padding:10px!important;gap:8px!important}.measurement-unit-redesign .aup-summary>div{padding:10px!important}.measurement-unit-redesign .aup-mode{margin:0 10px!important}.measurement-unit-redesign .aup-toolbar{margin:10px!important}.measurement-unit-redesign .aup-footer{padding:10px!important}}
+
+
+/* 2026-11-04: editor de unidades — evitar cartões com texto inline e sobreposição.
+   Escopo somente no painel real de edição; preservar scroll e lógica de medição. */
+.guided-measurement-unit-picker .guided-measurement-picker__panel.measurement-unit-redesign {
+  background:#f4f7fc!important;
+  color:#152944!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary {
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:12px!important;
+  margin:0!important;
+  padding:16px 22px!important;
+  width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  align-items:stretch!important;
+  background:#f4f7fc!important;
+  border:0!important;
+  border-radius:0!important;
+  box-sizing:border-box!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div,
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div:first-child,
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div.mct {
+  position:static!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  grid-column:auto!important;
+  gap:6px!important;
+  min-width:0!important;
+  min-height:96px!important;
+  height:auto!important;
+  padding:14px 16px!important;
+  margin:0!important;
+  border:1px solid #dbe5f0!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:0 3px 12px rgba(24,52,94,.05)!important;
+  box-sizing:border-box!important;
+  text-align:left!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div > span,
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div > strong,
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div > small {
+  position:static!important;
+  display:block!important;
+  float:none!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  line-height:1.35!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  text-align:left!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div > span {
+  font-size:12px!important;
+  font-weight:750!important;
+  color:#60728b!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div > strong {
+  font-size:clamp(16px,1.4vw,21px)!important;
+  font-weight:850!important;
+  color:#152d52!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div > small {
+  font-size:12px!important;
+  color:#6b7c92!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div.mct {
+  background:#eaf2ff!important;
+  border-color:#bcd3f8!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-mode {
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  gap:10px!important;
+  margin:0 22px 12px!important;
+  padding:14px 16px!important;
+  border:1px solid #dbe5f0!important;
+  border-radius:12px!important;
+  background:#fff!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-mode > div {
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-mode button {
+  min-height:38px!important;
+  border-radius:9px!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-toolbar {
+  margin:0 22px 12px!important;
+  padding:14px!important;
+  border:1px solid #dbe5f0!important;
+  border-radius:12px!important;
+  background:#fff!important;
+}
+@media (max-width:850px) {
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+    padding:12px!important;
+  }
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div,
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div:first-child,
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div.mct {
+    min-height:88px!important;
+    padding:11px!important;
+  }
+  .guided-measurement-unit-picker .measurement-unit-redesign .aup-mode,
+  .guided-measurement-unit-picker .measurement-unit-redesign .aup-toolbar {
+    margin-left:12px!important;
+    margin-right:12px!important;
+  }
+}
+@media (max-width:420px) {
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary {
+    gap:7px!important;
+    padding:9px!important;
+  }
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div,
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div:first-child,
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div.mct {
+    padding:9px!important;
+    min-height:80px!important;
+  }
+  .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary > div > strong {
+    font-size:15px!important;
+  }
+}
