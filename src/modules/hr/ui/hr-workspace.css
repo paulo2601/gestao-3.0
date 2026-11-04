@@ -163,3 +163,28 @@
 .hr-fixed-comp__add{display:flex;justify-content:center;margin:14px 0}
 .hr-fixed-comp__item button{border:1px solid #b7cbe7;border-radius:7px;padding:6px;background:#eef5ff;color:#17477f;cursor:pointer}
 @media(max-width:760px){.hr-edit-tabs--approved{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;overflow:visible}.hr-edit-tabs--approved button{flex:auto;min-width:0;max-width:none;padding:9px 2px;font-size:10px}.hr-address__row{grid-template-columns:repeat(2,minmax(0,1fr))}.hr-address input{min-width:0;padding:10px}.hr-fixed-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.hr-fixed-stats>div:first-child{grid-column:auto}.hr-fixed-stats>div{padding:8px 4px;text-align:center;gap:5px;font-size:11px}.hr-fixed-stats strong{font-size:clamp(11px,3vw,16px)}.hr-fixed-comp__list{overflow-x:auto}.hr-edit-summary__facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Ponto Digital — fechamento mensal (estilos locais, sem inline CSS). */
+.hr-monthly{display:grid;gap:16px;min-width:0}
+.hr-monthly__header,.hr-monthly__detail-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.hr-monthly__title{margin:0}
+.hr-monthly__actions{display:flex;gap:8px;flex-wrap:wrap}
+.hr-monthly__filters{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
+.hr-monthly__filters label{display:grid;gap:5px;font-weight:600}
+.hr-monthly__filters input,.hr-monthly__filters select{min-height:40px;max-width:100%;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);padding:7px 10px}
+.hr-monthly__error{color:#b91c1c}
+.hr-monthly__metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.hr-monthly__metric-value{margin:6px 0}
+.hr-monthly__scroll{overflow-x:auto}
+.hr-monthly__table{width:100%;border-collapse:collapse;text-align:left;min-width:730px}
+.hr-monthly__th{padding:10px;border-bottom:1px solid #cbd5e1}
+.hr-monthly__td{padding:10px;border-bottom:1px solid #e2e8f0}
+.hr-monthly__nowrap{white-space:nowrap}
+.hr-monthly__selected{background:#dbeafe;color:#172033}
+.hr-monthly__employee{border:0;background:transparent;color:#1d4ed8;cursor:pointer;font-weight:700;text-align:left}
+.hr-monthly__detail-scroll{overflow:auto;max-height:380px}
+.hr-monthly__detail-table{width:100%;min-width:500px;text-align:left}
+.hr-monthly__detail-table th,.hr-monthly__detail-table td{padding:8px;border-bottom:1px solid var(--border)}
+.hr-monthly__note{font-size:12px}
+@media(max-width:640px){.hr-monthly__filters label{width:100%}.hr-monthly__filters input,.hr-monthly__filters select{width:100%}}
