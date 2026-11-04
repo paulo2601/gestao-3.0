@@ -1144,3 +1144,62 @@
     font-size:15px!important;
   }
 }
+
+
+/* Layout aprovado: cinco indicadores financeiros por serviço, sem duplicar títulos. */
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary.aup-summary--approved {
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:12px!important;
+  padding:16px 22px!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary.aup-summary--approved > .aup-fin-card {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  min-height:155px!important;
+  padding:17px 14px 12px!important;
+  border-radius:15px!important;
+  border:1px solid var(--fin-border,#c9d8ed)!important;
+  background:var(--fin-bg,#f5f9ff)!important;
+  box-shadow:0 3px 12px rgba(18,47,91,.06)!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card > span {
+  color:var(--fin-ink,#173f79)!important;
+  font-size:15px!important;
+  font-weight:850!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card > strong {
+  color:#102544!important;
+  font-size:clamp(18px,1.6vw,24px)!important;
+  font-weight:900!important;
+  line-height:1.2!important;
+  overflow-wrap:anywhere!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card > small {
+  color:#536780!important;
+  font-size:12px!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card > b {
+  display:block!important;
+  margin-top:auto!important;
+  padding:9px 8px!important;
+  border-radius:9px!important;
+  background:var(--fin-pill,#dceaff)!important;
+  color:var(--fin-ink,#173f79)!important;
+  font-size:12px!important;
+  text-align:center!important;
+}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card--measured {--fin-bg:#f0fff1;--fin-border:#b5e7b9;--fin-pill:#d4f7d8;--fin-ink:#176b2c}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card--current {--fin-bg:#fff4ed;--fin-border:#ffd0b2;--fin-pill:#ffe0cc;--fin-ink:#a43b14}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card--balance {--fin-bg:#fffbeb;--fin-border:#f6df92;--fin-pill:#ffefb5;--fin-ink:#95610a}
+.guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card--final {--fin-bg:#f7f1ff;--fin-border:#d8bcff;--fin-pill:#ead7ff;--fin-ink:#6333a3}
+@media(max-width:1100px) {
+ .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary.aup-summary--approved {grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:650px) {
+ .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary.aup-summary--approved {grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:10px!important;gap:9px!important}
+ .guided-measurement-unit-picker .measurement-unit-redesign > .aup-summary.aup-summary--approved > .aup-fin-card {min-height:138px!important;padding:12px 10px!important}
+ .guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card > strong {font-size:17px!important}
+ .guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card--final {grid-column:1/-1!important}
+}
