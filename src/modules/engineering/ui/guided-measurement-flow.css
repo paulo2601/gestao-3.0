@@ -905,3 +905,65 @@
  .guided-measurement-unit-picker .guided-measurement-picker__panel > footer.aup-footer > button:nth-of-type(1) {grid-column:1!important}
  .guided-measurement-unit-picker .guided-measurement-picker__panel > footer.aup-footer > button:nth-of-type(2) {grid-column:2!important}
 }
+
+
+/* FIX 2026-11-04: origem de medição (torres/aditivos).
+   O conteúdo não pode ser cortado pelo rodapé fixo: a tabela tem rolagem própria. */
+@media (min-width: 641px) {
+ .guided-measurement-picker:has(.approved-measurement-origin-modal) {
+   display:flex!important;align-items:stretch!important;justify-content:center!important;
+   overflow:hidden!important;min-height:0!important;
+ }
+ .guided-measurement-picker .approved-measurement-origin-modal {
+   display:flex!important;flex-direction:column!important;
+   width:100%!important;height:100%!important;max-height:100%!important;
+   min-height:0!important;overflow:hidden!important;box-sizing:border-box!important;
+ }
+ .approved-measurement-origin-modal__header,
+ .approved-measurement-origin-modal__summary,
+ .approved-measurement-origin-modal__toolbar,
+ .approved-measurement-origin-modal__footer {
+   flex:0 0 auto!important;
+ }
+ .approved-measurement-origin-modal__table-card {
+   display:flex!important;flex-direction:column!important;
+   flex:1 1 0!important;min-height:0!important;max-height:none!important;
+   overflow:hidden!important;
+ }
+ .approved-measurement-origin-modal__table-card .ams-table-wrap,
+ .approved-measurement-origin-modal__table-card .approved-measurement-sheet__table-wrap {
+   display:block!important;flex:1 1 0!important;
+   min-height:0!important;max-height:100%!important;height:100%!important;
+   overflow-y:auto!important;overflow-x:auto!important;
+   overscroll-behavior:contain!important;scrollbar-gutter:stable!important;
+   -webkit-overflow-scrolling:touch!important;
+ }
+ .approved-measurement-origin-modal__footer {
+   position:relative!important;bottom:auto!important;z-index:5!important;
+   background:#fff!important;box-shadow:0 -6px 16px rgba(15,23,42,.06)!important;
+ }
+}
+@media (max-width: 640px) {
+ .guided-measurement-picker:has(.approved-measurement-origin-modal) {
+   overflow:hidden!important;min-height:0!important;
+ }
+ .guided-measurement-picker .approved-measurement-origin-modal {
+   display:flex!important;flex-direction:column!important;
+   min-height:0!important;height:100%!important;max-height:100%!important;
+   overflow:hidden!important;
+ }
+ .approved-measurement-origin-modal__table-card {
+   flex:1 1 0!important;min-height:0!important;overflow:hidden!important;
+   display:flex!important;flex-direction:column!important;
+ }
+ .approved-measurement-origin-modal__table-card .ams-table-wrap,
+ .approved-measurement-origin-modal__table-card .approved-measurement-sheet__table-wrap {
+   flex:1 1 auto!important;min-height:0!important;max-height:100%!important;
+   overflow-y:auto!important;overflow-x:auto!important;
+   -webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;
+ }
+ .approved-measurement-origin-modal__footer {
+   flex:0 0 auto!important;position:relative!important;bottom:auto!important;
+   z-index:5!important;background:#fff!important;
+ }
+}
