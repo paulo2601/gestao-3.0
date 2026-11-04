@@ -30,6 +30,8 @@ export async function listDailyScheduleAssessments(contractIds:string[],start:st
  const result:DailyScheduleAssessment[]=[];
  for(const [key,punches] of records){
   const separator=key.lastIndexOf('|'),contractId=key.slice(0,separator),date=key.slice(separator+1);
+  // Dia integralmente cancelado não é ponto incompleto: não existem marcações válidas a apurar.
+  if(!Object.values(punches).some(Boolean))continue;
   const assessment=assessEmployeePunches(versions,contractId,date,punches);
   if(assessment)result.push({contractId,date,result:assessment});
  }
