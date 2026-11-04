@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useState} from 'react';
 import type {HrEmployeeRow} from '../application/HrOperationsRepository';
-import {listDailyScheduleAssessments} from '../infrastructure/listDailyScheduleAssessments';
+import {assessEmployeePunches} from '../domain/assessEmployeePunches';
 import {listWorkSchedulesForPeriod,listClockReportEvents,listClockAdjustments,listClockCancellations} from '../infrastructure/HrWorkspaceService';
 import {weekdayIndex} from '../domain/assessEmployeePunches';
 import {Button} from '../../../shared/ui/Button';
@@ -26,13 +26,13 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
   setLoading(true);setError('');
   try{
    const start=month+'-01',end=month+'-'+String(new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate()).padStart(2,'0');
-   const [assessments,versions,events,adjustments,cancellations]=await Promise.all([listDailyScheduleAssessments(scopes,start,end),listWorkSchedulesForPeriod(scopes,start,end),listClockReportEvents(scopes,start,end),listClockAdjustments(scopes,start,end),listClockCancellations(scopes,start,end)]);
+   const [versions,events,adjustments,cancellations]=await Promise.all([listWorkSchedulesForPeriod(scopes,start,end),listClockReportEvents(scopes,start,end),listClockAdjustments(scopes,start,end),listClockCancellations(scopes,start,end)]);
    if(cancelled)return;
-   const byKey=new Map(assessments.map(a=>[a.contractId+'|'+a.date,a.result]));
    type Punch='entry'|'lunch_out'|'lunch_in'|'exit';
    const punchMap=new Map<string,Partial<Record<Punch,string>>>();
    for(const e of events){const local=new Date(e.captured_at).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo',hour12:false});const key=e.employment_contract_id+'|'+local.slice(0,10);const p=punchMap.get(key)??{};p[e.punch_kind as Punch]=local.slice(11,16);punchMap.set(key,p);}
    for(const a of adjustments){const key=a.employment_contract_id+'|'+a.attendance_date;const p=punchMap.get(key)??{};p[a.punch_kind]=a.corrected_time.slice(0,5);punchMap.set(key,p);}
+   const fullyCancelled=new Set(cancellations.filter(c=>c.punch_kind==='all').map(c=>c.employment_contract_id+'|'+c.attendance_date));
    for(const c of cancellations){const key=c.employment_contract_id+'|'+c.attendance_date;const p=punchMap.get(key)??{};if(c.punch_kind==='all')punchMap.set(key,{});else{delete p[c.punch_kind];punchMap.set(key,p);}}
    const parse=(v:string)=>{const [h=0,m=0]=v.split(':').map(Number);return h*60+m;};
    const today=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
@@ -51,9 +51,9 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
       if(!schedule?.active){if(recorded){const raw=rawWorked(punch??{});if(raw!==null)worked+=raw;else incomplete++;days.push({date,scheduled:0,worked:raw,status:'Registro em folga · revisar',difference:null});}continue;}
      const scheduled=Math.max(0,parse(schedule.lunchOut)-parse(schedule.entry)+parse(schedule.exit)-parse(schedule.lunchIn));
      planned+=scheduled;
-     const result=byKey.get(id+'|'+date);
-     if(!result){if(date<=today)days.push({date,scheduled,worked:null,status:'Sem marcações · revisar',difference:null});continue;}
-     if(result.status!=='complete'||result.workedMinutes===null){incomplete++;days.push({date,scheduled,worked:null,status:'Ponto incompleto',difference:null});continue;}
+     if(!recorded){if(date<=today)days.push({date,scheduled,worked:null,status:fullyCancelled.has(id+'|'+date)?'Registros cancelados':'Sem marcações · revisar',difference:null});continue;}
+     const result=assessEmployeePunches(versions,id,date,punch??{});
+     if(!result||result.status!=='complete'||result.workedMinutes===null){incomplete++;const missing=([['entry','entrada'],['lunch_out','saída almoço'],['lunch_in','retorno almoço'],['exit','saída final']] as const).filter(([kind])=>!punch?.[kind]).map(([,label])=>label);days.push({date,scheduled,worked:null,status:missing.length?'Ponto incompleto · falta '+missing.join(', '):'Ponto inconsistente · revisar',difference:null});continue;}
      const diff=result.workedMinutes-scheduled;
      worked+=result.workedMinutes;if(diff>0)positive+=diff;else negative+=-diff;
      days.push({date,scheduled,worked:result.workedMinutes,status:'Completo',difference:diff});
