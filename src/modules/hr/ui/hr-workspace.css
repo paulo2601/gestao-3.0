@@ -188,3 +188,16 @@
 .hr-monthly__detail-table th,.hr-monthly__detail-table td{padding:8px;border-bottom:1px solid var(--border)}
 .hr-monthly__note{font-size:12px}
 @media(max-width:640px){.hr-monthly__filters label{width:100%}.hr-monthly__filters input,.hr-monthly__filters select{width:100%}}
+
+
+@media(max-width:700px){
+ .hr-monthly__table{min-width:0;display:block}
+ .hr-monthly__table thead{display:none}
+ .hr-monthly__table tbody{display:grid;gap:12px}
+ .hr-monthly__table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+ .hr-monthly__table .hr-monthly__td{display:flex;flex-direction:column;gap:4px;padding:3px;border:0;white-space:normal;min-width:0}
+ .hr-monthly__table .hr-monthly__name{grid-column:1/-1;padding-bottom:10px;border-bottom:1px solid var(--border)}
+ .hr-monthly__table .hr-monthly__td[data-label]::before{content:attr(data-label);font-size:12px;font-weight:700;color:var(--muted)}
+ .hr-monthly__table .hr-monthly__employee{font-size:16px;overflow-wrap:anywhere}
+ .hr-monthly__table .hr-monthly__selected{background:#dbeafe}
+}
