@@ -1,4 +1,4 @@
-const CACHE='ponto-digital-shell-v6';
+const CACHE='ponto-digital-shell-v7';
 const SHELL=['./','./index.html','./app.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(async cache=>{
