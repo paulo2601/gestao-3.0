@@ -255,3 +255,21 @@
     text-align: center !important;
   }
 }
+
+
+/* Layout aprovado: medição e planilha de aditivos */
+.engineering-sheet--approved{display:grid;gap:20px;padding:8px 2px 20px}
+.engineering-sheet__approved-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.engineering-sheet__approved-summary>div{display:flex;flex-direction:column;gap:9px;min-width:0;padding:18px 20px;background:#fff;border:1px solid #dfe7f1;border-radius:16px;box-shadow:0 5px 18px rgba(15,45,85,.045)}
+.engineering-sheet__approved-summary small{color:#64748b;font-weight:700;font-size:12px}
+.engineering-sheet__approved-summary strong{color:#102b53;font-size:clamp(18px,1.6vw,25px);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.engineering-sheet--approved .engineering-sheet__live-filter{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f8fbff;border:1px solid #dfe7f1;border-radius:14px}
+.engineering-sheet--approved .engineering-sheet__live-filter input{flex:1;min-width:0;border:0;background:transparent;outline:none}
+.engineering-sheet--approved .engineering-sheet__table-wrap{border:1px solid #dfe7f1;border-radius:16px;overflow-x:auto;background:#fff}
+.engineering-sheet--approved .engineering-sheet__table{width:100%;border-collapse:collapse;min-width:780px}
+.engineering-sheet--approved .engineering-sheet__table th{padding:15px 14px;background:#edf4ff;color:#1e477e;font-size:12px;text-align:left;white-space:nowrap}
+.engineering-sheet--approved .engineering-sheet__table td{padding:14px;border-bottom:1px solid #e7edf5;vertical-align:middle}
+.engineering-sheet--approved .engineering-sheet__table tbody tr:nth-child(even){background:#f8fbff}
+.engineering-sheet--approved .engineering-sheet__table tbody tr:hover{background:#eff6ff}
+.engineering-sheet--approved .engineering-sheet__table td:nth-child(n+3){font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:720px){.engineering-sheet__approved-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.engineering-sheet__approved-summary>div:nth-child(2){grid-column:span 2;grid-row:1}.engineering-sheet__approved-summary>div{padding:13px}.engineering-sheet--approved .engineering-sheet__live-filter{flex-wrap:wrap}}
