@@ -127,7 +127,22 @@ export function useFinanceOperations(scope: CompanyScope, mode: 'full' | 'quick'
     createCardPurchase: (input: Omit<CreateCardPurchase, keyof CompanyScope>) => execute(() => repositories.cards.createPurchase({ ...scope, ...input }), 'Compra no cartão registrada com sucesso.'),
     closeCardStatement: (input: Omit<CloseCardStatement, keyof CompanyScope>) => execute(() => repositories.cards.closeStatement({ ...scope, ...input }), 'Fatura fechada com sucesso.'),
     payCardStatement: (input: Omit<RecordCardStatementPayment, keyof CompanyScope>) => execute(() => repositories.cards.recordStatementPayment({ ...scope, ...input }), 'Pagamento da fatura registrado com sucesso.'),
-    createRecurrence: (input: Omit<CreateFinancialRecurrenceRule, keyof CompanyScope>) => execute(() => repositories.recurrences.create({ ...scope, ...input }), 'Recorrência criada com sucesso.'),
+    createRecurrence: (input: Omit<CreateFinancialRecurrenceRule, keyof CompanyScope>) => execute(async () => {
+      const rule = await repositories.recurrences.create({ ...scope, ...input });
+      // A regra sozinha não representa um lançamento financeiro. Materialize a
+      // primeira competência vencida/atual antes de confirmar a operação.
+      const today = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+      }).format(new Date());
+      if (rule.startDate <= today) {
+        try {
+          await repositories.recurrences.materializeNext(rule.id);
+        } catch (error) {
+          throw new Error(`Recorrência salva, mas a primeira competência não foi gerada. Não cadastre novamente: use "Gerar próxima" na recorrência existente. Detalhes: ${messageFrom(error)}`);
+        }
+      }
+      return rule;
+    }, 'Recorrência salva e primeira competência processada com sucesso.'),
     materializeRecurrence: (ruleId: string) => execute(() => repositories.recurrences.materializeNext(ruleId), 'Próxima ocorrência gerada com sucesso.'),
     createCategory: (input: Omit<CreateFinancialCategory, keyof CompanyScope>) => execute(() => repositories.registries.createCategory({ ...scope, ...input }), 'Categoria criada com sucesso.'),
     updateCategory: (input: Omit<UpdateFinancialCategory, keyof CompanyScope>) => execute(() => repositories.registries.updateCategory({ ...scope, ...input }), 'Categoria atualizada com sucesso.'),
