@@ -2,7 +2,7 @@ import type { FinancialEntryType } from './entries';
 import type { CompanyScope } from './registries';
 
 export type RecurrenceStatus = 'active' | 'inactive';
-export type RecurrenceFrequency = 'monthly';
+export type RecurrenceFrequency = 'monthly' | 'weekly';
 
 export interface FinancialRecurrenceRule extends CompanyScope {
   id: string;
