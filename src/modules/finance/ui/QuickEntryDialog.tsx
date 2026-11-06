@@ -583,13 +583,14 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       // transformar um lançamento concluído em erro nem incentivar duplicação.
       resetAfterSave(keepData);
       setLocalSuccess(keepData ? 'Lançamento concluído. Todos os dados foram mantidos.' : 'Lançamento concluído. Pronto para o próximo lançamento.');
-      try {
-        await operations.loadReferences();
-        onSaved?.();
-      } catch {
-        // A operação financeira permanece concluída; os dados serão recarregados
-        // na próxima abertura sem solicitar um segundo lançamento.
-      }
+      // Notifique as telas imediatamente após a confirmação da gravação.
+      // Recarregar cadastros (categorias, contas e cartões) é uma operação
+      // independente e não pode atrasar a atualização de saldos/extratos.
+      window.dispatchEvent(new Event('finance-data-changed'));
+      onSaved?.();
+      void operations.loadReferences().catch(() => {
+        // Falha de atualização de cadastros não desfaz o lançamento salvo.
+      });
     } catch (error) {
       setLocalError(error instanceof Error && error.message ? error.message : 'Não foi possível concluir o lançamento.');
     } finally {
