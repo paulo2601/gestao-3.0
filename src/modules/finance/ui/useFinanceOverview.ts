@@ -34,7 +34,7 @@ export function useFinanceOverview(scope: CompanyScope | null, refreshToken = 0)
   useEffect(() => {
     const refresh = () => setSyncTick(value => value + 1);
     const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
-    const timer = window.setInterval(onVisible, 20_000);
+    const timer = window.setInterval(onVisible, 120_000);
     window.addEventListener('focus', refresh);
     window.addEventListener('finance-data-changed', refresh);
     document.addEventListener('visibilitychange', onVisible);
