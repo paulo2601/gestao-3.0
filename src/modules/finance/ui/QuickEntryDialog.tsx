@@ -203,7 +203,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     paymentMethod: 'pix' as PaymentMethod,
     launchType: 'single' as LaunchType,
     installmentCount: '2',
-    recurrenceCount: '12',
+    recurrenceCount: '12', recurrenceFrequency: 'monthly' as 'monthly' | 'weekly',
     accountRef: '',
     cardRef: '',
     categoryId: '',
@@ -225,7 +225,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     setLocalSuccess(null);
     setForm({
       entryType: 'expense', date: initialValues?.date ?? today(), description: initialValues?.description ?? '', amountDigits: initialValues?.amount ? String(Math.round(initialValues.amount * 100)) : '', paymentMethod: initialPaymentMethod ?? 'pix', launchType: 'single',
-      installmentCount: '2', recurrenceCount: '12', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
+      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
       counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
     });
   }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
@@ -428,7 +428,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     manualCompany.current = false;
     setForm({
       entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: 'pix', launchType: 'single',
-      installmentCount: '2', recurrenceCount: '12', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
+      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
       counterparty: '', notes: '', includeInBudget: false,
     });
   }
@@ -492,8 +492,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         const count = Math.max(1, Math.trunc(Number(form.recurrenceCount || '1')));
         await operations.createRecurrence({
           entryType: form.entryType, description: form.description.trim(), counterpartyName: form.counterparty.trim() || null,
-          categoryId: form.categoryId, costCenterId: form.costCenterId || null, amount, frequency: 'monthly', intervalCount: 1,
-          startDate: form.date, endDate: recurrenceEnd(form.date, count), notes: form.notes.trim() || null,
+          categoryId: form.categoryId, costCenterId: form.costCenterId || null, amount, frequency: form.recurrenceFrequency, intervalCount: form.recurrenceFrequency === 'weekly' ? 2 : 1,
+          startDate: form.date, endDate: form.recurrenceFrequency === 'weekly' ? new Date(Date.parse(form.date + 'T12:00:00Z') + (count - 1) * 14 * 86400000).toISOString().slice(0, 10) : recurrenceEnd(form.date, count), notes: form.notes.trim() || null,
         });
       } else if (form.paymentMethod === 'credit') {
         const card = parsePaymentRef(form.cardRef);
@@ -670,10 +670,11 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
               <span className="quick-entry__launch-check">{form.launchType === 'installment' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">▤</span><span><strong>Parcelado</strong><small>Várias parcelas</small></span>
             </Button>
             {form.paymentMethod !== 'credit' && <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'recurring' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'recurring'} onClick={() => set('launchType', 'recurring')}>
-              <span className="quick-entry__launch-check">{form.launchType === 'recurring' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">⟳</span><span><strong>Recorrente</strong><small>Todo mês</small></span>
+              <span className="quick-entry__launch-check">{form.launchType === 'recurring' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">⟳</span><span><strong>Recorrente</strong><small>Mensal ou quinzenal</small></span>
             </Button>}
           </div>
           {form.launchType === 'installment' && <Input label="Quantidade de parcelas" type="number" min="2" max="120" value={form.installmentCount} onChange={(event) => set('installmentCount', event.target.value)} required />}
+          {form.launchType === 'recurring' && <Select label="Frequência" value={form.recurrenceFrequency} onChange={(event) => set('recurrenceFrequency', event.target.value as 'monthly' | 'weekly')} options={[{ value: 'monthly', label: 'Mensal' }, { value: 'weekly', label: 'Quinzenal (a cada 2 semanas)' }]} />}
           {form.launchType === 'recurring' && <Input label="Quantidade de repetições" type="number" min="1" max="120" value={form.recurrenceCount} onChange={(event) => set('recurrenceCount', event.target.value)} required />}
           {isCrIncome && form.launchType !== 'recurring' && <label className="quick-entry__budget-toggle">
             <input type="checkbox" checked={form.includeInBudget} onChange={(event) => set('includeInBudget', event.target.checked)} />
