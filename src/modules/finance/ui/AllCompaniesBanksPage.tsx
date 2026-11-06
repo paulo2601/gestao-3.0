@@ -30,7 +30,7 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
   const load = useCallback(async () => {
     // Só bloqueia visualmente na primeira carga. Em atualizações mantém as contas
     // atuais utilizáveis enquanto os saldos são renovados em segundo plano.
-    if (accounts.length === 0) setLoading(true);
+    setLoading(current => current && accounts.length === 0);
     setError(null);
     try {
       const groups = await Promise.all(companies.map(async (company) => {
@@ -41,7 +41,7 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
       setAccounts(groups.flat().sort((a, b) => a.companyName.localeCompare(b.companyName) || a.name.localeCompare(b.name)));
     } catch { setError('Não foi possível carregar todas as contas bancárias.'); }
     finally { setLoading(false); }
-  }, [accounts.length, companies, repositories]);
+  }, [companies, repositories]);
 
   useEffect(() => { void load(); }, [load, refreshToken]);
   useEffect(() => { const refresh = () => setRefreshToken((value) => value + 1); window.addEventListener('finance-data-changed', refresh); return () => window.removeEventListener('finance-data-changed', refresh); }, []);
@@ -49,7 +49,7 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
   useEffect(() => {
     const refresh = () => setRefreshToken(value => value + 1);
     const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
-    const timer = window.setInterval(onVisible, 20_000);
+    const timer = window.setInterval(onVisible, 120_000);
     window.addEventListener('focus', refresh);
     document.addEventListener('visibilitychange', onVisible);
     return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', onVisible); };
