@@ -23,7 +23,7 @@ export async function loadMeasurementGoalPhysicalQuantities(model:MeasurementPar
  return physicalByAddendum;
 }
 
-export async function loadExternalServiceExecution(model:MeasurementParityModel,addendumIds:string[]):Promise<Map<string,{ratio:number;value:number}>> {
+export async function loadExternalServiceExecution(model:MeasurementParityModel,addendumIds:string[],competence?:string):Promise<Map<string,{ratio:number;value:number}>> {
  const result=new Map<string,{ratio:number;value:number}>();
  if(!addendumIds.length)return result;
  const db=getSupabaseClient();
@@ -41,10 +41,14 @@ export async function loadExternalServiceExecution(model:MeasurementParityModel,
  const validControlIds=new Set((controls??[]).filter(row=>row.contract_id===model.contractId).map(row=>String(row.id)));
  const validItems=(items??[]).filter(row=>validControlIds.has(String(row.control_id)));
  if(!validItems.length)return result;
- const {data:entries,error:entryError}=await db.from('engineering_service_control_entries').select('item_id,executed_quantity').in('item_id',validItems.map(row=>String(row.id)));
+ const {data:entries,error:entryError}=await db.from('engineering_service_control_entries').select('item_id,execution_date,executed_quantity').in('item_id',validItems.map(row=>String(row.id)));
  if(entryError)throw entryError;
  const quantities=new Map<string,number>();
- for(const entry of entries??[])quantities.set(String(entry.item_id),(quantities.get(String(entry.item_id))??0)+Number(entry.executed_quantity));
+ for(const entry of entries??[]){
+  // A medição exibe apenas lançamentos do mês de competência, não o histórico acumulado.
+  if(competence && String(entry.execution_date).slice(0,7)!==competence.slice(0,7))continue;
+  quantities.set(String(entry.item_id),(quantities.get(String(entry.item_id))??0)+Number(entry.executed_quantity));
+ }
  for(const link of linked){
   const item=validItems.find(row=>String(row.id)===String(link.control_item_id));
   if(!item)continue;
