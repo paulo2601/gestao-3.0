@@ -124,10 +124,26 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
   if(!Number.isFinite(entered)||entered<=0||quantities.some(q=>!Number.isFinite(q)||q<=0)){setError('Informe uma quantidade, valor ou percentual válido.');return}
   if(!date){setError('Informe a data da execução.');return}
   setSaving(true);setError(null);setNotice(null);
-  try{if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:quantities[0]!})}else if(activeGroup){for(let i=0;i<batch.length;i++)await saveLineExecution({measurementLineId:batch[i]!.measurementLineId,executionDate:date,quantity:quantities[i]!})}else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:quantities[0]!})}
-   const refreshed=await loadLineExecutions(scope,ids);setEntries(refreshed);setHistoryRevision(revision=>revision+1);setSelectedReferences([]);setEditing(null);setQuantity('');setNotice('Execução salva com sucesso. Selecione as próximas unidades para continuar.')}
-  catch(cause){setError(cause instanceof Error?cause.message:'Não foi possível salvar')}
-  finally{setSaving(false)}
+  try{
+   if(editing){await updateLineExecution({id:editing,executionDate:date,quantity:quantities[0]!})}
+   else if(activeGroup){for(let i=0;i<batch.length;i++)await saveLineExecution({measurementLineId:batch[i]!.measurementLineId,executionDate:date,quantity:quantities[i]!})}
+   else{await saveLineExecution({measurementLineId:current.measurementLineId,executionDate:date,quantity:quantities[0]!})}
+  }catch(cause){
+   const failure=cause as {message?:string;details?:string;hint?:string;code?:string};
+   setError([failure?.message||'Não foi possível salvar a execução.',failure?.details,failure?.hint].filter(Boolean).join(' — '));
+   setSaving(false);
+   return;
+  }
+  setHistoryRevision(revision=>revision+1);
+  setSelectedReferences([]);setEditing(null);setQuantity('');
+  setNotice('Execução gravada com sucesso. Atualizando os dados…');
+  try{
+   const refreshed=await loadLineExecutions(scope,ids);
+   setEntries(refreshed);
+   setNotice('Execução salva com sucesso. Selecione as próximas unidades para continuar.');
+  }catch{
+   setNotice('Execução gravada com sucesso, mas não foi possível atualizar a lista. Reabra a medição para consultar. Não salve novamente.');
+  }finally{setSaving(false)}
  }
  return <section className="measurement-execution-overview">
   <style>{` .ex-card-physical{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;border:1px solid #dbe5ef;border-radius:10px;background:#f5f9ff;font-size:12px;min-width:0}.ex-physical-value{display:block}.ex-physical-value--done{color:#078653}.ex-physical-value--pending{color:#1464d9}.ex-physical-full{grid-column:1/-1} .measurement-execution-overview__error{color:#b91c1c;font-weight:600}.measurement-execution-overview__notice{color:#047857;font-weight:600} .measurement-execution-overview__cards{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important}.measurement-execution-overview__cards>div{min-width:0;border:1px solid #d8e5f1;border-radius:9px;padding:12px;background:#fff}.measurement-execution-overview__cards>div:nth-child(1) strong{color:#1464d9}.measurement-execution-overview__cards>div:nth-child(2) strong{color:#078653}.measurement-execution-overview__cards>div:nth-child(3) strong{color:#dc2646}.measurement-execution-overview__items{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}.measurement-execution-overview__service{display:flex!important;flex-direction:column!important;text-align:left!important;align-items:stretch!important;min-width:0;gap:9px!important;border:1px solid #dce6f0;border-left:4px solid #3289d9;border-radius:10px;padding:13px;background:#fff}.measurement-execution-overview__service.is-done{border-left-color:#10a76a;background:#f5fdfa}.ex-card-metrics{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;border-top:1px solid #e4eaf2;padding-top:9px}.ex-card-metrics>span{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}.ex-card-metrics>span+span{border-left:1px solid #dce5ef;padding-left:6px}.ex-card-metrics strong{font-size:15px}.ex-card-metrics small{font-size:11px}.ex-card-done{color:#078653}.ex-card-pending{color:#dc2646}.ex-card-progress{display:block!important;width:100%;height:8px;appearance:none;border:0;background:#dce7f0;border-radius:10px;overflow:hidden}.ex-card-progress::-webkit-progress-bar{background:#dce7f0;border-radius:10px}.ex-card-progress::-webkit-progress-value{background:#10b981;border-radius:10px}.ex-card-progress::-moz-progress-bar{background:#10b981;border-radius:10px}@media(max-width:1100px){.measurement-execution-overview__items{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:620px){.measurement-execution-overview__items{grid-template-columns:1fr!important}.measurement-execution-overview__cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}} `}</style>
