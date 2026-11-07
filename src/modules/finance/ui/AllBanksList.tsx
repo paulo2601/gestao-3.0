@@ -78,7 +78,7 @@ export function AllBanksList({ companies }: { companies: readonly CompanySummary
     } catch { setError('Não foi possível carregar as contas bancárias.'); } finally { setLoading(false); }
   }, [companies, repositories]);
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => { const refresh = () => { void load(); }; window.addEventListener('finance-bank-order-changed', refresh); return () => window.removeEventListener('finance-bank-order-changed', refresh); }, [load]);
+  useEffect(() => { const refresh = () => { void load(); }; window.addEventListener('finance-data-changed', refresh); window.addEventListener('finance-bank-order-changed', refresh); return () => { window.removeEventListener('finance-data-changed', refresh); window.removeEventListener('finance-bank-order-changed', refresh); }; }, [load]);
   useEffect(() => {
     const handlePopState = () => {
       if (!extractHistoryRef.current) return;
