@@ -40,7 +40,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  .catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao carregar execução')})
  .finally(()=>{if(live)setLoading(false)});
  return()=>{live=false};},[scope,ids]);
- useEffect(()=>{let live=true;const addendumIds=[...new Set(model.origins.flatMap(origin=>origin.services.filter(item=>item.targetKind==='addendum').map(item=>item.targetId)))];void loadExternalServiceExecution(model,addendumIds,measurement?.competence).then(next=>{if(live)setExternal(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao sincronizar infraestrutura externa')});return()=>{live=false}},[model,items]);
+ useEffect(()=>{let live=true;const addendumIds=[...new Set(model.origins.flatMap(origin=>origin.services.filter(item=>item.targetKind==='addendum').map(item=>item.targetId)))];void loadExternalServiceExecution(model,addendumIds,measurement?.competence).then(next=>{if(live)setExternal(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao sincronizar infraestrutura externa')});return()=>{live=false}},[model,items,measurement?.competence]);
  useEffect(()=>{let live=true;void loadMeasurementGoalPhysicalQuantities(model).then(next=>{if(live)setPhysical(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao consultar metragens físicas')});return()=>{live=false}},[model]);
  const doneByLine=useMemo(()=>{const sums=new Map<string,number>();for(const entry of entries)sums.set(entry.measurementLineId,(sums.get(entry.measurementLineId)??0)+entry.executedQuantity);return sums},[entries]);
  // O Controle de Serviços é filtrado pela competência da medição aberta.
