@@ -43,12 +43,13 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
  useEffect(()=>{let live=true;const addendumIds=[...new Set(model.origins.flatMap(origin=>origin.services.filter(item=>item.targetKind==='addendum').map(item=>item.targetId)))];void loadExternalServiceExecution(model,addendumIds).then(next=>{if(live)setExternal(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao sincronizar infraestrutura externa')});return()=>{live=false}},[model,items]);
  useEffect(()=>{let live=true;void loadMeasurementGoalPhysicalQuantities(model).then(next=>{if(live)setPhysical(next)}).catch(cause=>{if(live)setError(cause instanceof Error?cause.message:'Falha ao consultar metragens físicas')});return()=>{live=false}},[model]);
  const doneByLine=useMemo(()=>{const sums=new Map<string,number>();for(const entry of entries)sums.set(entry.measurementLineId,(sums.get(entry.measurementLineId)??0)+entry.executedQuantity);return sums},[entries]);
- const effectiveDone=(item:typeof items[number])=>external.has(item.targetId)?external.get(item.targetId)!.ratio:(doneByLine.get(item.measurementLineId)??0);
+ // A execução do Controle de Serviços é histórica/acumulada e NÃO pertence à medição aberta.
+ const effectiveDone=(item:typeof items[number])=>doneByLine.get(item.measurementLineId)??0;
  const contractStages=useMemo(()=>new Map(model.origins.flatMap(origin=>origin.services.map(service=>[service.targetKind+':'+service.targetId,service] as const))),[model]);
  const contractUnitPrice=(item:typeof items[number])=>contractStages.get(item.targetKind+':'+item.targetId)?.unitPrice??item.unitPrice;
  const contractValue=(item:typeof items[number])=>{const stage=contractStages.get(item.targetKind+':'+item.targetId);return stage?stage.contractedQuantity*stage.unitPrice:item.plannedValue;};
  const groupContractValue=(lines:typeof items)=>[...new Map(lines.map(line=>[line.targetKind+':'+line.targetId,contractValue(line)])).values()].reduce((sum,value)=>sum+value,0);
- const financialExecuted=(item:typeof items[number])=>external.has(item.targetId)?external.get(item.targetId)!.value:Math.max(0,doneByLine.get(item.measurementLineId)??0)*(item.targetKind==='addendum'?contractUnitPrice(item):(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0));
+ const financialExecuted=(item:typeof items[number])=>Math.max(0,doneByLine.get(item.measurementLineId)??0)*(item.targetKind==='addendum'?contractUnitPrice(item):(item.plannedQuantity>0?item.plannedValue/item.plannedQuantity:0));
  // Conciliação histórica por serviço: execução física menos medição financeira.
  // Não transfere nem altera registros de medições anteriores.
  const signedByTarget=useMemo(()=>{
@@ -171,7 +172,7 @@ export function MeasurementExecutionOverview({model,measurementId,scope}:Props){
    return <button type="button" key={group.key} className={`measurement-execution-overview__service ${done>=planned?'is-done':'is-pending'}`} onClick={()=>{setSelected(group.key);setSelectedReferences([]);setEditing(null);setEntryMode('quantity');setQuantity('1');setError(null);setNotice(null)}} disabled={saving}>
     <small>{group.lines[0]?.originName} · {group.lines[0]?.unitKind==='hall'?'Halls / área comum':group.lines[0]?.unitKind==='apartamento'?'Apartamentos':'Unidades'}</small>
     <strong>{group.lines[0]?.description}</strong>
-    <small>Saldo acumulado de execução: {historyReady?money.format(signedGroupBalance):'Carregando…'}</small>
+    <small>Saldo acumulado de execução (histórico): {historyReady?money.format(signedGroupBalance):'Carregando…'}</small>
     <span className="ex-card-metrics">
      <span><small>Projetado</small><strong>{formatCardQuantity(planned,showPercent(group.lines))}</strong><small>{money.format(value)}</small></span>
      <span className="ex-card-done"><small>Executado</small><strong>{formatCardQuantity(done,showPercent(group.lines))}</strong><small>{money.format(executedValue)}</small></span>
