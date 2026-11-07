@@ -41,6 +41,29 @@ export function useHomeOverview(companies:readonly CompanySummary[],refreshToken
   if(stableCompanies.length===0){setState({status:'idle',data:null,errorMessage:null});return;}
   let cancelled=false; const month=currentMonthStart(); const hrMonth=currentHrCompetence().month; const monthEnd=nextMonthStart(hrMonth); const budgetYear=Number(hrMonth.slice(0,4)); const movementTo=new Date(); const movementFrom=new Date(); movementFrom.setDate(movementTo.getDate()-364);
   setState(previous=>({status:'loading',data:previous.data,errorMessage:null}));
+  // Atualize os saldos independentemente das consultas pesadas de RH,
+  // planejamento e gráficos. Não espere o dashboard completo para refletir
+  // pagamentos, transferências e recebimentos.
+  void Promise.all(stableCompanies.map(async company => {
+    const balances = await finance.accounts.listBalances({tenantId:company.tenantId,companyId:company.id});
+    return {company,balances};
+  })).then(results => {
+    if(cancelled)return;
+    setState(previous => {
+      if(!previous.data)return previous;
+      const bankAccounts:HomeBankAccount[]=[];
+      let bankBalance=0;
+      results.forEach(({company,balances})=>{
+        const label=companyName(company);
+        balances.filter(i=>i.status==='active'&&i.includeInDashboard&&(!isPersonalCompany(label)||isPersonalBalanceAccount(i.name))).forEach(i=>{
+          bankBalance+=i.currentBalance;
+          bankAccounts.push({tenantId:company.tenantId,companyId:company.id,companyName:label,accountId:i.accountId,name:i.name,bankInstitution:i.bankInstitution,currentBalance:i.currentBalance,sortOrder:i.sortOrder});
+        });
+      });
+      bankAccounts.sort((a,b)=>a.tenantId.localeCompare(b.tenantId)||a.sortOrder-b.sortOrder||a.name.localeCompare(b.name));
+      return {...previous,data:{...previous.data,bankBalance,bankAccounts}};
+    });
+  }).catch(()=>{ /* O carregamento completo continua sendo a alternativa. */ });
   void Promise.all(stableCompanies.map(async company=>{const scope={tenantId:company.tenantId,companyId:company.id}; const [summary,balances,movements,budget,operational,cardLimits,limitConsumptionResult,plannedIncomeResult,actualIncomeResult,budgetPricingResult,planningResult]=await Promise.all([
    finance.monthly.summarize({...scope,competenceFrom:month,competenceTo:month}),finance.accounts.listBalances(scope),finance.accounts.listMovements(scope,isoDate(movementFrom),isoDate(movementTo)),hr.getOverview({...scope,competenceMonth:hrMonth,year:budgetYear}),hrOperations.getSnapshot(scope,hrMonth),finance.cards.listLimits(scope),supabase.from('budget_limit_control_v2').select('limit_id,consumed_amount,remaining_amount,consumed_percent').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('competence_month',hrMonth).returns<BudgetLimitConsumptionRow[]>(),supabase.from('budget_plans').select('cost_center_id,category_id,planned_amount').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('competence_month',hrMonth).eq('flow_type','income').returns<BudgetPlanRow[]>(),supabase.from('financial_settlements').select('amount,settled_on,financial_installments!inner(financial_entries!inner(cost_center_id,category_id,entry_type,include_in_budget))').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).gte('settled_on',hrMonth).lt('settled_on',monthEnd).returns<BudgetSettlementRow[]>(),supabase.from('budget_planning_settings').select('cost_center_id,target_net_margin_percent').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('budget_year',budgetYear).returns<BudgetPricingSettingsRow[]>(),supabase.from('finance_planning_items').select('item_key,source_kind,entry_type,description,counterparty_name,installment_number,installment_count,due_date,amount,payment_status').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).order('due_date').returns<PlanningRow[]>()]);
    if(limitConsumptionResult.error)throw limitConsumptionResult.error; if(plannedIncomeResult.error)throw plannedIncomeResult.error; if(actualIncomeResult.error)throw actualIncomeResult.error; if(budgetPricingResult.error)throw budgetPricingResult.error; if(planningResult.error)throw planningResult.error;
