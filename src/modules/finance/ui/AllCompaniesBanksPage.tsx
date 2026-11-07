@@ -30,7 +30,7 @@ export function AllCompaniesBanksPage({ companies }: { companies: readonly Compa
   const load = useCallback(async () => {
     // Só bloqueia visualmente na primeira carga. Em atualizações mantém as contas
     // atuais utilizáveis enquanto os saldos são renovados em segundo plano.
-    setLoading(current => current && accounts.length === 0);
+    setLoading(current => current);
     setError(null);
     try {
       const groups = await Promise.all(companies.map(async (company) => {
