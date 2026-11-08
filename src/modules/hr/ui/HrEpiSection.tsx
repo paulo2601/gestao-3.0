@@ -23,7 +23,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  const [contract,setContract]=useState('');const [qty,setQty]=useState('1');const [date,setDate]=useState(new Date().toISOString().slice(0,10));const [notes,setNotes]=useState('');
  const selectedCompany=company||scopes[0]?.companyId||'';
  useEffect(()=>{let active=true;void listEpiProducts(scopes).then(rows=>{if(active)setProducts(rows)}).catch(e=>{if(active)setNotice(e instanceof Error?e.message:String(e))});return()=>{active=false}},[scopes,revision]);
- const caMatch=products.find(p=>p.ca_number?.replace(/\D/g,'')===ca.replace(/\D/g,'')&&ca.replace(/\D/g,'').length>0);
+ const caMatch=products.find(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===ca.replace(/\D/g,'')&&ca.replace(/\D/g,'').length>0);
  const onCaChange=(value:string)=>{setCa(value.replace(/[^0-9]/g,''));setOfficialCa(null);setCaStatus('');setName('');setManufacturer('');setNotice('');};
  useEffect(()=>{
   const digits=ca.replace(/\D/g,'');
@@ -36,7 +36,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
    const matched=products.find(p=>p.ca_number?.replace(/\D/g,'')===digits);
    if(matched){setName(matched.name);setManufacturer(matched.manufacturer||'');setCaStatus('CA localizado apenas no cadastro interno; não verificado na base oficial.');}
    else setCaStatus('CA não localizado na base disponível. A importação oficial pode estar pendente; consulte o MTE.');
-  }).catch((error:unknown)=>{if(!cancelled)setCaStatus(error instanceof Error?error.message:'Consulta indisponível. Não foi possível verificar o CA na base oficial.');});},500);
+  }).catch((error:unknown)=>{if(cancelled)return;const matched=products.find(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===digits);if(matched){setName(matched.name);setManufacturer(matched.manufacturer||'');setCaStatus('Dados preenchidos pelo cadastro interno. Consulta oficial indisponível no momento.');}else setCaStatus(error instanceof Error?error.message:'Consulta indisponível. Não foi possível verificar o CA na base oficial.');});},500);
   return()=>{cancelled=true;clearTimeout(timer)};
  },[ca,products]);
  const available=products.filter(p=>p.company_id===selectedCompany&&p.active);
@@ -57,7 +57,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  <Input label="Fabricante" value={manufacturer} onChange={e=>setManufacturer(e.target.value)}/>
  <Input label="Tamanho" value={size} onChange={e=>setSize(e.target.value)}/>
  <Input label="Estoque mínimo" type="number" min="0" value={minimum} onChange={e=>setMinimum(e.target.value)}/>
- <Button disabled={busy||!name.trim()||!selectedCompany||!!(caMatch&&caMatch.size?.trim().toLowerCase()===size.trim().toLowerCase())} onClick={()=>{const scope=scopes.find(c=>c.companyId===selectedCompany);if(scope)void execute(async()=>{await createEpiProduct({tenantId:scope.tenantId,companyId:scope.companyId,name,ca,manufacturer,size,minimum:Number(minimum)});setSize('');setNotice('EPI cadastrado. Para outra numeração, mantenha o mesmo CA e informe o novo tamanho.')})}}>Cadastrar EPI</Button>
+ <Button disabled={busy||!name.trim()||!selectedCompany||products.some(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===ca.replace(/\D/g,'')&&!!ca.trim()&&p.size?.trim().toLowerCase()===size.trim().toLowerCase())} onClick={()=>{const scope=scopes.find(c=>c.companyId===selectedCompany);if(scope)void execute(async()=>{await createEpiProduct({tenantId:scope.tenantId,companyId:scope.companyId,name,ca,manufacturer,size,minimum:Number(minimum)});setSize('');setNotice('EPI cadastrado. Para outra numeração, mantenha o mesmo CA e informe o novo tamanho.')})}}>Cadastrar EPI</Button>
  </div></Card>
  <Card title="Entrada no estoque"><div className="hr-workspace__form">
  <Select label="EPI cadastrado" value={productId} onChange={e=>setProductId(e.target.value)} options={[{value:'',label:'Selecione'},...available.map(p=>({value:p.id,label:p.name+' · Saldo '+p.quantity}))]}/>
