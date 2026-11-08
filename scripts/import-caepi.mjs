@@ -9,7 +9,7 @@ const file=process.argv[2];
 if(!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw Error('Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no ambiente privado.');
 let raw;
 if(file){raw=readFileSync(file,'utf8')}else{const response=await fetch(OFFICIAL_CSV,{signal:AbortSignal.timeout(120000)});if(!response.ok)throw Error('Falha ao obter CSV oficial: HTTP '+response.status);raw=await response.text()}
-raw=raw.replace(/^\\uFEFF/,'');
+raw=raw.replace(/^\uFEFF/,'');
 function parse(text){
  const firstLine=text.split(/\r?\n/,1)[0];const separator=firstLine.includes(';')?';':firstLine.includes('|')?'|':',';
  const rows=[];let row=[],cell='',quoted=false;
