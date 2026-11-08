@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import './hr-epi.css';
 import type { HrEmployeeRow } from '../application/HrOperationsRepository';
 import type { HrEpiDelivery } from '../infrastructure/HrWorkspaceService';
 import { createEpiProduct,listEpiProducts,registerEpiStockEntry,registerStockEpiDelivery,type EpiProduct } from '../infrastructure/HrEpiInventoryService';
