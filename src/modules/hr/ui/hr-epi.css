@@ -71,3 +71,11 @@
 .hr-epi-delivery-actions button{white-space:normal;line-height:1.3;padding:10px 8px}
 @media(max-width:390px){.hr-epi-delivery-header{padding:15px 12px;gap:9px}.hr-epi-delivery-form{padding:14px!important;gap:14px}.hr-epi-delivery-fields{gap:8px}.hr-epi-delivery-fields .hr-epi-quantity>div{grid-template-columns:30px minmax(0,1fr) 30px}.hr-epi-delivery-date input[type=date]{font-size:.7rem;padding-inline:2px!important}.hr-epi-delivery-actions{gap:7px}}
 @media(max-width:340px){.hr-epi-delivery-fields{grid-template-columns:1fr}.hr-epi-delivery-date input[type=date]{font-size:.9rem}}
+
+/* Fix: date input needs full row on mobile; native date widgets must not clip */
+@media(max-width:700px){
+ .hr-epi-delivery-fields{grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
+ .hr-epi-delivery-date{width:100%;min-width:0;overflow:visible!important}
+ .hr-epi-delivery-date input[type="date"]{box-sizing:border-box;width:100%!important;max-width:100%!important;min-width:0;font-size:1rem!important;padding-inline:12px!important;letter-spacing:normal!important;overflow:visible!important}
+ .hr-epi-delivery-fields .hr-epi-quantity>div{grid-template-columns:48px minmax(0,1fr) 48px}
+}
