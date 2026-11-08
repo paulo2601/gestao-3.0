@@ -15,3 +15,27 @@ html,body,#root{height:auto!important;min-height:0!important;max-height:none!imp
 .statement-view__list{display:block!important;border:1px solid #dbeafe!important;border-radius:4px!important;overflow:visible!important}.statement-view__list:before{display:block!important;font-size:7pt!important;font-weight:800!important;letter-spacing:.04em!important;padding:4px 6px!important;border-bottom:1px solid #bfdbfe!important;background:#eff6ff!important;color:#1d4ed8!important}.cards-page .statement-view__list:before{content:'MOVIMENTAÇÕES DA FATURA'}.banks-page .statement-view__list:before,.all-banks-list-shell .statement-view__list:before{content:'MOVIMENTAÇÕES DO EXTRATO'}.statement-view__row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:10px!important;align-items:start!important;padding:5px 6px!important;border:0!important;border-bottom:1px solid #e2e8f0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;break-inside:avoid!important}.statement-view__row:last-child{border-bottom:0!important}.statement-view__copy{display:block!important}.statement-view__copy strong{display:block!important;font-size:8.5pt!important;color:#0f172a!important;white-space:normal!important}.statement-view__copy span{display:block!important;font-size:7pt!important;color:#64748b!important;margin-top:1px!important}.statement-view__row>strong{font-size:8.5pt!important;white-space:nowrap!important}.statement-view__row>strong.statement-view__negative{color:#b91c1c!important}.statement-view__row>strong.statement-view__positive{color:#047857!important}
 .statement-print-surface:after{display:block!important;text-align:right!important;margin-top:5px!important;padding-top:3px!important;border-top:1px solid #dbeafe!important;font-size:6.5pt!important;color:#64748b!important}.cards-page .statement-print-surface:after{content:'Gestão 3.0 · Fatura emitida pelo sistema'}.banks-page .statement-print-surface:after,.all-banks-list-shell .statement-print-surface:after{content:'Gestão 3.0 · Extrato emitido pelo sistema'}
 }
+
+/* Compact card details: prioritise purchases and keep all actions visible. */
+.cards-page .statement-view{gap:6px}
+.cards-page .statement-view__top-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;position:sticky;top:0;z-index:5;padding:5px 0;background:var(--surface)}
+.cards-page .statement-view__top-actions .ui-button{min-height:32px;padding:5px 10px;font-size:.78rem}
+.cards-page .statement-view__hero{padding:7px 9px;gap:4px;box-shadow:none}
+.cards-page .statement-view__hero>div{padding:0 6px;gap:1px}
+.cards-page .statement-view__hero strong{font-size:.88rem}
+.cards-page .statement-view__hero small,.cards-page .statement-view__hero span{font-size:.7rem}
+.cards-page .statement-view__bank-symbol{width:30px;height:30px;font-size:.8rem}
+.cards-page .statement-view__dates{gap:6px}
+.cards-page .statement-view__dates .ui-card__header,.cards-page .statement-view__totals .ui-card__header{padding:5px 9px 0}
+.cards-page .statement-view__dates .ui-card__content,.cards-page .statement-view__totals .ui-card__content{padding:2px 9px 6px}
+.cards-page .statement-view__dates .ui-card__title,.cards-page .statement-view__totals .ui-card__title{font-size:.74rem}
+.cards-page .statement-view__dates strong,.cards-page .statement-view__totals strong{font-size:.9rem}
+.cards-page .statement-view__period{gap:5px}
+.cards-page .statement-view__period .ui-button,.cards-page .statement-view__filters .ui-button{min-height:30px;padding:4px 9px}
+.cards-page .statement-view__filters{gap:5px;padding:0}
+.cards-page .statement-view__totals{gap:6px}
+.cards-page .statement-view__activity-heading{margin:0}
+.cards-page .statement-view__row{padding:6px 9px;gap:6px}
+@media(min-width:900px){.cards-page .statement-view__dates{grid-template-columns:repeat(2,minmax(0,1fr))}.cards-page .statement-view__top-actions{justify-content:flex-end}}
+@media(max-width:760px){.cards-page .statement-view__top-actions{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.cards-page .statement-view__top-actions .ui-button{width:100%}.cards-page .statement-view__hero{padding:7px}.cards-page .statement-view__dates .ui-card__header,.cards-page .statement-view__totals .ui-card__header{padding:5px 6px 0}.cards-page .statement-view__dates .ui-card__content,.cards-page .statement-view__totals .ui-card__content{padding:2px 6px 6px}}
+@media print{.cards-page .statement-view__top-actions{display:none!important}}
