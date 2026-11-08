@@ -1,0 +1,5 @@
+.hr-epi-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%;align-items:stretch}
+.hr-epi-tabs button{width:100%;min-width:0;min-height:40px;padding:7px 3px;font-size:clamp(.68rem,2.5vw,.9rem);white-space:nowrap;justify-content:center}
+.hr-epi-table-scroll{width:100%;overflow-x:auto}
+.hr-epi-table{width:100%;text-align:left;border-collapse:collapse}
+.hr-epi-table th,.hr-epi-table td{padding:8px;border-bottom:1px solid #dbe4f0}
