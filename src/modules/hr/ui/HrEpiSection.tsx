@@ -25,11 +25,11 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  async function execute(action:()=>Promise<void>){setBusy(true);setNotice('');try{await action();setNotice('Operação realizada com sucesso.');setRevision(v=>v+1)}catch(e){setNotice(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}
  return <div className="hr-workspace__content">
  <div className="hr-epi-tabs">
- <Button variant={tab==='stock'?'primary':'secondary'} onClick={()=>setTab('stock')}>Cadastro e estoque</Button>
- <Button variant={tab==='delivery'?'primary':'secondary'} onClick={()=>setTab('delivery')}>Entregar EPI</Button>
+ <Button variant={tab==='stock'?'primary':'secondary'} onClick={()=>setTab('stock')}>Estoque</Button>
+ <Button variant={tab==='delivery'?'primary':'secondary'} onClick={()=>setTab('delivery')}>Entrega</Button>
  <Button variant={tab==='history'?'primary':'secondary'} onClick={()=>setTab('history')}>Histórico ({deliveries.length})</Button>
  </div>
- {notice&&<p role="status">{notice}</p>}
+ {notice&&<p role="status">{String(notice)}</p>}
  {tab==='stock'&&<><Card title="Cadastro de EPIs"><div className="hr-workspace__form">
  <Select label="Empresa" value={selectedCompany} onChange={e=>setCompany(e.target.value)} options={scopes.map(c=>({value:c.companyId,label:c.name}))}/>
  <Input label="Nome do EPI" value={name} onChange={e=>setName(e.target.value)}/>
