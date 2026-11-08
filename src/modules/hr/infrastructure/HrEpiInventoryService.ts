@@ -22,11 +22,14 @@ export async function lookupOfficialEpiCa(ca:string):Promise<OfficialCaRecord|nu
  const digits=ca.replace(/\D/g,'');
  if(!/^\d{3,6}$/.test(digits))return null;
  const client=getSupabaseClient();
- const {data,error}=await client.functions.invoke<{
+ const response: {data: {record?:OfficialCaRecord|null;error?:string}|null;error: Error|null}=await client.functions.invoke<{
   record?:OfficialCaRecord|null;
   error?:string;
  }>('lookup-epi-ca',{body:{ca:digits}});
- if(error)throw new Error('Não foi possível consultar o CA. Verifique a conexão e tente novamente.');
- if(data?.error)throw new Error(data.error);
- return data?.record??null;
+ if(response.error)throw new Error('Não foi possível consultar o CA. Verifique a conexão e tente novamente.');
+ const payload:unknown=response.data;
+ if(!payload||typeof payload!=='object')return null;
+ const result=payload as {record?:OfficialCaRecord|null;error?:string};
+ if(result.error)throw new Error(result.error);
+ return result.record??null;
 }
