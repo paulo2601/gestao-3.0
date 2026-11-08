@@ -1,5 +1,27 @@
-.hr-epi-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%;align-items:stretch}
-.hr-epi-tabs button{width:100%;min-width:0;min-height:40px;padding:7px 3px;font-size:clamp(.68rem,2.5vw,.9rem);white-space:nowrap;justify-content:center}
-.hr-epi-table-scroll{width:100%;overflow-x:auto}
-.hr-epi-table{width:100%;text-align:left;border-collapse:collapse}
-.hr-epi-table th,.hr-epi-table td{padding:8px;border-bottom:1px solid #dbe4f0}
+
+/* RH / EPIs — compact mobile-first redesign */
+.hr-epi-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;margin:0 0 12px}
+.hr-epi-tabs button{min-width:0;width:100%;min-height:46px;border-radius:13px;font-weight:700;padding:8px 5px;font-size:clamp(.72rem,2.5vw,.94rem);white-space:nowrap}
+.hr-epi-description{color:#64748b;font-size:.88rem;line-height:1.45;margin:-3px 0 16px}
+.hr-epi-notice{border:1px solid #9ddfc0;background:#eafaf1;color:#126b40;border-radius:14px;padding:12px 15px;font-weight:650;margin:10px 0 16px}
+.hr-epi-form{display:flex;flex-direction:column;gap:13px}
+.hr-epi-form label{font-weight:650;color:#172c4d}
+.hr-epi-form input,.hr-epi-form select{border-radius:11px;min-height:46px}
+.hr-epi-fields-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.hr-epi-fields-row>*{min-width:0}
+.hr-epi-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:10px;margin-top:6px}
+.hr-epi-actions button,.hr-epi-form>button{min-height:46px;border-radius:12px;font-weight:700}
+.hr-epi-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:4px 0 8px}
+.hr-epi-stats>div{display:flex;flex-direction:column;gap:5px;background:#edf5ff;border-radius:11px;padding:11px 7px;text-align:center;min-width:0}
+.hr-epi-stats>div:nth-child(2){background:#f1f4f8}
+.hr-epi-stats>div:nth-child(3){background:#e8f8ee}
+.hr-epi-stats small{font-size:.69rem;color:#475569;line-height:1.2}
+.hr-epi-stats strong{font-size:.86rem;color:#0c3675;overflow-wrap:anywhere}
+.hr-epi-stats>div:nth-child(3) strong{color:#14783f}
+.hr-epi-history-search{margin-bottom:15px}
+.hr-epi-table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.hr-epi-table{width:100%;border-collapse:collapse;text-align:left;font-size:.86rem}
+.hr-epi-table th{background:#f0f5fd;color:#244c86;font-weight:700}
+.hr-epi-table th,.hr-epi-table td{padding:11px 9px;border-bottom:1px solid #e3eaf3;vertical-align:middle}
+.hr-epi-table tbody tr:nth-child(even){background:#fafcff}
+@media(max-width:380px){.hr-epi-tabs{gap:5px}.hr-epi-tabs button{font-size:.7rem;padding:7px 2px}.hr-epi-fields-row{gap:8px}.hr-epi-stats small{font-size:.64rem}}
