@@ -16,3 +16,12 @@ export async function registerEpiStockEntry(productId:string,quantity:number,not
 export async function registerStockEpiDelivery(productId:string,contractId:string,quantity:number,date:string,notes:string){
  const r=await getSupabaseClient().rpc('hr_epi_register_delivery',{p_product:productId,p_contract:contractId,p_quantity:quantity,p_date:date,p_notes:notes||null});if(r.error)throw r.error;
 }
+
+export type OfficialCaRecord={ca_number:string;equipment:string;manufacturer:string|null;model:string|null;expires_on:string|null;situation:string|null;source_updated_at:string|null};
+export async function lookupOfficialEpiCa(ca:string):Promise<OfficialCaRecord|null>{
+ const digits=ca.replace(/\D/g,'');
+ if(!/^\d{3,6}$/.test(digits))return null;
+ const {data,error}=await getSupabaseClient().from('hr_epi_ca_catalog').select('ca_number,equipment,manufacturer,model,expires_on,situation,source_updated_at').eq('ca_number',digits).maybeSingle();
+ if(error)throw error;
+ return data as OfficialCaRecord|null;
+}
