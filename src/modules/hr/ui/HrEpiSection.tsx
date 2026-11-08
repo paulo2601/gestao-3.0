@@ -9,7 +9,7 @@ import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
 type Employee=HrEmployeeRow&{companyId:string;companyName:string;tenantId:string};
 export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:HrEpiDelivery[];employees:Employee[];activeEmployees:Employee[]}){
- const [tab,setTab]=useState<'stock'|'entry'|'delivery'|'history'>('stock');
+ const [tab,setTab]=useState<'stock'|'entry'|'delivery'|'history'>('delivery');
  const [products,setProducts]=useState<EpiProduct[]>([]);
  const [notice,setNotice]=useState('');
  const [historyQuery,setHistoryQuery]=useState('');
@@ -33,9 +33,9 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  async function execute(action:()=>Promise<void>){setBusy(true);setNotice('');try{await action();setNotice('Operação realizada com sucesso.');setRevision(v=>v+1)}catch(e){setNotice(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}
  return <div className="hr-workspace__content">
  <div className="hr-epi-tabs" role="tablist" aria-label="EPIs">
+ <Button variant={tab==='delivery'?'primary':'secondary'} onClick={()=>{setTab('delivery');setProductId('')}}>⇄ Entrega</Button>
  <Button variant={tab==='stock'?'primary':'secondary'} onClick={()=>{setTab('stock');setProductId('')}}>▣ Estoque</Button>
  <Button variant={tab==='entry'?'primary':'secondary'} onClick={()=>{setTab('entry');setProductId('')}}>↧ Entrada</Button>
- <Button variant={tab==='delivery'?'primary':'secondary'} onClick={()=>{setTab('delivery');setProductId('')}}>⇄ Entrega</Button>
  <Button variant={tab==='history'?'primary':'secondary'} onClick={()=>setTab('history')}>◷ Histórico</Button>
  </div>
  {notice&&<div className="hr-epi-notice" role="status">{String(notice)}</div>}
