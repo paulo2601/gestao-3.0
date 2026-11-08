@@ -36,7 +36,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
    const matched=products.find(p=>p.ca_number?.replace(/\D/g,'')===digits);
    if(matched){setName(matched.name);setManufacturer(matched.manufacturer||'');setCaStatus('CA localizado apenas no cadastro interno; não verificado na base oficial.');}
    else setCaStatus('CA não localizado na base disponível. A importação oficial pode estar pendente; consulte o MTE.');
-  }).catch(()=>{if(!cancelled)setCaStatus('Consulta indisponível. Não foi possível verificar o CA na base oficial.');});},500);
+  }).catch((error:unknown)=>{if(!cancelled)setCaStatus(error instanceof Error?error.message:'Consulta indisponível. Não foi possível verificar o CA na base oficial.');});},500);
   return()=>{cancelled=true;clearTimeout(timer)};
  },[ca,products]);
  const available=products.filter(p=>p.company_id===selectedCompany&&p.active);
