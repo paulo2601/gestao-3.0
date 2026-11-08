@@ -231,13 +231,6 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
   function printStatement() { setActivityFilter('all'); window.setTimeout(() => window.print(), 0); }
   function shareStatement(){setActivityFilter('all');window.setTimeout(()=>{const el=document.querySelector<HTMLElement>('.statement-print-surface');if(el)void sharePrintableElement(el,`Fatura ${selected?.name??'cartao'} ${selectedStatementMonth}`,'portrait').catch(e=>setError(e instanceof Error?e.message:'Não foi possível compartilhar o PDF.'));},0);}
   async function shareCompanyReport() { const el=document.querySelector<HTMLElement>('.company-report-print-surface'); if(!el)return; try { await sharePrintableElement(el,`Despesas por empresa - ${selected?.name??'cartao'} - ${selectedStatementMonth.slice(0,7)}`,'portrait'); } catch(e) {setError(e instanceof Error?e.message:'Não foi possível gerar o PDF.');} }
-  function exportCsv() {
-    if (!selected) return;
-    const rows = [['Data','Tipo','Descrição','Parcela','Valor'], ...filteredActivities.map((item) => [dateLabel(item.activityDate), item.activityType === 'purchase' ? 'Compra' : 'Pagamento', item.description, activityInstallmentLabel(item), (item.activityType === 'payment' ? -item.amount : item.amount).toFixed(2)])];
-    const csv = '\ufeff' + rows.map((row) => row.map(csvCell).join(';')).join('\n');
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `fatura-${selected.name}-${selectedStatementMonth.slice(0,7)}.csv`; anchor.click(); URL.revokeObjectURL(url);
-  }
 
   if (loading) return <LoadingState label="Carregando cartões…" />;
   const totalLimit = cards.reduce((sum, item) => sum + item.creditLimit, 0), totalUsed = cards.reduce((sum, item) => sum + item.committedAmount, 0), totalAvailable = cards.reduce((sum, item) => sum + item.availableLimit, 0);
