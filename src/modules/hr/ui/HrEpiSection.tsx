@@ -8,7 +8,7 @@ import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
 type Employee=HrEmployeeRow&{companyId:string;companyName:string;tenantId:string};
 type Draft={employmentContractId:string;epiName:string;quantity:string;deliveredOn:string;caNumber:string;notes:string};
-export function HrEpiSection({deliveries,employees,activeEmployees,draft,setDraft,saving,feedback,onRegister}:{deliveries:HrEpiDelivery[];employees:Employee[];activeEmployees:Employee[];draft:Draft;setDraft:(v:Draft)=>void;saving:boolean;feedback:string|null;onRegister:()=>void}){
+export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:HrEpiDelivery[];employees:Employee[];activeEmployees:Employee[];draft:Draft;setDraft:(v:Draft)=>void;saving:boolean;feedback:string|null;onRegister:()=>void}){
  const [tab,setTab]=useState<'stock'|'delivery'|'history'>('stock');
  const [products,setProducts]=useState<EpiProduct[]>([]);
  const [notice,setNotice]=useState('');
