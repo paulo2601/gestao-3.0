@@ -23,7 +23,6 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  const [contract,setContract]=useState('');const [qty,setQty]=useState('1');const [date,setDate]=useState(new Date().toISOString().slice(0,10));const [notes,setNotes]=useState('');
  const selectedCompany=company||scopes[0]?.companyId||'';
  useEffect(()=>{let active=true;void listEpiProducts(scopes).then(rows=>{if(active)setProducts(rows)}).catch(e=>{if(active)setNotice(e instanceof Error?e.message:String(e))});return()=>{active=false}},[scopes,revision]);
- const caMatch=products.find(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===ca.replace(/\D/g,'')&&ca.replace(/\D/g,'').length>0);
  const onCaChange=(value:string)=>{setCa(value.replace(/[^0-9]/g,''));setOfficialCa(null);setCaStatus('');setName('');setManufacturer('');setNotice('');};
  useEffect(()=>{
   const digits=ca.replace(/\D/g,'');
@@ -38,7 +37,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
    else setCaStatus('CA não localizado na base disponível. A importação oficial pode estar pendente; consulte o MTE.');
   }).catch((error:unknown)=>{if(cancelled)return;const matched=products.find(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===digits);if(matched){setName(matched.name);setManufacturer(matched.manufacturer||'');setCaStatus('Dados preenchidos pelo cadastro interno. Consulta oficial indisponível no momento.');}else setCaStatus(error instanceof Error?error.message:'Consulta indisponível. Não foi possível verificar o CA na base oficial.');});},500);
   return()=>{cancelled=true;clearTimeout(timer)};
- },[ca,products]);
+ },[ca,products,selectedCompany]);
  const available=products.filter(p=>p.company_id===selectedCompany&&p.active);
  const selected=products.find(p=>p.id===productId);
  async function execute(action:()=>Promise<void>){setBusy(true);setNotice('');try{await action();setNotice('Operação realizada com sucesso.');setRevision(v=>v+1)}catch(e){setNotice(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}
