@@ -19,14 +19,11 @@ export async function registerStockEpiDelivery(productId:string,contractId:strin
 
 export type OfficialCaRecord={ca_number:string;equipment:string;manufacturer:string|null;model:string|null;expires_on:string|null;situation:string|null;source_updated_at:string|null};
 export async function lookupOfficialEpiCa(ca:string):Promise<OfficialCaRecord|null>{
- const digits=ca.replace(/\D/g,'');
- if(!/^\d{3,6}$/.test(digits))return null;
- const {data,error}=await getSupabaseClient().from('hr_epi_ca_catalog').select('ca_number,equipment,manufacturer,model,expires_on,situation,source_updated_at').eq('ca_number',digits).maybeSingle();
- if(error)throw error;
- if(!data){
-  const {count,error:countError}=await getSupabaseClient().from('hr_epi_ca_catalog').select('ca_number',{count:'exact',head:true});
-  if(countError)throw countError;
-  if(count===0)throw new Error('A base oficial de certificados CAEPI ainda não foi importada. Nenhum CA poderá ser localizado até concluir a importação.');
- }
- return data as OfficialCaRecord|null;
+ const digits=ca.replace(/\\D/g,'');
+ if(!/^\\d{3,6}$/.test(digits))return null;
+ const client=getSupabaseClient();
+ const {data,error}=await client.functions.invoke('lookup-epi-ca',{body:{ca:digits}});
+ if(error)throw new Error('Não foi possível consultar o CA. Verifique a conexão e tente novamente.');
+ if(data?.error)throw new Error(String(data.error));
+ return (data?.record??null) as OfficialCaRecord|null;
 }
