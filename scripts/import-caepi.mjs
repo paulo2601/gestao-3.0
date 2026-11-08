@@ -20,14 +20,15 @@ function parse(text){
  }
  row.push(cell);if(row.some(Boolean))rows.push(row);return rows;
 }
-const rows=parse(raw);const header=rows.shift().map(x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''));
+if(raw.trimStart().startsWith('<!')||raw.trimStart().startsWith('<html'))throw Error('Fonte retornou HTML em vez de CSV oficial.');
+const rows=parse(raw);if(rows.length<1000)throw Error('Arquivo oficial vazio ou incompleto');const header=rows.shift().map(x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''));
 function col(...aliases){return header.findIndex(h=>aliases.some(a=>h===a||h.includes(a)))}
-const idx={ca:col('numeroca','nroca','noca','certificadodeaprovacao','ca'),equipment:col('equipamento','descricaoepi','descricaoequipamento','descricaodoequipamento'),manufacturer:col('razaosocial','fabricante','importador'),model:col('modelo','referencia'),expires:col('validade','datavalidade'),situation:col('situacao','status')};
+const idx={ca:col('nrregistroca','numeroca','nroca','noca','certificadodeaprovacao'),equipment:col('descricao','descricaoequipamento','descricaodoequipamento','descricaoepi','equipamento','tipoepi'),manufacturer:col('razaosocial','fabricante','importador'),model:col('modelo','referencia'),expires:col('validade','datavalidade'),situation:col('situacao','status')};
 if(idx.ca<0||idx.equipment<0)throw Error('Colunas de CA/equipamento não identificadas: '+JSON.stringify(header));
 const value=(row,index)=>index<0?'':(row[index]||'').trim();
 const date=(s)=>{const m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return m?m[3]+'-'+m[2]+'-'+m[1]:/^\d{4}-\d{2}-\d{2}$/.test(s)?s:null};
 const entries=new Map();
-for(const row of rows){const ca=value(row,idx.ca).replace(/\D/g,'');const equipment=value(row,idx.equipment);if(!ca||!equipment)continue;
+for(const row of rows){const ca=value(row,idx.ca).replace(/\D/g,'');const equipment=value(row,idx.equipment);if(!/^\d{1,6}$/.test(ca)||!equipment)continue;
 entries.set(ca,{ca_number:ca,equipment,manufacturer:value(row,idx.manufacturer)||null,model:value(row,idx.model)||null,expires_on:date(value(row,idx.expires)),situation:value(row,idx.situation)||null,source_updated_at:new Date('2025-05-19T00:00:00Z').toISOString()});}
 if(entries.size<1000)throw Error('Importação interrompida: base parece incompleta ('+entries.size+' registros)');
 const url=process.env.SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/hr_epi_ca_catalog?on_conflict=ca_number';
