@@ -12,6 +12,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  const [tab,setTab]=useState<'stock'|'delivery'|'history'>('stock');
  const [products,setProducts]=useState<EpiProduct[]>([]);
  const [notice,setNotice]=useState('');
+ const [historyQuery,setHistoryQuery]=useState('');
  const [busy,setBusy]=useState(false);
  const [revision,setRevision]=useState(0);
  const scopes=useMemo(()=>[...new Map(employees.map(e=>[e.companyId,{tenantId:e.tenantId,companyId:e.companyId,name:e.companyName}])).values()],[employees]);
@@ -24,40 +25,42 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  const onCaChange=(value:string)=>{const digits=value.replace(/[^0-9]/g,'');setCa(digits);setNotice('');const matched=products.find(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===digits);if(matched){setName(matched.name);setManufacturer(matched.manufacturer||'');}}
  const available=products.filter(p=>p.company_id===selectedCompany&&p.active);
  const selected=products.find(p=>p.id===productId);
+ const historyRows=deliveries.filter(item=>{const employee=employees.find(e=>e.employmentContractId===item.employmentContractId);const query=historyQuery.toLocaleLowerCase('pt-BR');return (employee?.fullName||'').toLocaleLowerCase('pt-BR').includes(query)||item.epiName.toLocaleLowerCase('pt-BR').includes(query)||String(item.caNumber||'').includes(query)});
  async function execute(action:()=>Promise<void>){setBusy(true);setNotice('');try{await action();setNotice('Operação realizada com sucesso.');setRevision(v=>v+1)}catch(e){setNotice(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}
  return <div className="hr-workspace__content">
  <div className="hr-epi-tabs">
- <Button variant={tab==='stock'?'primary':'secondary'} onClick={()=>setTab('stock')}>Estoque</Button>
- <Button variant={tab==='delivery'?'primary':'secondary'} onClick={()=>setTab('delivery')}>Entrega</Button>
- <Button variant={tab==='history'?'primary':'secondary'} onClick={()=>setTab('history')}>Histórico ({deliveries.length})</Button>
+ <Button variant={tab==='stock'?'primary':'secondary'} onClick={()=>setTab('stock')}>▣ Estoque</Button>
+ <Button variant={tab==='delivery'?'primary':'secondary'} onClick={()=>setTab('delivery')}>⇄ Entrega</Button>
+ <Button variant={tab==='history'?'primary':'secondary'} onClick={()=>setTab('history')}>◷ Histórico ({deliveries.length})</Button>
  </div>
- {notice&&<p role="status">{String(notice)}</p>}
- {tab==='stock'&&<><Card title="Cadastro de EPIs"><div className="hr-workspace__form">
+ {notice&&<div className="hr-epi-notice" role="status">{String(notice)}</div>}
+ {tab==='stock'&&<><Card title="Cadastro de EPIs"><p className="hr-epi-description">Cadastre ou atualize os equipamentos de proteção individual.</p><div className="hr-workspace__form hr-epi-form">
  <Select label="Empresa" value={selectedCompany} onChange={e=>setCompany(e.target.value)} options={scopes.map(c=>({value:c.companyId,label:c.name}))}/>
  <Input label="CA" placeholder="Digite o número do CA" value={ca} onChange={e=>onCaChange(e.target.value)}/>
  <Input label="Nome do EPI" value={name} onChange={e=>setName(e.target.value)}/>
  <Input label="Fabricante" value={manufacturer} onChange={e=>setManufacturer(e.target.value)}/>
- <Input label="Tamanho" value={size} onChange={e=>setSize(e.target.value)}/>
- <Input label="Estoque mínimo" type="number" min="0" value={minimum} onChange={e=>setMinimum(e.target.value)}/>
- <Button disabled={busy||!name.trim()||!selectedCompany||products.some(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===ca.replace(/\D/g,'')&&!!ca.trim()&&p.size?.trim().toLowerCase()===size.trim().toLowerCase())} onClick={()=>{const scope=scopes.find(c=>c.companyId===selectedCompany);if(scope)void execute(async()=>{await createEpiProduct({tenantId:scope.tenantId,companyId:scope.companyId,name,ca,manufacturer,size,minimum:Number(minimum)});setSize('');setNotice('EPI cadastrado. Para outra numeração, mantenha o mesmo CA e informe o novo tamanho.')})}}>Cadastrar EPI</Button>
+ <div className="hr-epi-fields-row"><Input label="Tamanho" value={size} onChange={e=>setSize(e.target.value)}/>
+ <Input label="Estoque mínimo" type="number" min="0" value={minimum} onChange={e=>setMinimum(e.target.value)}/></div>
+ <div className="hr-epi-actions"><Button variant="secondary" disabled={busy} onClick={()=>{setCa('');setName('');setManufacturer('');setSize('');setMinimum('0');setNotice('')}}>Limpar</Button><Button disabled={busy||!name.trim()||!selectedCompany||products.some(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===ca.replace(/\D/g,'')&&!!ca.trim()&&p.size?.trim().toLowerCase()===size.trim().toLowerCase())} onClick={()=>{const scope=scopes.find(c=>c.companyId===selectedCompany);if(scope)void execute(async()=>{await createEpiProduct({tenantId:scope.tenantId,companyId:scope.companyId,name,ca,manufacturer,size,minimum:Number(minimum)});setSize('');setNotice('EPI cadastrado. Para outra numeração, mantenha o mesmo CA e informe o novo tamanho.')})}}>Salvar EPI</Button></div>
  </div></Card>
- <Card title="Entrada no estoque"><div className="hr-workspace__form">
+ <Card title="Entrada no estoque"><p className="hr-epi-description">Registre o recebimento e a reposição dos equipamentos.</p><div className="hr-workspace__form hr-epi-form">
  <Select label="EPI cadastrado" value={productId} onChange={e=>setProductId(e.target.value)} options={[{value:'',label:'Selecione'},...available.map(p=>({value:p.id,label:p.name+' · Saldo '+p.quantity}))]}/>
+ {selected&&<div className="hr-epi-stats"><div><small>Saldo atual</small><strong>{selected.quantity} un</strong></div><div><small>Estoque mínimo</small><strong>{selected.minimum_stock} un</strong></div><div><small>Situação</small><strong>{selected.quantity<=selected.minimum_stock?'Repor':'Normal'}</strong></div></div>}
  <Input label="Quantidade recebida" type="number" min="1" value={entryQty} onChange={e=>setEntryQty(e.target.value)}/>
  <Input label="Observações" value={entryNotes} onChange={e=>setEntryNotes(e.target.value)}/>
- <Button disabled={busy||!productId} onClick={()=>void execute(async()=>{await registerEpiStockEntry(productId,Number(entryQty),entryNotes);setEntryQty('1');setEntryNotes('')})}>Registrar entrada</Button>
+ <Button disabled={busy||!productId||!Number.isInteger(Number(entryQty))||Number(entryQty)<=0} onClick={()=>void execute(async()=>{await registerEpiStockEntry(productId,Number(entryQty),entryNotes);setEntryQty('1');setEntryNotes('')})}>Registrar entrada</Button>
  </div></Card>
- <Card title="Saldo de estoque"><div className="hr-epi-table-scroll"><table className="hr-epi-table"><thead><tr><th>EPI</th><th>CA</th><th>Disponível</th><th>Mínimo</th><th>Situação</th></tr></thead><tbody>{available.map(p=><tr key={p.id}><td>{p.name}{p.size?' · '+p.size:''}</td><td>{p.ca_number||'—'}</td><td>{p.quantity}</td><td>{p.minimum_stock}</td><td>{p.quantity<=p.minimum_stock?'Reposição necessária':'Normal'}</td></tr>)}</tbody></table></div></Card></>}
- {tab==='delivery'&&<Card title="Registrar entrega de EPI"><div className="hr-workspace__form">
+ <Card title="Saldo de estoque"><p className="hr-epi-description">Acompanhe a disponibilidade por equipamento e tamanho.</p><div className="hr-epi-table-scroll"><table className="hr-epi-table"><thead><tr><th>EPI</th><th>CA</th><th>Disponível</th><th>Mínimo</th><th>Situação</th></tr></thead><tbody>{available.map(p=><tr key={p.id}><td>{p.name}{p.size?' · '+p.size:''}</td><td>{p.ca_number||'—'}</td><td>{p.quantity}</td><td>{p.minimum_stock}</td><td>{p.quantity<=p.minimum_stock?'Reposição necessária':'Normal'}</td></tr>)}</tbody></table></div></Card></>}
+ {tab==='delivery'&&<Card title="Registrar entrega de EPI"><p className="hr-epi-description">Entregue EPIs aos colaboradores e dê baixa no estoque.</p><div className="hr-workspace__form hr-epi-form">
  <Select label="Colaborador" value={contract} onChange={e=>{setContract(e.target.value);setProductId('')}} options={[{value:'',label:'Selecione'},...activeEmployees.map(e=>({value:e.employmentContractId,label:e.fullName+' · '+e.companyName}))]}/>
  <Select label="EPI do estoque" value={productId} onChange={e=>setProductId(e.target.value)} options={[{value:'',label:'Selecione'},...products.filter(p=>p.active&&p.company_id===activeEmployees.find(e=>e.employmentContractId===contract)?.companyId).map(p=>({value:p.id,label:p.name+' · '+p.quantity+' disponíveis'}))]}/>
- {selected&&<p>CA: {selected.ca_number||'Não informado'} · Saldo: {selected.quantity}</p>}
- <Input label="Quantidade" type="number" min="1" value={qty} onChange={e=>setQty(e.target.value)}/>
- <Input label="Data da entrega" type="date" value={date} onChange={e=>setDate(e.target.value)}/>
+ {selected&&<div className="hr-epi-stats"><div><small>CA</small><strong>{selected.ca_number||'—'}</strong></div><div><small>Disponível</small><strong>{selected.quantity} un</strong></div><div><small>Situação</small><strong>{selected.quantity<=selected.minimum_stock?'Repor':'Normal'}</strong></div></div>}
+ <div className="hr-epi-fields-row"><Input label="Quantidade" type="number" min="1" value={qty} onChange={e=>setQty(e.target.value)}/>
+ <Input label="Data da entrega" type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
  <Input label="Observações" value={notes} onChange={e=>setNotes(e.target.value)}/>
- <Button disabled={busy||!contract||!selected||Number(qty)<=0||Number(qty)>selected.quantity} onClick={()=>void execute(async()=>{await registerStockEpiDelivery(productId,contract,Number(qty),date,notes);setQty('1');setNotes('');onRegisterRefresh()})}>Registrar entrega e baixar estoque</Button>
+ <Button disabled={busy||!contract||!selected||!Number.isInteger(Number(qty))||Number(qty)<=0||Number(qty)>selected.quantity} onClick={()=>void execute(async()=>{await registerStockEpiDelivery(productId,contract,Number(qty),date,notes);setQty('1');setNotes('');onRegisterRefresh()})}>Registrar entrega e baixar estoque</Button>
  </div></Card>}
- {tab==='history'&&<Card title="Histórico de entregas">{deliveries.length===0?<p>Nenhuma entrega registrada.</p>:<div className="hr-workspace__list">{deliveries.map(item=><div className="hr-workspace__employee-row" key={item.id}><div><strong>{employees.find(e=>e.employmentContractId===item.employmentContractId)?.fullName??'Colaborador'}</strong><span>{item.epiName} · Qtd. {item.quantity} · CA {item.caNumber||'—'}</span></div><strong>{new Date(item.deliveredOn+'T12:00:00').toLocaleDateString('pt-BR')}</strong></div>)}</div>}</Card>}
+ {tab==='history'&&<Card title="Histórico de entregas"><p className="hr-epi-description">Consulte as entregas realizadas aos colaboradores.</p><div className="hr-epi-history-search"><Input label="Buscar colaborador, EPI ou CA" value={historyQuery} onChange={e=>setHistoryQuery(e.target.value)}/></div>{historyRows.length===0?<p>Nenhuma entrega encontrada.</p>:<div className="hr-workspace__list">{historyRows.map(item=><div className="hr-workspace__employee-row" key={item.id}><div><strong>{employees.find(e=>e.employmentContractId===item.employmentContractId)?.fullName??'Colaborador'}</strong><span>{item.epiName} · Qtd. {item.quantity} · CA {item.caNumber||'—'}</span></div><strong>{new Date(item.deliveredOn+'T12:00:00').toLocaleDateString('pt-BR')}</strong></div>)}</div>}</Card>}
  </div>;
  function onRegisterRefresh(){window.dispatchEvent(new Event('hr-epi-delivery-updated'))}
 }
