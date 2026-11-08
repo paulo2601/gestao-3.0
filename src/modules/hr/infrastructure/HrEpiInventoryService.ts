@@ -19,11 +19,14 @@ export async function registerStockEpiDelivery(productId:string,contractId:strin
 
 export type OfficialCaRecord={ca_number:string;equipment:string;manufacturer:string|null;model:string|null;expires_on:string|null;situation:string|null;source_updated_at:string|null};
 export async function lookupOfficialEpiCa(ca:string):Promise<OfficialCaRecord|null>{
- const digits=ca.replace(/\\D/g,'');
- if(!/^\\d{3,6}$/.test(digits))return null;
+ const digits=ca.replace(/\D/g,'');
+ if(!/^\d{3,6}$/.test(digits))return null;
  const client=getSupabaseClient();
- const {data,error}=await client.functions.invoke('lookup-epi-ca',{body:{ca:digits}});
+ const {data,error}=await client.functions.invoke<{
+  record?:OfficialCaRecord|null;
+  error?:string;
+ }>('lookup-epi-ca',{body:{ca:digits}});
  if(error)throw new Error('Não foi possível consultar o CA. Verifique a conexão e tente novamente.');
- if(data?.error)throw new Error(String(data.error));
- return (data?.record??null) as OfficialCaRecord|null;
+ if(data?.error)throw new Error(data.error);
+ return data?.record??null;
 }
