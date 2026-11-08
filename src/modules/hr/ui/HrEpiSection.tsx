@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import './hr-epi.css';
 import type { HrEmployeeRow } from '../application/HrOperationsRepository';
 import type { HrEpiDelivery } from '../infrastructure/HrWorkspaceService';
-import { createEpiProduct,listEpiProducts,registerEpiStockEntry,registerStockEpiDelivery,type EpiProduct,lookupOfficialEpiCa,type OfficialCaRecord } from '../infrastructure/HrEpiInventoryService';
+import { createEpiProduct,listEpiProducts,registerEpiStockEntry,registerStockEpiDelivery,type EpiProduct } from '../infrastructure/HrEpiInventoryService';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { Input } from '../../../shared/ui/Input';
@@ -12,8 +12,6 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  const [tab,setTab]=useState<'stock'|'delivery'|'history'>('stock');
  const [products,setProducts]=useState<EpiProduct[]>([]);
  const [notice,setNotice]=useState('');
- const [caStatus,setCaStatus]=useState('');
- const [officialCa,setOfficialCa]=useState<OfficialCaRecord|null>(null);
  const [busy,setBusy]=useState(false);
  const [revision,setRevision]=useState(0);
  const scopes=useMemo(()=>[...new Map(employees.map(e=>[e.companyId,{tenantId:e.tenantId,companyId:e.companyId,name:e.companyName}])).values()],[employees]);
@@ -23,21 +21,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  const [contract,setContract]=useState('');const [qty,setQty]=useState('1');const [date,setDate]=useState(new Date().toISOString().slice(0,10));const [notes,setNotes]=useState('');
  const selectedCompany=company||scopes[0]?.companyId||'';
  useEffect(()=>{let active=true;void listEpiProducts(scopes).then(rows=>{if(active)setProducts(rows)}).catch(e=>{if(active)setNotice(e instanceof Error?e.message:String(e))});return()=>{active=false}},[scopes,revision]);
- const onCaChange=(value:string)=>{setCa(value.replace(/[^0-9]/g,''));setOfficialCa(null);setCaStatus('');setName('');setManufacturer('');setNotice('');};
- useEffect(()=>{
-  const digits=ca.replace(/\D/g,'');
-  if(digits.length<3){setCaStatus('');return;}
-  let cancelled=false;
-  setCaStatus('Consultando CA...');
-  const timer=setTimeout(()=>{void lookupOfficialEpiCa(digits).then(record=>{
-   if(cancelled)return;
-   if(record){setOfficialCa(record);setName(record.equipment);setManufacturer(record.manufacturer||'');setCaStatus('CA localizado na base CAEPI importada. Confira a situação e a validade.');return;}
-   const matched=products.find(p=>p.ca_number?.replace(/\D/g,'')===digits);
-   if(matched){setName(matched.name);setManufacturer(matched.manufacturer||'');setCaStatus('CA localizado apenas no cadastro interno; não verificado na base oficial.');}
-   else setCaStatus('CA não localizado na base disponível. A importação oficial pode estar pendente; consulte o MTE.');
-  }).catch((error:unknown)=>{if(cancelled)return;const matched=products.find(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===digits);if(matched){setName(matched.name);setManufacturer(matched.manufacturer||'');setCaStatus('Dados preenchidos pelo cadastro interno. Consulta oficial indisponível no momento.');}else setCaStatus(error instanceof Error?error.message:'Consulta indisponível. Não foi possível verificar o CA na base oficial.');});},500);
-  return()=>{cancelled=true;clearTimeout(timer)};
- },[ca,products,selectedCompany]);
+ const onCaChange=(value:string)=>{const digits=value.replace(/[^0-9]/g,'');setCa(digits);setNotice('');const matched=products.find(p=>p.company_id===selectedCompany&&p.ca_number?.replace(/\D/g,'')===digits);if(matched){setName(matched.name);setManufacturer(matched.manufacturer||'');}}
  const available=products.filter(p=>p.company_id===selectedCompany&&p.active);
  const selected=products.find(p=>p.id===productId);
  async function execute(action:()=>Promise<void>){setBusy(true);setNotice('');try{await action();setNotice('Operação realizada com sucesso.');setRevision(v=>v+1)}catch(e){setNotice(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}
@@ -50,8 +34,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  {notice&&<p role="status">{String(notice)}</p>}
  {tab==='stock'&&<><Card title="Cadastro de EPIs"><div className="hr-workspace__form">
  <Select label="Empresa" value={selectedCompany} onChange={e=>setCompany(e.target.value)} options={scopes.map(c=>({value:c.companyId,label:c.name}))}/>
- <Input label="CA — buscar EPI" placeholder="Digite o número do CA" value={ca} onChange={e=>onCaChange(e.target.value)}/>
- <div className="hr-epi-ca-info" role="status">{caStatus||'Digite o CA para iniciar a consulta automática.'}{officialCa&&<p>Modelo: {officialCa.model||'Não informado'} · Situação: {officialCa.situation||'Não informada'} · Validade: {officialCa.expires_on||'Não informada'}</p>} <a href="https://caepi.trabalho.gov.br/internet/ConsultaCAInternet.aspx" target="_blank" rel="noreferrer">Conferir no Ministério do Trabalho</a></div>
+ <Input label="CA" placeholder="Digite o número do CA" value={ca} onChange={e=>onCaChange(e.target.value)}/>
  <Input label="Nome do EPI" value={name} onChange={e=>setName(e.target.value)}/>
  <Input label="Fabricante" value={manufacturer} onChange={e=>setManufacturer(e.target.value)}/>
  <Input label="Tamanho" value={size} onChange={e=>setSize(e.target.value)}/>
