@@ -23,5 +23,10 @@ export async function lookupOfficialEpiCa(ca:string):Promise<OfficialCaRecord|nu
  if(!/^\d{3,6}$/.test(digits))return null;
  const {data,error}=await getSupabaseClient().from('hr_epi_ca_catalog').select('ca_number,equipment,manufacturer,model,expires_on,situation,source_updated_at').eq('ca_number',digits).maybeSingle();
  if(error)throw error;
+ if(!data){
+  const {count,error:countError}=await getSupabaseClient().from('hr_epi_ca_catalog').select('ca_number',{count:'exact',head:true});
+  if(countError)throw countError;
+  if(count===0)throw new Error('A base oficial de certificados CAEPI ainda não foi importada. Nenhum CA poderá ser localizado até concluir a importação.');
+ }
  return data as OfficialCaRecord|null;
 }
