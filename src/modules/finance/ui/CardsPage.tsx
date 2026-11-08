@@ -14,6 +14,7 @@ import { SortableHandle } from '../../../shared/ui/SortableHandle';
 import '../../home/ui/bank-brand.css';
 import './cards-page.css';
 import './statement-view.css';
+import './company-report.css';
 import { sharePrintableElement } from '../../../shared/utils/reportShare';
 import { QuickEntryDialog } from './QuickEntryDialog';
 
@@ -249,17 +250,17 @@ export function CardsPage({ companies, availableCompanies = companies }: { compa
     <Dialog open={dialog === 'companyReport' && selected !== null} title="Relatório por empresa — PDF" description={selected?.name} onClose={() => setDialog('details')} onBack={() => setDialog('details')}>
       {selected && <div>
         <Select label="Empresa responsável" value={reportCompanyId} onChange={(event) => setReportCompanyId(event.target.value)} options={[{value:'all',label:'Todas as empresas'},...reportCompanies.map((company)=>({value:company.id,label:companyName(company)})),...(reportUnclassified?[{value:'unclassified',label:'Não classificado'}]:[])]} />
-        <div className="company-report-print-surface" style={{padding:20,background:'#fff',color:'#18233a'}}>
-          <h2 style={{margin:'0 0 8px'}}>Relatório de despesas por empresa</h2>
-          <p style={{margin:'0 0 16px'}}><strong>Cartão:</strong> {selected.name} · <strong>Fatura:</strong> {monthLabel(selectedStatementMonth)} · <strong>Filtro:</strong> {reportCompanyId==='all'?'Todas as empresas':reportCompanyId==='unclassified'?'Não classificado':reportCompanyName(reportCompanyId)}</p>
-          {reportCompanyId==='all' && <div style={{marginBottom:16}}>{[...reportCompanies.map((company)=>({id:company.id,name:companyName(company)})),...(reportUnclassified?[{id:'unclassified',name:'Não classificado'}]:[])].map((company)=><p key={company.id} style={{margin:'4px 0'}}><strong>{company.name}:</strong> {currency.format(reportPurchases.filter((item)=>company.id==='unclassified'?(!item.expenseCompanyId||!formCompanies.some((c)=>c.id===item.expenseCompanyId)):item.expenseCompanyId===company.id).reduce((sum,item)=>sum+item.amount,0))}</p>)}</div>}
-          <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
-            <thead><tr><th style={{textAlign:'left',borderBottom:'1px solid #aaa',padding:6}}>Data</th><th style={{textAlign:'left',borderBottom:'1px solid #aaa',padding:6}}>Descrição / parcela</th><th style={{textAlign:'left',borderBottom:'1px solid #aaa',padding:6}}>Empresa</th><th style={{textAlign:'right',borderBottom:'1px solid #aaa',padding:6}}>Valor</th></tr></thead>
-            <tbody>{reportRows.map((item)=><tr key={item.activityKey}><td style={{padding:6,borderBottom:'1px solid #ddd'}}>{dateLabel(item.activityDate)}</td><td style={{padding:6,borderBottom:'1px solid #ddd'}}>{item.description}{activityInstallmentLabel(item)?' · '+activityInstallmentLabel(item):''}</td><td style={{padding:6,borderBottom:'1px solid #ddd'}}>{reportCompanyName(item.expenseCompanyId)}</td><td style={{padding:6,borderBottom:'1px solid #ddd',textAlign:'right',whiteSpace:'nowrap'}}>{currency.format(item.amount)}</td></tr>)}</tbody>
+        <div className="company-report-print-surface" className="company-report__style-1">
+          <h2 className="company-report__style-2">Relatório de despesas por empresa</h2>
+          <p className="company-report__style-3"><strong>Cartão:</strong> {selected.name} · <strong>Fatura:</strong> {monthLabel(selectedStatementMonth)} · <strong>Filtro:</strong> {reportCompanyId==='all'?'Todas as empresas':reportCompanyId==='unclassified'?'Não classificado':reportCompanyName(reportCompanyId)}</p>
+          {reportCompanyId==='all' && <div className="company-report__style-4">{[...reportCompanies.map((company)=>({id:company.id,name:companyName(company)})),...(reportUnclassified?[{id:'unclassified',name:'Não classificado'}]:[])].map((company)=><p key={company.id} className="company-report__style-5"><strong>{company.name}:</strong> {currency.format(reportPurchases.filter((item)=>company.id==='unclassified'?(!item.expenseCompanyId||!formCompanies.some((c)=>c.id===item.expenseCompanyId)):item.expenseCompanyId===company.id).reduce((sum,item)=>sum+item.amount,0))}</p>)}</div>}
+          <table className="company-report__style-6">
+            <thead><tr><th className="company-report__style-7">Data</th><th className="company-report__style-8">Descrição / parcela</th><th className="company-report__style-9">Empresa</th><th className="company-report__style-10">Valor</th></tr></thead>
+            <tbody>{reportRows.map((item)=><tr key={item.activityKey}><td className="company-report__style-11">{dateLabel(item.activityDate)}</td><td className="company-report__style-12">{item.description}{activityInstallmentLabel(item)?' · '+activityInstallmentLabel(item):''}</td><td className="company-report__style-13">{reportCompanyName(item.expenseCompanyId)}</td><td className="company-report__style-14">{currency.format(item.amount)}</td></tr>)}</tbody>
           </table>
           {reportRows.length===0 && <p>Nenhuma compra encontrada neste filtro.</p>}
-          <p style={{textAlign:'right',fontWeight:700,marginTop:14}}>Total selecionado: {currency.format(reportTotal)}</p>
-          <p style={{fontSize:11,color:'#555'}}>Valores das parcelas desta fatura. Pagamentos não são contabilizados como compras. Lançamentos sem empresa identificada aparecem como “Não classificado”.</p>
+          <p className="company-report__style-15">Total selecionado: {currency.format(reportTotal)}</p>
+          <p className="company-report__style-16">Valores das parcelas desta fatura. Pagamentos não são contabilizados como compras. Lançamentos sem empresa identificada aparecem como “Não classificado”.</p>
         </div>
         <div className="statement-view__footer-actions"><Button onClick={() => {void shareCompanyReport();}}>Gerar / compartilhar PDF</Button><Button variant="secondary" onClick={() => setDialog('details')}>Voltar à fatura</Button></div>
       </div>}
