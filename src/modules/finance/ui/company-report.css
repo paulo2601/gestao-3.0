@@ -14,3 +14,31 @@
 .company-report__style-14{padding:6px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap;}
 .company-report__style-15{text-align:right;font-weight:700;margin-top:14px;}
 .company-report__style-16{font-size:11px;color:#555;}
+/* Approved CR financial report: compact toolbar and print-safe dashboard. */
+.company-report__toolbar{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.company-report__toolbar>.ui-field{flex:1 1 230px;max-width:390px}
+.company-report__toolbar-actions{display:flex;gap:7px;flex-wrap:wrap}
+.company-report__toolbar-actions .ui-button{min-height:34px}
+.company-report-print-surface{border:1px solid #dbe5f5;border-radius:10px;overflow:hidden}
+.company-report__style-1{padding:12px}
+.company-report__masthead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#eff5ff;border-left:4px solid #0b347d;border-radius:7px;margin-bottom:10px}
+.company-report__style-2{font-size:1.13rem;color:#102f6d;margin:0 0 4px}
+.company-report__style-3{font-size:.8rem;color:#475569;margin:0}
+.company-report__grand-total{display:grid;gap:3px;text-align:right;white-space:nowrap}
+.company-report__grand-total span{font-size:.72rem;color:#475569}
+.company-report__grand-total strong{font-size:1.2rem;color:#0b347d}
+.company-report__summary{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:10px}
+.company-report__summary-card,.company-report__style-5{background:#f0f5fd;border:1px solid #d9e5f8;border-radius:7px;padding:7px 11px;margin:0;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.company-report__summary-card{min-width:120px;display:grid;gap:2px}
+.company-report__summary-card span{font-size:.73rem;color:#52647c}
+.company-report__style-4{display:flex;flex:1;gap:8px;flex-wrap:wrap;margin:0}
+.company-report__style-5{flex:1 1 175px;color:#17396e;font-size:.83rem}
+.company-report__style-6{font-size:.8rem}
+.company-report__style-7,.company-report__style-8,.company-report__style-9,.company-report__style-10{background:#0b347d;color:white;padding:8px;border-bottom:0}
+.company-report__style-11,.company-report__style-12,.company-report__style-13,.company-report__style-14{padding:7px 8px;border-bottom:1px solid #dce5f2}
+.company-report__style-6 tbody tr:nth-child(even){background:#f5f8fd}
+.company-report__style-13{font-weight:600;color:#154184}
+.company-report__style-15{color:#0b347d;font-size:1rem;margin:9px 0}
+.company-report__style-16{margin:5px 0;font-size:.72rem}
+@media(max-width:680px){.company-report__toolbar-actions{width:100%}.company-report__toolbar-actions .ui-button{flex:1}.company-report__masthead{align-items:start;flex-direction:column}.company-report__grand-total{text-align:left}.company-report__style-1{padding:7px}.company-report__style-6{font-size:.72rem}}
+@media print{.company-report__toolbar{display:none!important}.company-report-print-surface{border:0!important;overflow:visible!important}.company-report__masthead,.company-report__style-7,.company-report__style-8,.company-report__style-9,.company-report__style-10{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.company-report__style-6 thead{display:table-header-group}.company-report__style-6 tr{break-inside:avoid;page-break-inside:avoid}.company-report__style-1{padding:0!important}}
