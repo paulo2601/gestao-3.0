@@ -27,7 +27,8 @@ export async function lookupOfficialEpiCa(ca:string):Promise<OfficialCaRecord|nu
   error?:string;
  }>('lookup-epi-ca',{body:{ca:digits}});
  if(response.error){
-  const context=response.error.context;
+  const errorWithContext=response.error as Error & {context?:unknown};
+  const context=errorWithContext.context;
   if(context instanceof Response){
    const payload:unknown=await context.clone().json().catch(()=>null);
    if(payload&&typeof payload==='object'&&'error' in payload&&typeof payload.error==='string')throw new Error(payload.error);
