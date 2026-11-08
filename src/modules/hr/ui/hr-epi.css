@@ -79,3 +79,9 @@
  .hr-epi-delivery-date input[type="date"]{box-sizing:border-box;width:100%!important;max-width:100%!important;min-width:0;font-size:1rem!important;padding-inline:12px!important;letter-spacing:normal!important;overflow:visible!important}
  .hr-epi-delivery-fields .hr-epi-quantity>div{grid-template-columns:48px minmax(0,1fr) 48px}
 }
+
+/* EPI delivery date: explicit DD/MM/YYYY selectors avoid Android native date clipping */
+.hr-epi-delivery-date>label{display:block;margin-bottom:9px;color:#172c4d;font-weight:700}
+.hr-epi-date-parts{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.25fr);gap:8px}
+.hr-epi-date-parts select{width:100%;min-width:0;max-width:100%;min-height:52px;padding:8px 7px;border:1px solid #cbd5e1;border-radius:11px;background:#fff;color:#162b4d;font-weight:700;font-size:1rem;text-align:center}
+.hr-epi-date-parts select:focus-visible{outline:2px solid #2868e8;outline-offset:1px}
