@@ -119,6 +119,7 @@ export interface CardStatementActivity extends CompanyScope {
   activityKey: string;
   activityType: 'purchase' | 'payment';
   sourceId: string;
+  expenseCompanyId: string | null;
   activityDate: string;
   description: string;
   counterpartyName: string | null;
