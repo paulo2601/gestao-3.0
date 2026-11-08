@@ -39,7 +39,6 @@ function monthLabel(value: string): string { return value.slice(0, 7).split('-')
 function shiftMonth(value: string, offset: number): string { const parts = value.slice(0, 7).split('-'); const year = Number(parts[0] ?? 0); const month = Number(parts[1] ?? 1); const date = new Date(year, month - 1 + offset, 1); return monthKey(date); }
 function dateLabel(value: string): string { return value.split('-').reverse().join('/'); }
 function money(value: string): number { return Number(value.replace(',', '.')); }
-function csvCell(value: string | number): string { return `"${String(value).replaceAll('"', '""')}"`; }
 function cardVisual(institution: FinancialBankInstitution | null, name: string): { tone: CardTone; mark: string; institution: string } {
   const raw = `${institution ?? ''} ${name}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR');
   if (institution === 'nubank' || raw.includes('NUBANK') || raw.includes('NU ')) return { tone: 'nubank', mark: 'nu', institution: 'Nubank' };
