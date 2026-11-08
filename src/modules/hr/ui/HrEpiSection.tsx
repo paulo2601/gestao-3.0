@@ -25,7 +25,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  const selected=products.find(p=>p.id===productId);
  async function execute(action:()=>Promise<void>){setBusy(true);setNotice('');try{await action();setNotice('Operação realizada com sucesso.');setRevision(v=>v+1)}catch(e){setNotice(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}
  return <div className="hr-workspace__content">
- <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+ <div className="hr-epi-tabs">
  <Button variant={tab==='stock'?'primary':'secondary'} onClick={()=>setTab('stock')}>Cadastro e estoque</Button>
  <Button variant={tab==='delivery'?'primary':'secondary'} onClick={()=>setTab('delivery')}>Entregar EPI</Button>
  <Button variant={tab==='history'?'primary':'secondary'} onClick={()=>setTab('history')}>Histórico ({deliveries.length})</Button>
@@ -46,7 +46,7 @@ export function HrEpiSection({deliveries,employees,activeEmployees}:{deliveries:
  <Input label="Observações" value={entryNotes} onChange={e=>setEntryNotes(e.target.value)}/>
  <Button disabled={busy||!productId} onClick={()=>void execute(async()=>{await registerEpiStockEntry(productId,Number(entryQty),entryNotes);setEntryQty('1');setEntryNotes('')})}>Registrar entrada</Button>
  </div></Card>
- <Card title="Saldo de estoque"><div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left'}}><thead><tr><th>EPI</th><th>CA</th><th>Disponível</th><th>Mínimo</th><th>Situação</th></tr></thead><tbody>{available.map(p=><tr key={p.id}><td>{p.name}{p.size?' · '+p.size:''}</td><td>{p.ca_number||'—'}</td><td>{p.quantity}</td><td>{p.minimum_stock}</td><td>{p.quantity<=p.minimum_stock?'Reposição necessária':'Normal'}</td></tr>)}</tbody></table></div></Card></>}
+ <Card title="Saldo de estoque"><div className="hr-epi-table-scroll"><table className="hr-epi-table"><thead><tr><th>EPI</th><th>CA</th><th>Disponível</th><th>Mínimo</th><th>Situação</th></tr></thead><tbody>{available.map(p=><tr key={p.id}><td>{p.name}{p.size?' · '+p.size:''}</td><td>{p.ca_number||'—'}</td><td>{p.quantity}</td><td>{p.minimum_stock}</td><td>{p.quantity<=p.minimum_stock?'Reposição necessária':'Normal'}</td></tr>)}</tbody></table></div></Card></>}
  {tab==='delivery'&&<Card title="Registrar entrega de EPI"><div className="hr-workspace__form">
  <Select label="Colaborador" value={contract} onChange={e=>{setContract(e.target.value);setProductId('')}} options={[{value:'',label:'Selecione'},...activeEmployees.map(e=>({value:e.employmentContractId,label:e.fullName+' · '+e.companyName}))]}/>
  <Select label="EPI do estoque" value={productId} onChange={e=>setProductId(e.target.value)} options={[{value:'',label:'Selecione'},...products.filter(p=>p.active&&p.company_id===activeEmployees.find(e=>e.employmentContractId===contract)?.companyId).map(p=>({value:p.id,label:p.name+' · '+p.quantity+' disponíveis'}))]}/>
