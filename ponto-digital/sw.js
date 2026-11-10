@@ -69,3 +69,7 @@ async function uploadPending(){
  }finally{db.close()}
 }
 self.addEventListener('sync',event=>{if(event.tag==='ponto-upload-pending')event.waitUntil(uploadPending())});
+// Opportunistic retry when the service worker is awakened by a push event.
+// The sync event remains the primary background path; push must not be used
+// to manufacture periodic wakeups without a legitimate notification.
+self.addEventListener('push',event=>{event.waitUntil(uploadPending().catch(()=>{}))});
