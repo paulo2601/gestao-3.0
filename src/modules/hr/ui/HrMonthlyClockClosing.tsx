@@ -62,16 +62,18 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
      const version=versions.filter(v=>v.employment_contract_id===id&&v.effective_on<=date).sort((a,b)=>b.effective_on.localeCompare(a.effective_on))[0];
      const punch=punchMap.get(id+'|'+date);
      const attendanceDay=attendanceMap.get(id+'|'+date);
-     const justified=attendanceDay?.status==='medical_certificate'||attendanceDay?.status==='vacation'||attendanceDay?.status==='day_off';
-     const justifiedLabel=attendanceDay?.status==='medical_certificate'?'Atestado médico':attendanceDay?.status==='vacation'?'Férias':'Folga registrada';
+     const justified=attendanceDay?.status==='medical_certificate'||attendanceDay?.status==='vacation'||attendanceDay?.status==='day_off'||attendanceDay?.status==='absence';
+     const justifiedLabel=attendanceDay?.status==='medical_certificate'?'Atestado médico':attendanceDay?.status==='vacation'?'Férias':attendanceDay?.status==='absence'?'Falta registrada':'Folga registrada';
       const recorded=Boolean(punch&&Object.values(punch).some(Boolean));
       if(!version){if(recorded){const raw=rawWorked(punch??{});if(raw!==null)worked+=raw;else incomplete++;days.push({date,scheduled:0,worked:raw,status:raw===null?'Ponto incompleto · sem jornada':'Sem jornada cadastrada',difference:null});}continue;}
       hasSchedule=true;
+      const holiday=isNationalHoliday(date);
       const schedule=version.weekdays[weekdayIndex(date)];
-      if(!schedule?.active){if(recorded){const raw=rawWorked(punch??{});if(raw!==null)worked+=raw;else incomplete++;days.push({date,scheduled:0,worked:raw,status:'Registro em folga · revisar',difference:null});}continue;}
+      if(!schedule?.active){if(recorded){const raw=rawWorked(punch??{});if(raw!==null)worked+=raw;else incomplete++;days.push({date,scheduled:0,worked:raw,status:'Registro em folga · revisar',difference:null});}else if(justified){days.push({date,scheduled:0,worked:null,status:justifiedLabel,difference:null});}continue;}
      const scheduled=Math.max(0,parse(schedule.lunchOut)-parse(schedule.entry)+parse(schedule.exit)-parse(schedule.lunchIn));
-     planned+=scheduled;
-     if(!recorded){if(justified){days.push({date,scheduled,worked:null,status:justifiedLabel,difference:null});continue;}if(date<today){const canceled=fullyCancelled.has(id+'|'+date);const holiday=isNationalHoliday(date);days.push({date,scheduled,worked:null,status:canceled?'Registros cancelados':holiday?'Feriado nacional · sem marcações':'Sem marcações · revisar',difference:null});}continue;}
+     if(!holiday)planned+=scheduled;
+     if(!recorded){if(justified){days.push({date,scheduled:holiday?0:scheduled,worked:null,status:justifiedLabel,difference:null});continue;}if(holiday){days.push({date,scheduled:0,worked:null,status:'Feriado nacional · compensado',difference:null});continue;}if(date<today){const canceled=fullyCancelled.has(id+'|'+date);days.push({date,scheduled,worked:null,status:canceled?'Registros cancelados':'Sem marcações · revisar',difference:null});}continue;}
+     if(holiday){const raw=rawWorked(punch??{});if(raw!==null)worked+=raw;else incomplete++;days.push({date,scheduled:0,worked:raw,status:raw===null?'Ponto incompleto · feriado':'Trabalho em feriado · revisar',difference:null});continue;}
      const result=assessEmployeePunches(versions,id,date,punch??{});
      if(!result||result.status!=='complete'||result.workedMinutes===null){incomplete++;const missing=([['entry','entrada'],['lunch_out','saída almoço'],['lunch_in','retorno almoço'],['exit','saída final']] as const).filter(([kind])=>!punch?.[kind]).map(([,label])=>label);days.push({date,scheduled,worked:null,status:missing.length?'Ponto incompleto · falta '+missing.join(', '):'Ponto inconsistente · revisar',difference:null});continue;}
      // CLT art. 58, §1º: desconsiderar pequenas variações somente quando
