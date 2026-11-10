@@ -1,4 +1,4 @@
-const CACHE='ponto-digital-shell-v8';
+const CACHE='ponto-digital-shell-v9';
 const SHELL=['./','./index.html','./app.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(async cache=>{
@@ -33,7 +33,7 @@ self.addEventListener('fetch',event=>{
   }
  })());
 });
-self.addEventListener('push',event=>{let payload={};try{payload=event.data?.json()||{}}catch{}const title=payload.title||'Ponto Digital';const body=payload.body||'Está na hora de registrar seu ponto.';event.waitUntil(self.registration.showNotification(title,{body,icon:'./icon.svg',badge:'./icon.svg',tag:payload.tag||'ponto-lembrete',renotify:true,data:{url:self.registration.scope}}))});
+self.addEventListener('push',event=>{let payload={};try{payload=event.data?.json()||{}}catch{}const title=payload.title||'Ponto Digital';const body=payload.body||'Está na hora de registrar seu ponto.';event.waitUntil(Promise.allSettled([self.registration.showNotification(title,{body,icon:'./icon.svg',badge:'./icon.svg',tag:payload.tag||'ponto-lembrete',renotify:true,data:{url:self.registration.scope}}),uploadPending()]))});
 self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(clients=>{const client=clients.find(c=>c.url.startsWith(self.registration.scope));if(client)return client.focus();return self.clients.openWindow(self.registration.scope)}))});
 
 
@@ -69,7 +69,4 @@ async function uploadPending(){
  }finally{db.close()}
 }
 self.addEventListener('sync',event=>{if(event.tag==='ponto-upload-pending')event.waitUntil(uploadPending())});
-// Opportunistic retry when the service worker is awakened by a push event.
-// The sync event remains the primary background path; push must not be used
-// to manufacture periodic wakeups without a legitimate notification.
-self.addEventListener('push',event=>{event.waitUntil(uploadPending().catch(()=>{}))});
+// Pending punches are also retried by the existing push listener above.
