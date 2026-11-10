@@ -1,13 +1,15 @@
 import {useEffect,useMemo,useState} from 'react';
 import type {HrEmployeeRow} from '../application/HrOperationsRepository';
 import {assessEmployeePunches} from '../domain/assessEmployeePunches';
-import {listWorkSchedulesForPeriod,listClockReportEvents,listClockAdjustments,listClockCancellations,listAttendanceForPeriod} from '../infrastructure/HrWorkspaceService';
+import {listWorkSchedulesForPeriod,listClockReportEvents,listClockAdjustments,listClockCancellations,listAttendanceForPeriod,saveClockAdjustment} from '../infrastructure/HrWorkspaceService';
 import {weekdayIndex} from '../domain/assessEmployeePunches';
 import {Button} from '../../../shared/ui/Button';
 import {Card} from '../../../shared/ui/Card';
 
 type Employee=HrEmployeeRow&{companyId:string;companyName:string;tenantId:string};
 type Day={date:string;scheduled:number;worked:number|null;status:string;difference:number|null};
+type Punch='entry'|'lunch_out'|'lunch_in'|'exit';
+const punchLabels:Record<Punch,string>={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída final'};
 type Summary={employee:Employee;planned:number;worked:number;positive:number;negative:number;days:Day[];incomplete:number;hasSchedule:boolean};
 const fmt=(minutes:number)=>{const abs=Math.abs(Math.round(minutes));return (minutes<0?'-':'')+String(Math.floor(abs/60)).padStart(2,'0')+'h'+String(abs%60).padStart(2,'0');};
 const dateLabel=(value:string)=>value.slice(8,10)+'/'+value.slice(5,7);
@@ -23,6 +25,13 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
  const [rows,setRows]=useState<Summary[]>([]);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState('');
+ const [refresh,setRefresh]=useState(0);
+ const [editDate,setEditDate]=useState<string|null>(null);
+ const [editPunch,setEditPunch]=useState<Punch>('entry');
+ const [editTime,setEditTime]=useState('');
+ const [editReason,setEditReason]=useState('');
+ const [saving,setSaving]=useState(false);
+ const [punchesByDay,setPunchesByDay]=useState<Map<string,Partial<Record<Punch,string>>>>(new Map());
 
  const scopes=useMemo(()=>employees.map(e=>e.employmentContractId).filter(Boolean),[employees]);
  useEffect(()=>{let cancelled=false;const run=async()=>{
@@ -32,13 +41,13 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
    const attendanceScopes=[...new Map(employees.map(e=>[e.tenantId+'|'+e.companyId,{tenantId:e.tenantId,companyId:e.companyId}])).values()];
    const [versions,events,adjustments,cancellations,attendance]=await Promise.all([listWorkSchedulesForPeriod(scopes,start,end),listClockReportEvents(scopes,start,end),listClockAdjustments(scopes,start,end),listClockCancellations(scopes,start,end),listAttendanceForPeriod(attendanceScopes,start,end)]);
    if(cancelled)return;
-   type Punch='entry'|'lunch_out'|'lunch_in'|'exit';
    const punchMap=new Map<string,Partial<Record<Punch,string>>>();
    for(const e of events){const local=new Date(e.captured_at).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo',hour12:false});const key=e.employment_contract_id+'|'+local.slice(0,10);const p=punchMap.get(key)??{};p[e.punch_kind as Punch]=local.slice(11,16);punchMap.set(key,p);}
    for(const a of adjustments){const key=a.employment_contract_id+'|'+a.attendance_date;const p=punchMap.get(key)??{};p[a.punch_kind]=a.corrected_time.slice(0,5);punchMap.set(key,p);}
    const attendanceMap=new Map(attendance.map(a=>[a.employmentContractId+'|'+a.attendanceDate,a]));
    const fullyCancelled=new Set(cancellations.filter(c=>c.punch_kind==='all').map(c=>c.employment_contract_id+'|'+c.attendance_date));
    for(const c of cancellations){const key=c.employment_contract_id+'|'+c.attendance_date;const p=punchMap.get(key)??{};if(c.punch_kind==='all')punchMap.set(key,{});else{delete p[c.punch_kind];punchMap.set(key,p);}}
+   setPunchesByDay(new Map(punchMap));
    const parse=(v:string)=>{const [h=0,m=0]=v.split(':').map(Number);return h*60+m;};
    const today=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
    const rawWorked=(p:Partial<Record<Punch,string>>)=>p.entry&&p.lunch_out&&p.lunch_in&&p.exit&&parse(p.entry)<=parse(p.lunch_out)&&parse(p.lunch_out)<=parse(p.lunch_in)&&parse(p.lunch_in)<=parse(p.exit)?parse(p.lunch_out)-parse(p.entry)+parse(p.exit)-parse(p.lunch_in):null;
@@ -79,9 +88,13 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
    setRows(result);
   }catch(e){if(!cancelled)setError(e instanceof Error?e.message:'Falha ao consultar o ponto.');}
   finally{if(!cancelled)setLoading(false);}
- };void run();return()=>{cancelled=true;};},[month,scopes,employees]);
+ };void run();return()=>{cancelled=true;};},[month,scopes,employees,refresh]);
  const visible=rows.filter(r=>(!company||r.employee.companyId===company)&&(!work||r.employee.costCenterName===work)&&r.employee.fullName.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'))).sort((a,b)=>a.employee.fullName.localeCompare(b.employee.fullName,'pt-BR'));
  const current=visible.find(r=>r.employee.employmentContractId===selected);
+ const editingPunches=editDate&&current?punchesByDay.get(current.employee.employmentContractId+'|'+editDate):null;
+ const openDay=(date:string)=>{setEditDate(date);setEditPunch('entry');setEditTime(punchesByDay.get(current!.employee.employmentContractId+'|'+date)?.entry??'');setEditReason('');setError('');};
+ const saveDay=async()=>{if(!current||!editDate)return;if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(editTime)){setError('Informe um horário válido.');return;}if(editReason.trim().length<5){setError('Informe uma justificativa com pelo menos 5 caracteres.');return;}
+ try{setSaving(true);setError('');await saveClockAdjustment({tenantId:current.employee.tenantId,companyId:current.employee.companyId,employmentContractId:current.employee.employmentContractId,attendanceDate:editDate,punchKind:editPunch,correctedTime:editTime,originalTime:editingPunches?.[editPunch]??null,reason:editReason});setEditDate(null);setRefresh(v=>v+1);}catch(e){setError(e instanceof Error?e.message:'Falha ao salvar ajuste.');}finally{setSaving(false);}};
  const pendingCount=visible.filter(r=>r.incomplete||r.days.some(d=>d.status.includes('revisar'))).length;
  const totals=visible.reduce((a,r)=>({planned:a.planned+r.planned,worked:a.worked+r.worked,positive:a.positive+r.positive,negative:a.negative+r.negative}),{planned:0,worked:0,positive:0,negative:0});
  const exportCsv=()=>{const lines=[['Colaborador','Empresa','Obra','Previstas','Trabalhadas','Excedentes','Faltantes','Saldo preliminar','Pendências'],...visible.map(r=>[r.employee.fullName,r.employee.companyName,r.employee.costCenterName??'',fmt(r.planned),fmt(r.worked),fmt(r.positive),fmt(r.negative),fmt(r.positive-r.negative),String(r.incomplete)])];const csv='\uFEFF'+lines.map(line=>line.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='fechamento-ponto-'+month+'.csv';a.click();URL.revokeObjectURL(url);};
@@ -98,7 +111,8 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
   {!loading&&<><div className="hr-monthly__metrics">
    {[['Colaboradores',String(visible.length)],['Horas previstas',fmt(totals.planned)],['Trabalhadas',fmt(totals.worked)],['Excedentes',fmt(totals.positive)],['Faltantes',fmt(totals.negative)],['Saldo preliminar',fmt(totals.positive-totals.negative)]].map(([label,value])=><Card key={label}><small>{label}</small><h3 className="hr-monthly__metric-value">{value}</h3></Card>)}
   </div><Card><div className="hr-monthly__list-head"><div><h3 className="hr-monthly__list-title">Colaboradores</h3><span className="ui-muted">Selecione um nome para conferir os dias e horários.</span></div><span className="hr-monthly__pending">{pendingCount} com pendências</span></div><div className="hr-monthly__scroll"><table className="hr-monthly__table"><thead><tr>{['Colaborador','Previstas','Trabalhadas','Excedente','Faltante','Saldo','Situação'].map(t=><th key={t} className="hr-monthly__th">{t}</th>)}</tr></thead><tbody>{visible.map(r=><tr key={r.employee.employmentContractId} className={selected===r.employee.employmentContractId?'hr-monthly__selected':''}><td className="hr-monthly__td hr-monthly__name"><button type="button" onClick={()=>setSelected(selected===r.employee.employmentContractId?null:r.employee.employmentContractId)} className="hr-monthly__employee">{r.employee.fullName} <span aria-hidden="true">{selected===r.employee.employmentContractId?'▴':'▾'}</span></button><div><small>{r.employee.costCenterName??r.employee.companyName}</small></div></td>{[r.hasSchedule?fmt(r.planned):'—',r.days.some(d=>d.worked!==null)?fmt(r.worked):'—',r.hasSchedule?fmt(r.positive):'—',r.hasSchedule?fmt(r.negative):'—',r.hasSchedule?fmt(r.positive-r.negative):'—'].map((v,i)=><td key={i} data-label={['Previstas','Trabalhadas','Excedente','Faltante','Saldo'][i]} className="hr-monthly__td hr-monthly__nowrap">{v}</td>)}<td data-label="Situação" className="hr-monthly__td"><span className={'hr-monthly__status '+statusClass(statusOf(r))}>{statusOf(r)}</span></td></tr>)}</tbody></table></div>{!visible.length&&<p>Nenhum colaborador encontrado.</p>}</Card>
-  {current&&<Card><div className="hr-monthly__detail-head"><div><h3 className="hr-monthly__title">{current.employee.fullName} — Detalhamento</h3><p className="ui-muted">Dias com diferenças, registros ausentes ou cancelamentos · {month.slice(5)}/{month.slice(0,4)}</p></div><Button onClick={()=>setSelected(null)}>Fechar</Button></div><div className="hr-monthly__detail-scroll"><table className="hr-monthly__detail-table"><thead><tr><th>Dia</th><th>Previstas</th><th>Trabalhadas</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>{current.days.filter(d=>d.difference!==0||d.status!=='Completo').map(d=><tr key={d.date}><td>{dateLabel(d.date)}</td><td>{fmt(d.scheduled)}</td><td>{d.worked===null?'—':fmt(d.worked)}</td><td>{d.difference===null?'—':(d.difference>0?'+':'')+fmt(d.difference)}</td><td>{d.status}</td></tr>)}</tbody></table></div></Card>}
+  {current&&<Card><div className="hr-monthly__detail-head"><div><h3 className="hr-monthly__title">{current.employee.fullName} — Detalhamento</h3><p className="ui-muted">Dias com diferenças, registros ausentes ou cancelamentos · {month.slice(5)}/{month.slice(0,4)}</p></div><Button onClick={()=>setSelected(null)}>Fechar</Button></div><div className="hr-monthly__detail-scroll"><table className="hr-monthly__detail-table"><thead><tr><th>Dia</th><th>Previstas</th><th>Trabalhadas</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>{current.days.filter(d=>d.difference!==0||d.status!=='Completo').map(d=><tr key={d.date} onClick={()=>openDay(d.date)} style={{cursor:'pointer'}} title="Toque para visualizar e corrigir marcações"><td><button type="button" onClick={()=>openDay(d.date)} aria-label={'Corrigir ponto de '+dateLabel(d.date)}>{dateLabel(d.date)} ✎</button></td><td>{fmt(d.scheduled)}</td><td>{d.worked===null?'—':fmt(d.worked)}</td><td>{d.difference===null?'—':(d.difference>0?'+':'')+fmt(d.difference)}</td><td>{d.status}</td></tr>)}</tbody></table></div></Card>}
+  {current&&editDate&&<Card><h3>Corrigir ponto — {dateLabel(editDate)}</h3><p>{current.employee.fullName}</p><div style={{display:'grid',gap:12}}>{(Object.keys(punchLabels) as Punch[]).map(kind=><button key={kind} type="button" onClick={()=>{setEditPunch(kind);setEditTime(editingPunches?.[kind]??'');}} style={{textAlign:'left',padding:12,border:editPunch===kind?'2px solid #2563eb':'1px solid #cbd5e1',borderRadius:10}}>{punchLabels[kind]}: {editingPunches?.[kind]??'Sem registro'} {editPunch===kind?'· Editando':''}</button>)}<label>Horário corrigido <input type="time" value={editTime} onChange={e=>setEditTime(e.target.value)}/></label><label>Justificativa <textarea value={editReason} onChange={e=>setEditReason(e.target.value)} placeholder="Motivo da correção" rows={2}/></label><div style={{display:'flex',gap:8}}><Button onClick={()=>void saveDay()} disabled={saving}>{saving?'Salvando...':'Salvar correção'}</Button><Button onClick={()=>setEditDate(null)} disabled={saving}>Cancelar</Button></div></div></Card>}
   <p className="ui-muted hr-monthly__note">Saldos provisórios. Dias sem marcação são sinalizados somente após o dia transcorrer; feriados nacionais são identificados separadamente. Ausências justificadas, escalas especiais, compensações e aprovação de horas extras dependem de validação do RH. Nenhuma hora é paga automaticamente.</p></>}
  </div>;
 }
