@@ -62,8 +62,16 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
      if(!recorded){if(justified){days.push({date,scheduled,worked:null,status:justifiedLabel,difference:null});continue;}if(date<today){const canceled=fullyCancelled.has(id+'|'+date);const holiday=isNationalHoliday(date);days.push({date,scheduled,worked:null,status:canceled?'Registros cancelados':holiday?'Feriado nacional · sem marcações':'Sem marcações · revisar',difference:null});}continue;}
      const result=assessEmployeePunches(versions,id,date,punch??{});
      if(!result||result.status!=='complete'||result.workedMinutes===null){incomplete++;const missing=([['entry','entrada'],['lunch_out','saída almoço'],['lunch_in','retorno almoço'],['exit','saída final']] as const).filter(([kind])=>!punch?.[kind]).map(([,label])=>label);days.push({date,scheduled,worked:null,status:missing.length?'Ponto incompleto · falta '+missing.join(', '):'Ponto inconsistente · revisar',difference:null});continue;}
-     const diff=result.workedMinutes-scheduled;
-     worked+=result.workedMinutes;if(diff>0)positive+=diff;else negative+=-diff;
+     // CLT art. 58, §1º: desconsiderar pequenas variações somente quando
+     // CADA marcação estiver dentro da tolerância e a soma absoluta do dia <= 10 min.
+     // Ultrapassado qualquer limite, considerar a diferença integral, sem deduzir franquia.
+     const scheduledPunches=[schedule.entry,schedule.lunchOut,schedule.lunchIn,schedule.exit].map(parse);
+     const actualPunches=[punch!.entry!,punch!.lunch_out!,punch!.lunch_in!,punch!.exit!].map(parse);
+     const deviations=actualPunches.map((actual,i)=>Math.abs(actual-scheduledPunches[i]!));
+     const tolerance=Math.min(5,Math.max(0,version.tolerance_minutes??5));
+     const withinTolerance=deviations.every(minutes=>minutes<=tolerance)&&deviations.reduce((sum,minutes)=>sum+minutes,0)<=10;
+     const diff=withinTolerance?0:result.workedMinutes-scheduled;
+     worked+=result.workedMinutes;if(diff>0)positive+=diff;else if(diff<0)negative+=-diff;
      days.push({date,scheduled,worked:result.workedMinutes,status:'Completo',difference:diff});
     }
     return {employee,planned,worked,positive,negative,days,incomplete,hasSchedule};
