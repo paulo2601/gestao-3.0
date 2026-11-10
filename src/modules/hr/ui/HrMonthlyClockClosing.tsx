@@ -38,7 +38,7 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
 
  const scopes=useMemo(()=>employees.map(e=>e.employmentContractId).filter(Boolean),[employees]);
  useEffect(()=>{let cancelled=false;const run=async()=>{
-  if(!rows.length)setLoading(true);setError('');
+  setError('');
   try{
    const start=month+'-01',end=month+'-'+String(new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate()).padStart(2,'0');
    const attendanceScopes=[...new Map(employees.map(e=>[e.tenantId+'|'+e.companyId,{tenantId:e.tenantId,companyId:e.companyId}])).values()];
