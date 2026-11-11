@@ -28,12 +28,12 @@ export function useVisibleModules(tenantIds:readonly string[],userId?:string){
    key:cacheKey,allowed:new Set(cached?.codes||[]),operator:cached?.operator===true
   });
   void (async()=>{
-   const [operatorResult,...moduleResults]=await Promise.all([
+   const [operatorResult,moduleResults]=await Promise.all([
     checkPlatformOperator().then(value=>({ok:true,value}),()=>({ok:false,value:false})),
-    ...codes.map(async code=>{
+    Promise.all(codes.map(async code=>{
      try{return {code,ok:true,value:(await Promise.all(ids.map(id=>checkModuleAccess(id,code)))).every(Boolean)}}
      catch{return {code,ok:false,value:false}}
-    })
+    }))
    ]);
    if(!alive)return;
    setSnapshot(previous=>{
