@@ -22,7 +22,7 @@ async function renderPontoNotificationButton(){
  button.onclick=async()=>{button.disabled=true;try{await enablePontoNotifications();button.textContent='🔔 Lembretes ativados'}catch(e){button.disabled=false;alert(e.message)}};
 }
 
-const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFOCSIvSbWifFCy6DjIg_9QJeYd38';let session=null,account=null;const el=id=>document.getElementById(id);const labels={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída'};const kinds=Object.keys(labels);const day=iso=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));async function api(path,method='GET',data){const r=await fetch(U+path,{method,headers:{apikey:K,'Content-Type':'application/json',...(session?{Authorization:'Bearer '+session.access_token}:{})},...(data?{body:JSON.stringify(data)}:{})});if(!r.ok){const d=await r.json().catch(()=>({}));throw Error(d.msg||d.message||d.error_description||'Falha HTTP '+r.status)}return r.status===204?null:r.text().then(t=>t?JSON.parse(t):null)}function message(t){el('message').textContent=t}const SESSION_KEY='ponto-digital-session-v1';
+const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFOCSIvSbWifFCy6DjIg_9QJeYd38';let session=null,account=null;const el=id=>document.getElementById(id);const labels={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída'};const kinds=Object.keys(labels);const day=iso=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));async function api(path,method='GET',data){const r=await fetch(U+path,{method,headers:{apikey:K,'Content-Type':'application/json',...(session?{Authorization:'Bearer '+session.access_token}:{})},...(data?{body:JSON.stringify(data)}:{})});if(!r.ok){const d=await r.json().catch(()=>({}));throw Error('HTTP '+r.status+': '+(d.msg||d.message||d.error_description||d.details||'Falha no envio'))}return r.status===204?null:r.text().then(t=>t?JSON.parse(t):null)}function message(t){el('message').textContent=t}const SESSION_KEY='ponto-digital-session-v1';
 function saveSession(value){if(value?.refresh_token){localStorage.setItem(SESSION_KEY,JSON.stringify({refresh_token:value.refresh_token}));void storeBackgroundAuth(value.refresh_token).catch(console.warn);}}
 function clearSession(){localStorage.removeItem(SESSION_KEY);void clearBackgroundAuth().catch(console.warn);session=null;account=null;}
 
@@ -45,7 +45,42 @@ async function recoverBackgroundQueue(){if(!('indexedDB'in window))return;const 
 const cachedEvents=()=>getJson(EVENTS_KEY,[]);
 const cacheAccount=()=>{if(account&&session?.user?.id)localStorage.setItem(ACCOUNT_KEY,JSON.stringify({user_id:session.user.id,account}))};
 let syncing=false;
-async function syncPending(){if(syncing||!navigator.onLine||!session?.access_token||!account)return;syncing=true;try{const pending=offlineQueue();for(const record of pending){if(record.user_id!==session.user.id||record.employment_contract_id!==account.employment_contract_id)continue;try{await api('/rest/v1/employee_clock_events','POST',record);saveQueue(offlineQueue().filter(item=>item.id!==record.id));await removeMirroredPending(record.id).catch(console.warn);localStorage.removeItem('ponto-last-sync-error')}catch(error){if(/409|duplicate|already exists/i.test(error.message)){const existing=await api('/rest/v1/employee_clock_events?select=id&id=eq.'+encodeURIComponent(record.id)).catch(()=>[]);if(existing.length){saveQueue(offlineQueue().filter(item=>item.id!==record.id));await removeMirroredPending(record.id).catch(console.warn);continue}}console.warn('Ponto offline aguardando sincronização:',error);localStorage.setItem('ponto-last-sync-error',String(error.message||error));break}}}finally{syncing=false}}
+async function syncPending(){
+ if(syncing||!navigator.onLine||!session?.access_token||!account)return;
+ syncing=true;
+ try{
+  // Each record is independent: one rejected ID must not block later punches.
+  const pending=offlineQueue().filter(record=>record.user_id===session.user.id&&record.employment_contract_id===account.employment_contract_id);
+  let failures=0,firstError='';
+  for(const record of pending){
+   try{
+    await api('/rest/v1/employee_clock_events','POST',record);
+    saveQueue(offlineQueue().filter(item=>item.id!==record.id));
+    await removeMirroredPending(record.id).catch(console.warn);
+   }catch(error){
+    const msg=String(error?.message||error);
+    // An existing row is the only safe reason to discard a local copy.
+    if(/409|23505|duplicate|already exists/i.test(msg)){
+     try{
+      const existing=await api('/rest/v1/employee_clock_events?select=id&id=eq.'+encodeURIComponent(record.id));
+      if(Array.isArray(existing)&&existing.some(item=>item.id===record.id)){
+       saveQueue(offlineQueue().filter(item=>item.id!==record.id));
+       await removeMirroredPending(record.id).catch(console.warn);
+       continue;
+      }
+     }catch(checkError){console.warn('Não foi possível confirmar duplicidade:',checkError)}
+    }
+    failures++;
+    if(!firstError)firstError=msg;
+    console.warn('Ponto preservado para nova tentativa:',record.id,msg);
+   }
+  }
+  if(failures){
+   localStorage.setItem('ponto-last-sync-error',failures+' registro(s) aguardando envio: '+firstError);
+   await requestBackgroundSync().catch(console.warn);
+  }else localStorage.removeItem('ponto-last-sync-error');
+ }finally{syncing=false}
+}
 function offlineAccount(){const cached=getJson(ACCOUNT_KEY,null);if(!cached?.account?.enabled)return false;account=cached.account;session={user:{id:cached.user_id},access_token:null};return true}
 window.addEventListener('online',()=>{void (async()=>{await recoverBackgroundQueue().catch(console.warn);if(!session?.access_token){await restoreSession();return}await syncPending();if(account)await home()})().catch(console.warn)});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&session?.access_token)void syncPending()});
