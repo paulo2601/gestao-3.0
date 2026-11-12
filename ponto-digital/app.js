@@ -22,7 +22,7 @@ async function renderPontoNotificationButton(){
  button.onclick=async()=>{button.disabled=true;try{await enablePontoNotifications();button.textContent='🔔 Lembretes ativados'}catch(e){button.disabled=false;alert(e.message)}};
 }
 
-const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFOCSIvSbWifFCy6DjIg_9QJeYd38';let session=null,account=null;const el=id=>document.getElementById(id);const labels={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída'};const kinds=Object.keys(labels);const day=iso=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));async function api(path,method='GET',data){const r=await fetch(U+path,{method,headers:{apikey:K,'Content-Type':'application/json',...(session?{Authorization:'Bearer '+session.access_token}:{})},...(data?{body:JSON.stringify(data)}:{})});if(!r.ok){const d=await r.json().catch(()=>({}));throw Error('HTTP '+r.status+': '+(d.msg||d.message||d.error_description||d.details||'Falha no envio'))}return r.status===204?null:r.text().then(t=>t?JSON.parse(t):null)}function message(t){el('message').textContent=t}const SESSION_KEY='ponto-digital-session-v1';
+const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFOCSIvSbWifFCy6DjIg_9QJeYd38';let session=null,account=null;const el=id=>document.getElementById(id);const labels={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída'};const kinds=Object.keys(labels);const day=iso=>{const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(iso));const get=type=>parts.find(p=>p.type===type)?.value;return get('year')+'-'+get('month')+'-'+get('day')};async function api(path,method='GET',data){const r=await fetch(U+path,{method,headers:{apikey:K,'Content-Type':'application/json',...(session?{Authorization:'Bearer '+session.access_token}:{})},...(data?{body:JSON.stringify(data)}:{})});if(!r.ok){const d=await r.json().catch(()=>({}));throw Error('HTTP '+r.status+': '+(d.msg||d.message||d.error_description||d.details||'Falha no envio'))}return r.status===204?null:r.text().then(t=>t?JSON.parse(t):null)}function message(t){el('message').textContent=t}const SESSION_KEY='ponto-digital-session-v1';
 function saveSession(value){if(value?.refresh_token){localStorage.setItem(SESSION_KEY,JSON.stringify({refresh_token:value.refresh_token}));void storeBackgroundAuth(value.refresh_token).catch(console.warn);}}
 function clearSession(){localStorage.removeItem(SESSION_KEY);void clearBackgroundAuth().catch(console.warn);session=null;account=null;}
 
@@ -255,6 +255,34 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
  const tick=()=>{const clock=el('live-clock');if(clock)clock.textContent=new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})};tick();clearInterval(window.pontoClockInterval);window.pontoClockInterval=setInterval(tick,1000);
  const rows=el('rows');
  for(const k of kinds){const v=current.find(x=>x.punch_kind===k);const row=document.createElement('div');row.className='clock-row '+(v?'is-done':'is-pending');const symbol=document.createElement('span');symbol.className='clock-symbol '+k;symbol.textContent={entry:'↪',lunch_out:'♜',lunch_in:'↶',exit:'⇥'}[k];const label=document.createElement('strong');label.textContent=labels[k];const time=document.createElement('span');time.className='clock-time';time.textContent=v?new Date(v.captured_at).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}):'--:--';const status=document.createElement('small');status.className=v?'clock-done':'clock-pending';status.textContent=v?(v.pending_sync?'◷ A sincronizar':'✓ Registrado'):'◷ Pendente';row.append(symbol,label,time,status);rows.append(row)}
+ // One-tap diagnostic: inspect local queue and server independently, without deleting punches.
+ let diagButton=document.getElementById('ponto-sync-diagnostic');
+ if(!diagButton){
+  diagButton=document.createElement('button');
+  diagButton.id='ponto-sync-diagnostic';
+  diagButton.type='button';
+  diagButton.textContent='Verificar sincronização com RH';
+  diagButton.style.cssText='display:block;width:100%;margin:12px 0;padding:13px;border:1px solid #2563eb;border-radius:12px;background:#eff6ff;color:#1d4ed8;font-weight:700';
+  const action=document.querySelector('.clock-action-card');
+  if(action)action.after(diagButton);
+ }
+ diagButton.onclick=async()=>{
+  diagButton.disabled=true;diagButton.textContent='Verificando pontos...';
+  try{
+   await recoverBackgroundQueue().catch(console.warn);
+   await syncPending();
+   const queue=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account?.employment_contract_id);
+   let remote=null,remoteError='';
+   try{remote=await api('/rest/v1/employee_clock_events?select=id,captured_at,punch_kind&employment_contract_id=eq.'+encodeURIComponent(account.employment_contract_id)+'&order=captured_at.desc&limit=200')}catch(e){remoteError=e.message}
+   const lines=queue.sort((a,b)=>new Date(a.captured_at)-new Date(b.captured_at)).map(v=>{
+    const sent=remote?.some(x=>x.id===v.id);
+    return day(v.captured_at)+' '+new Date(v.captured_at).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'})+' '+(labels[v.punch_kind]||v.punch_kind)+': '+(sent?'recebido no RH':v.sync_conflict?'CONFLITO, preservado':'aguardando envio');
+   });
+   const status=remote===null?'Consulta ao RH falhou: '+remoteError:'Servidor consultado: '+remote.length+' marcações recentes';
+   alert('DIAGNÓSTICO DE SINCRONIZAÇÃO\\n'+status+'\\nPendentes neste aparelho: '+queue.length+'\\n'+(lines.join('\\n')||'Nenhuma marcação local pendente')+'\\n\\nNão apague os dados do aplicativo.');
+  }catch(error){alert('Não foi possível concluir diagnóstico: '+error.message)}
+  finally{diagButton.disabled=false;diagButton.textContent='Verificar sincronização com RH'}
+ };
  el('mark').textContent=next?'◉ Bater ponto':'✓ Jornada registrada';el('mark').setAttribute('aria-label',next?'Registrar '+labels[next]:'Jornada registrada');
  el('mark').disabled=!next;
  el('mark').onclick=async()=>{
