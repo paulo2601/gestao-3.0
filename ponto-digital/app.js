@@ -52,7 +52,7 @@ async function syncPending(){
  syncing=true;
  try{
   // Each record is independent: one rejected ID must not block later punches.
-  const pending=offlineQueue().filter(record=>record.user_id===session.user.id&&record.employment_contract_id===account.employment_contract_id);
+  const pending=offlineQueue().filter(record=>record.user_id===session.user.id&&record.employment_contract_id===account.employment_contract_id&&!record.sync_conflict);
   let failures=0,firstError='';
   for(const record of pending){
    try{
@@ -82,7 +82,18 @@ async function syncPending(){
        await removeMirroredPending(record.id).catch(console.warn);
        continue;
       }
-      if(existing?.length)console.warn('Conflito de horário exige revisão do RH:',localDay,record.punch_kind);
+      if(existing?.length){
+       // Preserve the rejected original punch for RH review; stop an endless 409 loop.
+       const queue=offlineQueue();
+       const idx=queue.findIndex(item=>item.id===record.id);
+       if(idx>=0){
+        queue[idx]={...queue[idx],sync_conflict:true,sync_error:'Já existe '+record.punch_kind+' em '+localDay+' com horário diferente. Revisão necessária.'};
+        saveQueue(queue);
+        await mirrorPending(queue[idx]).catch(console.warn);
+       }
+       console.warn('Conflito preservado para revisão do RH:',localDay,record.punch_kind);
+       continue;
+      }
      }catch(checkError){console.warn('Não foi possível confirmar duplicidade:',checkError)}
     }
     failures++;
@@ -188,9 +199,11 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
  const planned=mySchedule?.weekdays?.[weekday];
  const plannedText=planned?(planned.active?'Horário previsto: '+planned.entry+'–'+planned.lunchOut+' / '+planned.lunchIn+'–'+planned.exit:'Folga prevista'):'Jornada prevista não cadastrada';
  const current=all.filter(x=>day(x.captured_at)===today);
- const unsentCount=offlineQueue().filter(record=>record.user_id===session?.user?.id&&record.employment_contract_id===account.employment_contract_id).length;
+ const unsentRecords=offlineQueue().filter(record=>record.user_id===session?.user?.id&&record.employment_contract_id===account.employment_contract_id);
+ const unsentCount=unsentRecords.length;
+ const conflictCount=unsentRecords.filter(record=>record.sync_conflict).length;
  if(unsentCount){
-  message('⚠ '+unsentCount+' marcação(ões) aguardando envio ao RH. Os horários estão preservados neste aparelho.');
+  message('⚠ '+unsentCount+' marcação(ões) não confirmadas no RH ('+conflictCount+' com conflito de horário). Preservadas neste aparelho.');
  }else if(localStorage.getItem('ponto-last-sync-error')){
   localStorage.removeItem('ponto-last-sync-error');
  }
