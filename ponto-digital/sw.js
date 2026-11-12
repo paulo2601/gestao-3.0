@@ -1,4 +1,4 @@
-const CACHE='ponto-digital-shell-v10';
+const CACHE='ponto-digital-shell-v11';
 const SHELL=['./','./index.html','./app.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(async cache=>{
@@ -55,17 +55,28 @@ async function uploadPending(){
   if(!tokenResponse.ok)throw Error('Sessão expirada: sincronizar ao abrir aplicativo');
   const tokens=await tokenResponse.json();
   if(tokens.refresh_token)await dbOperation(db,'auth','readwrite','put',tokens.refresh_token,'refresh');
+  let failed=0;
   for(const record of records){
-   const response=await fetch(API+'/rest/v1/employee_clock_events',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(record)});
-   if(!response.ok){
-    if(response.status===409){
-     const check=await fetch(API+'/rest/v1/employee_clock_events?select=id&id=eq.'+encodeURIComponent(record.id),{headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token}});
-     if(check.ok&&(await check.json()).length){await dbOperation(db,'pending','readwrite','delete',record.id);continue}
+   try{
+    const response=await fetch(API+'/rest/v1/employee_clock_events',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(record)});
+    if(!response.ok){
+     if(response.status===409){
+      const check=await fetch(API+'/rest/v1/employee_clock_events?select=id&id=eq.'+encodeURIComponent(record.id),{headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token}});
+      if(check.ok&&(await check.json()).some(item=>item.id===record.id)){
+       await dbOperation(db,'pending','readwrite','delete',record.id);
+       continue;
+      }
+     }
+     throw Error('Envio pendente: HTTP '+response.status);
     }
-    throw Error('Envio pendente: HTTP '+response.status);
+    await dbOperation(db,'pending','readwrite','delete',record.id);
+   }catch(error){
+    failed++;
+    console.warn('Ponto preservado para nova tentativa:',record.id,error);
    }
-   await dbOperation(db,'pending','readwrite','delete',record.id);
   }
+  if(failed)throw Error(failed+' marcação(ões) aguardando nova tentativa');
+
  }finally{db.close()}
 }
 self.addEventListener('sync',event=>{if(event.tag==='ponto-upload-pending')event.waitUntil(uploadPending())});
