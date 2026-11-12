@@ -64,9 +64,9 @@ async function applyClockCorrections(records){
   try{cancellations=await api('/rest/v1/rpc/ponto_digital_my_cancellations_v2','POST',{});localStorage.setItem(cancelKey,JSON.stringify(cancellations))}
   catch(error){console.warn('Cancelamentos do RH indisponíveis:',error)}
  }
- // Uma exclusão do RH cancela apenas as batidas anteriores à exclusão.
+ // Uma exclusão do RH cancela batidas anteriores, inclusive cópias locais pendentes.\n // Não ressuscitar a batida cancelada quando a fila offline é recuperada.
  // Novas marcações posteriores devem aparecer e ser aceitas normalmente.
- records=records.filter(record=>record.pending_sync||!cancellations.some(c=>
+ records=records.filter(record=>!cancellations.some(c=>
   c.attendance_date===day(record.captured_at)&&
   (c.punch_kind==='all'||c.punch_kind===record.punch_kind)&&
   !!c.cancelled_at&&new Date(record.captured_at).getTime()<=new Date(c.cancelled_at).getTime()
