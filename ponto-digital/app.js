@@ -39,7 +39,7 @@ async function removeMirroredPending(id){if(!('indexedDB'in window))return;const
 async function storeBackgroundAuth(token){if(!('indexedDB'in window)||!token)return;const {db,store}=await pontoStore('readwrite','auth');await new Promise((resolve,reject)=>{const req=store.put(token,'refresh');req.onsuccess=resolve;req.onerror=()=>reject(req.error)});db.close()}
 async function clearBackgroundAuth(){if(!('indexedDB'in window))return;const {db,store}=await pontoStore('readwrite','auth');await new Promise((resolve,reject)=>{const req=store.delete('refresh');req.onsuccess=resolve;req.onerror=()=>reject(req.error)});db.close()}
 async function readBackgroundAuth(){if(!('indexedDB'in window))return null;const {db,store}=await pontoStore('readonly','auth');const value=await new Promise((resolve,reject)=>{const req=store.get('refresh');req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error)});db.close();return value}
-async function requestBackgroundSync(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.ready;if(reg.sync?.register)await reg.sync.register('ponto-upload-pending')}catch(error){console.warn('Sincronização em segundo plano indisponível:',error)}}
+async function requestBackgroundSync(){if(!('serviceWorker'in navigator)||!('SyncManager'in window))return;try{const reg=await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Service worker indisponível')),2500))]);if(reg.sync?.register)await reg.sync.register('ponto-upload-pending')}catch(error){console.warn('Sincronização em segundo plano indisponível:',error)}}
 async function recoverBackgroundQueue(){if(!('indexedDB'in window))return;const {db,store}=await pontoStore('readonly','pending');const records=await new Promise((resolve,reject)=>{const req=store.getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error)});db.close();const current=offlineQueue();let changed=false;for(const record of records){if(!current.some(item=>item.id===record.id)){current.push(record);changed=true}}if(changed)saveQueue(current);for(const record of current)if(!records.some(item=>item.id===record.id))await mirrorPending(record)}
 
 const cachedEvents=()=>getJson(EVENTS_KEY,[]);
@@ -100,7 +100,34 @@ function offlineAccount(){const cached=getJson(ACCOUNT_KEY,null);if(!cached?.acc
 window.addEventListener('online',()=>{void (async()=>{await recoverBackgroundQueue().catch(console.warn);if(!session?.access_token){await restoreSession();return}await syncPending();if(account)await home()})().catch(console.warn)});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&session?.access_token)void syncPending()});
 async function loadAccount(){const a=await api('/rest/v1/employee_clock_accounts?select=*&user_id=eq.'+encodeURIComponent(session.user.id));if(a.length!==1||!a[0].enabled)throw Error('Conta ainda não habilitada pelo RH');account=a[0];try{const name=await api('/rest/v1/rpc/ponto_digital_my_name','POST',{});if(typeof name==='string'&&name.trim())account.full_name=name.trim()}catch(error){console.warn('Nome do colaborador indisponível:',error)}cacheAccount();}
-async function restoreSession(){await recoverBackgroundQueue().catch(console.warn);await requestBackgroundSync();let stored;try{stored=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{stored=null}const backgroundToken=await readBackgroundAuth().catch(()=>null);if(backgroundToken)stored={refresh_token:backgroundToken};if(!stored?.refresh_token)return;try{session=await api('/auth/v1/token?grant_type=refresh_token','POST',{refresh_token:stored.refresh_token});saveSession(session);await loadAccount();await home()}catch(err){if(/401|403|invalid|expired|revoked|refresh.token|Conta ainda não habilitada/i.test(err.message)){clearSession()}else if(offlineAccount()){await home();message('Modo offline: as marcações serão sincronizadas quando houver internet.')}else{session=null;account=null;message('Conecte-se à internet ao menos uma vez para ativar o modo offline.')}}}
+async function restoreSession(){
+ await recoverBackgroundQueue().catch(console.warn);
+ // Never block iOS startup on Background Sync (unsupported in Safari).
+ void requestBackgroundSync().catch(console.warn);
+ let local;try{local=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{local=null}
+ const backgroundToken=await readBackgroundAuth().catch(()=>null);
+ const candidates=[local?.refresh_token,backgroundToken].filter((v,i,a)=>v&&a.indexOf(v)===i);
+ if(!candidates.length){if(offlineAccount()){await home();message('Modo offline: os pontos estão preservados neste aparelho. Entre novamente quando houver internet.')}return}
+ let lastError=null;
+ for(const refresh_token of candidates){
+  try{
+   session=await api('/auth/v1/token?grant_type=refresh_token','POST',{refresh_token});
+   saveSession(session);
+   await loadAccount();
+   await home();
+   return;
+  }catch(error){
+   lastError=error;
+   // An invalid token must not erase the other token or queued punches.
+   if(!/401|403|invalid|expired|revoked|refresh.token/i.test(String(error.message)))break;
+  }
+ }
+ session=null;account=null;
+ if(offlineAccount()){
+  await home();
+  message('Pontos preservados neste aparelho. Sessão não validada: conecte-se e entre novamente para transmitir ao RH.');
+ }else message('Não foi possível recuperar a sessão. Entre novamente para sincronizar as marcações pendentes. '+(lastError?.message||''));
+}
 async function applyClockCorrections(records){
  const cacheKey='ponto-digital-adjustments-'+(session?.user?.id||'offline');
  let adjustments=getJson(cacheKey,[]);
