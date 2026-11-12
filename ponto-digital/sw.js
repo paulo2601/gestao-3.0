@@ -1,4 +1,4 @@
-const CACHE='ponto-digital-shell-v9';
+const CACHE='ponto-digital-shell-v10';
 const SHELL=['./','./index.html','./app.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(async cache=>{
@@ -56,7 +56,7 @@ async function uploadPending(){
   const tokens=await tokenResponse.json();
   if(tokens.refresh_token)await dbOperation(db,'auth','readwrite','put',tokens.refresh_token,'refresh');
   for(const record of records){
-   const response=await fetch(API+'/rest/v1/employee_clock_events?on_conflict=id',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify(record)});
+   const response=await fetch(API+'/rest/v1/employee_clock_events',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(record)});
    if(!response.ok){
     if(response.status===409){
      const check=await fetch(API+'/rest/v1/employee_clock_events?select=id&id=eq.'+encodeURIComponent(record.id),{headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token}});
