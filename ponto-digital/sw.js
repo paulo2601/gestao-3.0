@@ -1,4 +1,4 @@
-const CACHE='ponto-digital-shell-v12';
+const CACHE='ponto-digital-shell-v13';
 const SHELL=['./','./index.html','./app.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(async cache=>{
@@ -47,7 +47,7 @@ function dbOperation(db,table,mode,method,...args){return new Promise((resolve,r
 async function uploadPending(){
  const db=await openPontoDb();
  try{
-  const records=await dbOperation(db,'pending','readonly','getAll');
+  const records=(await dbOperation(db,'pending','readonly','getAll')).filter(record=>!record.sync_conflict);
   if(!records.length)return;
   const refresh=await dbOperation(db,'auth','readonly','get','refresh');
   if(!refresh)throw Error('Aguardando autenticação do colaborador');
@@ -70,11 +70,16 @@ async function uploadPending(){
        +'&captured_at=gte.'+encodeURIComponent(from)
        +'&captured_at=lt.'+encodeURIComponent(until);
       const check=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token}});
-      if(check.ok&&(await check.json()).some(item=>
-       item.id===record.id||Math.abs(new Date(item.captured_at)-new Date(record.captured_at))<=1000
-      )){
-       await dbOperation(db,'pending','readwrite','delete',record.id);
-       continue;
+      if(check.ok){
+       const existing=await check.json();
+       if(existing.some(item=>item.id===record.id||Math.abs(new Date(item.captured_at)-new Date(record.captured_at))<=1000)){
+        await dbOperation(db,'pending','readwrite','delete',record.id);
+        continue;
+       }
+       if(existing.length){
+        await dbOperation(db,'pending','readwrite','put',{...record,sync_conflict:true,sync_error:'Já existe marcação do mesmo tipo e data com horário diferente.'});
+        continue;
+       }
       }
      }
      throw Error('Envio pendente: HTTP '+response.status);
