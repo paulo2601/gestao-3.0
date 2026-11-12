@@ -61,15 +61,28 @@ async function syncPending(){
     await removeMirroredPending(record.id).catch(console.warn);
    }catch(error){
     const msg=String(error?.message||error);
-    // An existing row is the only safe reason to discard a local copy.
-    if(/409|23505|duplicate|already exists/i.test(msg)){
+    // The database guard deduplicates by contract + local date + punch kind,
+    // not only by UUID. Verify the existing punch before removing local data.
+    if(/409|23505|duplicate|já existe/i.test(msg)){
      try{
-      const existing=await api('/rest/v1/employee_clock_events?select=id&id=eq.'+encodeURIComponent(record.id));
-      if(Array.isArray(existing)&&existing.some(item=>item.id===record.id)){
+      const localDay=day(record.captured_at);
+      const from=localDay+'T00:00:00-03:00';
+      const until=new Date(new Date(from).getTime()+86400000).toISOString();
+      const path='/rest/v1/employee_clock_events?select=id,captured_at'
+       +'&employment_contract_id=eq.'+encodeURIComponent(record.employment_contract_id)
+       +'&punch_kind=eq.'+encodeURIComponent(record.punch_kind)
+       +'&captured_at=gte.'+encodeURIComponent(from)
+       +'&captured_at=lt.'+encodeURIComponent(until);
+      const existing=await api(path);
+      const match=Array.isArray(existing)&&existing.some(item=>
+       item.id===record.id||Math.abs(new Date(item.captured_at)-new Date(record.captured_at))<=1000
+      );
+      if(match){
        saveQueue(offlineQueue().filter(item=>item.id!==record.id));
        await removeMirroredPending(record.id).catch(console.warn);
        continue;
       }
+      if(existing?.length)console.warn('Conflito de horário exige revisão do RH:',localDay,record.punch_kind);
      }catch(checkError){console.warn('Não foi possível confirmar duplicidade:',checkError)}
     }
     failures++;
