@@ -46,6 +46,8 @@ const cachedEvents=()=>getJson(EVENTS_KEY,[]);
 const cacheAccount=()=>{if(account&&session?.user?.id)localStorage.setItem(ACCOUNT_KEY,JSON.stringify({user_id:session.user.id,account}))};
 let syncing=false;
 async function syncPending(){
+ // Recover records that exist only in IndexedDB, including on Safari/iOS.
+ await recoverBackgroundQueue().catch(console.warn);
  if(syncing||!navigator.onLine||!session?.access_token||!account)return;
  syncing=true;
  try{
@@ -128,6 +130,11 @@ async function applyClockCorrections(records){
  return updated.sort((a,b)=>new Date(b.captured_at).getTime()-new Date(a.captured_at).getTime());
 }
 async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.access_token){try{remote=await api('/rest/v1/employee_clock_events?select=*&employment_contract_id=eq.'+account.employment_contract_id+'&order=captured_at.desc&limit=100');localStorage.setItem(EVENTS_KEY,JSON.stringify(remote))}catch(error){console.warn('Histórico offline:',error)}}const pending=offlineQueue().filter(v=>v.user_id===session?.user?.id&&v.employment_contract_id===account.employment_contract_id);return applyClockCorrections([...pending.map(v=>({...v,pending_sync:true})),...remote.filter(v=>!pending.some(p=>p.id===v.id))])}async function home(){
+ // Reconcile both persistent queues before showing the day's confirmation.
+ if(navigator.onLine&&session?.access_token){
+  await recoverBackgroundQueue().catch(console.warn);
+  await syncPending().catch(console.warn);
+ }
  const today=day(new Date().toISOString());
  // Histórico e jornada são independentes: consultar em paralelo reduz o tempo de abertura.
  const [all,mySchedule]=await Promise.all([
@@ -137,11 +144,16 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
    return schedules?.[0]??null;
   }catch(error){console.warn('Jornada não disponível para consulta:',error);return null}})()
  ]);
- if(navigator.onLine&&session?.access_token)await syncPending();
  const weekday=(new Date(today+'T12:00:00Z').getUTCDay()+6)%7;
  const planned=mySchedule?.weekdays?.[weekday];
  const plannedText=planned?(planned.active?'Horário previsto: '+planned.entry+'–'+planned.lunchOut+' / '+planned.lunchIn+'–'+planned.exit:'Folga prevista'):'Jornada prevista não cadastrada';
  const current=all.filter(x=>day(x.captured_at)===today);
+ const unsentCount=offlineQueue().filter(record=>record.user_id===session?.user?.id&&record.employment_contract_id===account.employment_contract_id).length;
+ if(unsentCount){
+  message('⚠ '+unsentCount+' marcação(ões) aguardando envio ao RH. Os horários estão preservados neste aparelho.');
+ }else if(localStorage.getItem('ponto-last-sync-error')){
+  localStorage.removeItem('ponto-last-sync-error');
+ }
  const pendingKinds=kinds.filter(k=>!current.some(x=>x.punch_kind===k));
  // Prefer the nearest scheduled punch, not merely the first missing punch.
  // A forgotten punch stays pending and may be corrected through the RH workflow.
