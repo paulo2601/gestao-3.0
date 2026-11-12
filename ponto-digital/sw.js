@@ -1,4 +1,4 @@
-const CACHE='ponto-digital-shell-v11';
+const CACHE='ponto-digital-shell-v12';
 const SHELL=['./','./index.html','./app.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(async cache=>{
@@ -61,8 +61,18 @@ async function uploadPending(){
     const response=await fetch(API+'/rest/v1/employee_clock_events',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(record)});
     if(!response.ok){
      if(response.status===409){
-      const check=await fetch(API+'/rest/v1/employee_clock_events?select=id&id=eq.'+encodeURIComponent(record.id),{headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token}});
-      if(check.ok&&(await check.json()).some(item=>item.id===record.id)){
+      const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(record.captured_at));
+      const from=date+'T00:00:00-03:00';
+      const until=new Date(new Date(from).getTime()+86400000).toISOString();
+      const url=API+'/rest/v1/employee_clock_events?select=id,captured_at'
+       +'&employment_contract_id=eq.'+encodeURIComponent(record.employment_contract_id)
+       +'&punch_kind=eq.'+encodeURIComponent(record.punch_kind)
+       +'&captured_at=gte.'+encodeURIComponent(from)
+       +'&captured_at=lt.'+encodeURIComponent(until);
+      const check=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+tokens.access_token}});
+      if(check.ok&&(await check.json()).some(item=>
+       item.id===record.id||Math.abs(new Date(item.captured_at)-new Date(record.captured_at))<=1000
+      )){
        await dbOperation(db,'pending','readwrite','delete',record.id);
        continue;
       }
