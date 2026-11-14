@@ -189,6 +189,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   const [templates, setTemplates] = useState<readonly SmartTemplate[]>([]);
   const manuallyEdited = useRef<Set<string>>(new Set());
   const manualCompany = useRef(false);
+  const initializedForOpen = useRef(false);
   const launchLock = useRef(false);
   const [savedEntryPendingCompletion, setSavedEntryPendingCompletion] = useState(false);
   const [paymentAccounts, setPaymentAccounts] = useState<readonly OwnedAccount[]>([]);
@@ -216,7 +217,12 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      initializedForOpen.current = false;
+      return;
+    }
+    if (initializedForOpen.current) return;
+    initializedForOpen.current = true;
     setCompanyId((current) => current && companies.some((item) => item.id === current) ? current : initialCompanyId || companies[0]?.id || '');
     manuallyEdited.current.clear();
     manualCompany.current = false;
@@ -231,7 +237,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
     });
   // Inicializar somente na abertura; atualizações de referências não podem apagar um rascunho.
-  }, [open]);
+  }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
 
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
   const scope = useMemo(() => ({ tenantId: company?.tenantId ?? '', companyId: company?.id ?? '' }), [company?.id, company?.tenantId]);
