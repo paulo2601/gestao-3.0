@@ -3,6 +3,11 @@ export type ScheduleDay = {active:boolean;entry:string;lunchOut:string;lunchIn:s
 export type PunchTimes = {entry?:string|null;lunchOut?:string|null;lunchIn?:string|null;exit?:string|null};
 export type DayAssessment = {status:'rest'|'incomplete'|'complete';scheduledMinutes:number;workedMinutes:number|null;lateMinutes:number|null;earlyExitMinutes:number|null;extraMinutes:number|null;requiresReview:boolean};
 const toMinutes=(time:string):number|null=>{if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))return null;const [h=0,m=0]=time.split(':').map(Number);return h*60+m;};
+/** Tolerância única para apuração de diferenças: até 5 min por batida e 10 min no dia. */
+export function applyDailyTolerance(rawDifference:number,deviations:number[],configuredTolerance=5):number{
+ const perPunch=Math.min(5,Math.max(0,configuredTolerance));
+ return deviations.every(value=>Number.isFinite(value)&&value<=perPunch)&&deviations.reduce((total,value)=>total+value,0)<=10?0:rawDifference;
+}
 export function assessScheduledDay(day:ScheduleDay,punches:PunchTimes,toleranceMinutes=5):DayAssessment{
  const scheduled=[day.entry,day.lunchOut,day.lunchIn,day.exit].map(toMinutes);
  const scheduledMinutes=scheduled.every(v=>v!==null)?Math.max(0,(scheduled[1]!-scheduled[0]!)+(scheduled[3]!-scheduled[2]!)):0;
@@ -14,5 +19,7 @@ export function assessScheduledDay(day:ScheduleDay,punches:PunchTimes,toleranceM
  const lateMinutes=Math.max(0,actual[0]!-scheduled[0]!)+Math.max(0,actual[2]!-scheduled[2]!);
  const earlyExitMinutes=Math.max(0,scheduled[1]!-actual[1]!)+Math.max(0,scheduled[3]!-actual[3]!);
  const extraMinutes=Math.max(0,scheduled[0]!-actual[0]!)+Math.max(0,actual[1]!-scheduled[1]!)+Math.max(0,scheduled[2]!-actual[2]!)+Math.max(0,actual[3]!-scheduled[3]!);
- return {status:'complete',scheduledMinutes,workedMinutes,lateMinutes,earlyExitMinutes,extraMinutes,requiresReview:lateMinutes>toleranceMinutes||earlyExitMinutes>toleranceMinutes||extraMinutes>0};
+ const deviations=actual.map((value,i)=>Math.abs(value!-scheduled[i]!));
+ const adjustedDifference=applyDailyTolerance(workedMinutes-scheduledMinutes,deviations,toleranceMinutes);
+ return {status:'complete',scheduledMinutes,workedMinutes,lateMinutes,earlyExitMinutes,extraMinutes,requiresReview:adjustedDifference!==0};
 }
