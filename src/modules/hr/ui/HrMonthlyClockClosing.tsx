@@ -2,6 +2,7 @@ import './HrMonthlyClockClosing.css';
 import {useEffect,useMemo,useState} from 'react';
 import type {HrEmployeeRow} from '../application/HrOperationsRepository';
 import {assessEmployeePunches} from '../domain/assessEmployeePunches';
+import {applyDailyTolerance} from '../domain/assessScheduledDay';
 import {listWorkSchedulesForPeriod,listClockReportEvents,listClockAdjustments,listClockCancellations,listAttendanceForPeriod,saveClockAdjustment} from '../infrastructure/HrWorkspaceService';
 import {weekdayIndex} from '../domain/assessEmployeePunches';
 import {Button} from '../../../shared/ui/Button';
@@ -86,9 +87,7 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
      const scheduledPunches=[schedule.entry,schedule.lunchOut,schedule.lunchIn,schedule.exit].map(parse);
      const actualPunches=[punch!.entry!,punch!.lunch_out!,punch!.lunch_in!,punch!.exit!].map(parse);
      const deviations=actualPunches.map((actual,i)=>Math.abs(actual-scheduledPunches[i]!));
-     const tolerance=Math.min(5,Math.max(0,version.tolerance_minutes??5));
-     const withinTolerance=deviations.every(minutes=>minutes<=tolerance)&&deviations.reduce((sum,minutes)=>sum+minutes,0)<=10;
-     const diff=withinTolerance?0:result.workedMinutes-scheduled;
+     const diff=applyDailyTolerance(result.workedMinutes-scheduled,deviations,version.tolerance_minutes);
      worked+=result.workedMinutes;if(diff>0)positive+=diff;else if(diff<0)negative+=-diff;
      days.push({date,scheduled,worked:result.workedMinutes,status:'Completo',difference:diff});
     }
