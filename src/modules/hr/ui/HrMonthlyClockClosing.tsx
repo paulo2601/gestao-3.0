@@ -46,10 +46,14 @@ export function HrMonthlyClockClosing({employees}:{employees:Employee[]}){
    if(cancelled)return;
    const punchMap=new Map<string,Partial<Record<Punch,string>>>();
    for(const e of events){const local=new Date(e.captured_at).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo',hour12:false});const key=e.employment_contract_id+'|'+local.slice(0,10);const p=punchMap.get(key)??{};p[e.punch_kind as Punch]=local.slice(11,16);punchMap.set(key,p);}
-   for(const a of adjustments){const key=a.employment_contract_id+'|'+a.attendance_date;const p=punchMap.get(key)??{};p[a.punch_kind]=a.corrected_time.slice(0,5);punchMap.set(key,p);}
+   // Aplicar cancelamentos somente aos eventos anteriores e nunca ocultar ajuste posterior do RH.
+   const lastCancellation=new Map<string,number>();
+   for(const c of cancellations){const key=c.employment_contract_id+'|'+c.attendance_date+'|'+c.punch_kind;lastCancellation.set(key,Math.max(lastCancellation.get(key)??0,new Date(c.cancelled_at).getTime()));}
+   const cancelledAt=(id:string,date:string,kind:Punch)=>Math.max(lastCancellation.get(id+'|'+date+'|all')??0,lastCancellation.get(id+'|'+date+'|'+kind)??0);
+   for(const e of events){const local=new Date(e.captured_at).toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo',hour12:false});const date=local.slice(0,10);if(new Date(e.captured_at).getTime()<=cancelledAt(e.employment_contract_id,date,e.punch_kind as Punch)){const key=e.employment_contract_id+'|'+date;const p=punchMap.get(key);if(p&&p[e.punch_kind as Punch]===local.slice(11,16))delete p[e.punch_kind as Punch];}}
+   for(const a of adjustments){if(new Date(a.created_at).getTime()<=cancelledAt(a.employment_contract_id,a.attendance_date,a.punch_kind))continue;const key=a.employment_contract_id+'|'+a.attendance_date;const p=punchMap.get(key)??{};p[a.punch_kind]=a.corrected_time.slice(0,5);punchMap.set(key,p);}
    const attendanceMap=new Map(attendance.map(a=>[a.employmentContractId+'|'+a.attendanceDate,a]));
-   const fullyCancelled=new Set(cancellations.filter(c=>c.punch_kind==='all').map(c=>c.employment_contract_id+'|'+c.attendance_date));
-   for(const c of cancellations){const key=c.employment_contract_id+'|'+c.attendance_date;const p=punchMap.get(key)??{};if(c.punch_kind==='all')punchMap.set(key,{});else{delete p[c.punch_kind];punchMap.set(key,p);}}
+   const fullyCancelled=new Set(cancellations.filter(c=>c.punch_kind==='all'&&!adjustments.some(a=>a.employment_contract_id===c.employment_contract_id&&a.attendance_date===c.attendance_date&&new Date(a.created_at).getTime()>new Date(c.cancelled_at).getTime())).map(c=>c.employment_contract_id+'|'+c.attendance_date));
    setPunchesByDay(new Map(punchMap));
    const parse=(v:string)=>{const [h=0,m=0]=v.split(':').map(Number);return h*60+m;};
    const today=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
