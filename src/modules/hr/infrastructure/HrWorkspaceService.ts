@@ -371,8 +371,9 @@ export async function listClockAdjustments(ids:string[],start:string,end:string)
 export async function saveClockAdjustment(input:{tenantId:string;companyId:string;employmentContractId:string;attendanceDate:string;punchKind:ClockPunchKind;correctedTime:string;originalTime:string|null;reason:string}):Promise<void>{
  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(input.correctedTime))throw new Error('Horário inválido.');
  if(input.reason.trim().length<5)throw new Error('Informe uma justificativa com pelo menos 5 caracteres.');
- const r=await getSupabaseClient().from('employee_clock_adjustments').upsert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,attendance_date:input.attendanceDate,punch_kind:input.punchKind,corrected_time:input.correctedTime,original_time:input.originalTime,reason:input.reason.trim()},{onConflict:'employment_contract_id,attendance_date,punch_kind'});
+ const r=await getSupabaseClient().from('employee_clock_adjustments').upsert({tenant_id:input.tenantId,company_id:input.companyId,employment_contract_id:input.employmentContractId,attendance_date:input.attendanceDate,punch_kind:input.punchKind,corrected_time:input.correctedTime,original_time:input.originalTime,reason:input.reason.trim(),created_at:new Date().toISOString()},{onConflict:'employment_contract_id,attendance_date,punch_kind'}).select('employment_contract_id,attendance_date,punch_kind,corrected_time').single();
  if(r.error)throw r.error;
+ if(!r.data||r.data.employment_contract_id!==input.employmentContractId||r.data.attendance_date!==input.attendanceDate||r.data.punch_kind!==input.punchKind||String(r.data.corrected_time).slice(0,5)!==input.correctedTime)throw new Error('A correção não foi confirmada pelo banco. Tente novamente.');
 }
 
 export type ClockCancellation={employment_contract_id:string;attendance_date:string;punch_kind:ClockPunchKind|'all';reason:string;cancelled_at:string};
