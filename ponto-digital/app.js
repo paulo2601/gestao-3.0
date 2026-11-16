@@ -143,7 +143,7 @@ async function applyClockCorrections(records){
  const cacheKey='ponto-digital-adjustments-'+(session?.user?.id||'offline');
  let adjustments=getJson(cacheKey,[]);
  if(navigator.onLine&&session?.access_token){
-  try{adjustments=await api('/rest/v1/rpc/ponto_digital_my_adjustments','POST',{});localStorage.setItem(cacheKey,JSON.stringify(adjustments))}
+  try{adjustments=await api('/rest/v1/rpc/ponto_digital_my_adjustments_v2','POST',{});localStorage.setItem(cacheKey,JSON.stringify(adjustments))}
   catch(error){console.warn('Correções do RH indisponíveis:',error)}
  }
  const cancelKey='ponto-digital-cancellations-'+(session?.user?.id||'offline');
@@ -175,7 +175,7 @@ async function applyClockCorrections(records){
   const hhmm=String(adjustment.corrected_time||'').slice(0,5);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!kinds.includes(kind)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm))continue;
   if(updated.some(record=>day(record.captured_at)===date&&record.punch_kind===kind))continue;
-  if(cancellations.some(c=>c.attendance_date===date&&(c.punch_kind==='all'||c.punch_kind===kind)))continue;
+  if(cancellations.some(c=>c.attendance_date===date&&(c.punch_kind==='all'||c.punch_kind===kind)&&new Date(c.cancelled_at).getTime()>=new Date(adjustment.created_at).getTime()))continue;
   updated.push({id:'rh-adjustment-'+date+'-'+kind,employment_contract_id:account.employment_contract_id,punch_kind:kind,captured_at:date+'T'+hhmm+':00-03:00',corrected_by_hr:true,approved_adjustment:true});
  }
  return updated.sort((a,b)=>new Date(b.captured_at).getTime()-new Date(a.captured_at).getTime());
