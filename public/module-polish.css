@@ -86,3 +86,8 @@
 .hr-clock-correction-list{display:grid;gap:12px}
 .hr-clock-correction-card{border:1px solid #cbd5e1;border-radius:10px;padding:12px;display:grid;gap:6px}
 .hr-clock-correction-decision{border:1px solid #94a3b8;border-radius:10px;padding:12px;display:grid;gap:10px}
+
+/* Atalhos do painel inicial: cinco ações compactas no celular. */
+.home-approved .home-actions--five { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.home-approved .home-actions--five > * { min-width: 0; padding: 8px 3px; font-size: clamp(10px, 2.5vw, 14px); white-space: normal; overflow-wrap: anywhere; }
+.home-approved .home-actions--five .home-contracts-shortcut { background: #fff; color: #1757d8; border: 2px solid #1757d8; }
