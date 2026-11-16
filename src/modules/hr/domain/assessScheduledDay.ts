@@ -7,6 +7,8 @@ const toMinutes=(time:string):number|null=>{if(!/^([01]\d|2[0-3]):[0-5]\d$/.test
  * Não modifica os horários originais nem substitui a conferência da tolerância legal.
  */
 export function applyDailyTolerance(rawDifference:number,_deviations:number[],_configuredTolerance=5):number{
+ // A regra interna usa 10 minutos fixos de saldo líquido, independentemente da configuração por batida.
+ void _configuredTolerance;
  return Number.isFinite(rawDifference)&&Math.abs(rawDifference)<=10?0:rawDifference;
 }
 export function assessScheduledDay(day:ScheduleDay,punches:PunchTimes,toleranceMinutes=5):DayAssessment{
