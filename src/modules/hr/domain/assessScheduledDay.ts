@@ -3,10 +3,11 @@ export type ScheduleDay = {active:boolean;entry:string;lunchOut:string;lunchIn:s
 export type PunchTimes = {entry?:string|null;lunchOut?:string|null;lunchIn?:string|null;exit?:string|null};
 export type DayAssessment = {status:'rest'|'incomplete'|'complete';scheduledMinutes:number;workedMinutes:number|null;lateMinutes:number|null;earlyExitMinutes:number|null;extraMinutes:number|null;requiresReview:boolean};
 const toMinutes=(time:string):number|null=>{if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))return null;const [h=0,m=0]=time.split(':').map(Number);return h*60+m;};
-/** Tolerância única para apuração de diferenças: até 5 min por batida e 10 min no dia. */
-export function applyDailyTolerance(rawDifference:number,deviations:number[],configuredTolerance=5):number{
- const perPunch=Math.min(5,Math.max(0,configuredTolerance));
- return deviations.every(value=>Number.isFinite(value)&&value<=perPunch)&&deviations.reduce((total,value)=>total+value,0)<=10?0:rawDifference;
+/** Regra interna de apuração: tolerância de 10 minutos sobre o saldo líquido diário.
+ * Não modifica os horários originais nem substitui a conferência da tolerância legal.
+ */
+export function applyDailyTolerance(rawDifference:number,_deviations:number[],_configuredTolerance=5):number{
+ return Number.isFinite(rawDifference)&&Math.abs(rawDifference)<=10?0:rawDifference;
 }
 export function assessScheduledDay(day:ScheduleDay,punches:PunchTimes,toleranceMinutes=5):DayAssessment{
  const scheduled=[day.entry,day.lunchOut,day.lunchIn,day.exit].map(toMinutes);
