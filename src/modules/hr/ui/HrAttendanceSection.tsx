@@ -123,7 +123,7 @@ export function HrAttendanceSection({date,setDate,search,setSearch,rows,employee
  }
  for(const a of adjustments){
   const key=a.employment_contract_id+'|'+a.punch_kind;
-  if(!activePunches.has(key)&&lastCancel(a.employment_contract_id,a.punch_kind)>0)continue;
+  if(!activePunches.has(key)&&new Date(a.created_at).getTime()<=lastCancel(a.employment_contract_id,a.punch_kind))continue;
   if(!data.has(a.employment_contract_id))data.set(a.employment_contract_id,new Map());
   data.get(a.employment_contract_id)!.set(a.punch_kind,a.corrected_time.slice(0,5));
  }
