@@ -360,11 +360,11 @@ export async function listClockReportEvents(contractIds:string[],startDate:strin
 }
 
 export type ClockPunchKind='entry'|'lunch_out'|'lunch_in'|'exit';
-export type ClockAdjustment={employment_contract_id:string;attendance_date:string;punch_kind:ClockPunchKind;corrected_time:string;original_time:string|null};
+export type ClockAdjustment={employment_contract_id:string;attendance_date:string;punch_kind:ClockPunchKind;corrected_time:string;original_time:string|null;created_at:string};
 export async function listClockAdjustments(ids:string[],start:string,end:string):Promise<ClockAdjustment[]>{
  if(!ids.length)return[];
  const results=await Promise.all(Array.from({length:Math.ceil(ids.length/100)},(_,i)=>ids.slice(i*100,(i+1)*100)).map(async batch=>{
- const r=await getSupabaseClient().from('employee_clock_adjustments').select('employment_contract_id,attendance_date,punch_kind,corrected_time,original_time').in('employment_contract_id',batch).gte('attendance_date',start).lte('attendance_date',end).limit(10000);
+ const r=await getSupabaseClient().from('employee_clock_adjustments').select('employment_contract_id,attendance_date,punch_kind,corrected_time,original_time,created_at').in('employment_contract_id',batch).gte('attendance_date',start).lte('attendance_date',end).limit(10000);
  if(r.error)throw r.error;return r.data as ClockAdjustment[];}));
  return results.flat();
 }
