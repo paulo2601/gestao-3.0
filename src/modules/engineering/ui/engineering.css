@@ -116,3 +116,23 @@
 .app-edit-form__stats .app-edit-form__total strong{color:#0645c7}
 @media(max-width:800px){.app-edit-form .app-edit-form__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.app-edit-form__stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.app-edit-form .app-edit-form__grid{grid-template-columns:1fr}.app-edit-form__wide{grid-column:auto}.app-edit-form__section{padding:12px}.app-edit-form__stats{gap:8px}.app-edit-form__stats>div{padding:10px}.app-edit-form__stats strong{font-size:1rem}}
+
+
+/* Compact contract-item editor: fit form, summary and actions in one desktop viewport. */
+@media(min-width:900px) and (min-height:650px){
+.ui-dialog[data-variant="contract-item-edit"]{width:min(98vw,1420px);max-width:1420px;max-height:calc(100dvh - 20px)}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form{gap:8px}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form__section{padding:10px 14px}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form__heading{padding:7px 12px;margin-bottom:9px;font-size:.95rem}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form__grid{gap:8px 14px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form__wide{grid-column:1/-1}
+.ui-dialog[data-variant="contract-item-edit"] .ui-field{gap:4px}
+.ui-dialog[data-variant="contract-item-edit"] .ui-field__label{font-size:.82rem}
+.ui-dialog[data-variant="contract-item-edit"] .ui-field--adorned .ui-field__control{min-height:39px}
+.ui-dialog[data-variant="contract-item-edit"] .ui-field--adorned .ui-input{min-height:37px}
+.ui-dialog[data-variant="contract-item-edit"] .ui-input{min-height:39px}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form__stats{gap:8px}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form__stats>div{padding:9px 12px}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form__stats small{margin-bottom:2px}
+.ui-dialog[data-variant="contract-item-edit"] .app-edit-form__stats strong{font-size:1.05rem}
+}
