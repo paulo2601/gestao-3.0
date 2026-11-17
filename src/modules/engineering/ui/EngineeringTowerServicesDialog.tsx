@@ -38,7 +38,7 @@ export function EngineeringTowerServicesDialog({open,scope,contractId,workId,str
  <Dialog open={open} title={structure.name} description="Serviços do contrato · toque em um item para editar" onClose={onClose} onBack={onClose} loading={busy}>
   <div className="engineering-tower-services">
    {error&&<Feedback tone="danger" title="Não foi possível concluir" message={error}/>} {info&&<Feedback tone="success" title="Concluído" message={info}/>}
-   <div className="engineering-tower-services__actions" className="tower-style-1">
+   <div className="engineering-tower-services__actions tower-style-1">
     <label className="ui-button ui-button--secondary">⇧ Importar planilha CSV<input type="file" accept=".csv,text/csv" hidden disabled={busy} onChange={e=>void importFile(e)}/></label>
     <Button disabled={busy} onClick={()=>setManual(v=>!v)}>＋ Adicionar serviço</Button>
     <input aria-label="Pesquisar serviço, código ou descrição" placeholder="⌕ Pesquisar serviço, código ou descrição..." value={search} onChange={e=>setSearch(e.target.value)} className="tower-style-2"/>
@@ -50,10 +50,10 @@ export function EngineeringTowerServicesDialog({open,scope,contractId,workId,str
     {([['Total de serviços',String(towerRows.length)],['Valor total',money.format(total)],['Serviços com valor',String(priced)],['Sem valor',String(towerRows.length-priced)]] as const).map(([label,value])=><div key={label} className="tower-style-5"><div className="tower-style-6">{label}</div><strong className="tower-style-7">{value}</strong></div>)}
    </div>
    {manual&&<div className="engineering-standard-form"><div className="engineering-form-grid"><Input label="Serviço / descrição" value={description} onChange={e=>setDescription(e.target.value)} required/><Input label="Unidade" value={unit} onChange={e=>setUnit(e.target.value)}/><Input label="Quantidade" inputMode="decimal" value={qty} onChange={e=>setQty(e.target.value)} required/><Input label="Valor unitário" inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)}/></div><div className="engineering-tower-services__manual-actions"><Button variant="secondary" onClick={()=>setManual(false)}>Cancelar</Button><Button loading={busy} onClick={()=>void saveManual()}>Salvar serviço</Button></div></div>}
-   <div className="engineering-tower-services__list" className="tower-style-8">
+   <div className="engineering-tower-services__list tower-style-8">
     <table className="tower-style-9">
-     <thead className="tower-style-10"><tr>{['Código','Descrição do serviço','Valor total','Qtd. itens','Ações'].map(h=><th key={h} className="tower-style-11">{h}</th>)}</tr></thead>
-     <tbody>{visibleRows.map(({service,allocation},index)=><tr key={allocation.id} className="tower-style-12">
+     <thead className="tower-style-10"><tr>{['Código','Descrição do serviço','Valor total','Qtd. itens','Ações'].map(h=><th key={h} className={h==='Descrição do serviço'?'tower-style-11 tower-style-11--left':'tower-style-11'}>{h}</th>)}</tr></thead>
+     <tbody>{visibleRows.map(({service,allocation})=><tr key={allocation.id} className="tower-style-12">
       <td className="tower-style-13">{String((service as {code?:string}).code??'—')}</td>
       <td className="tower-style-14">{service.description}<div className="tower-style-15">{service.unit} · {money.format(service.unitPrice)} por unidade</div></td>
       <td className="tower-style-16">{money.format(allocation.allocatedQuantity*service.unitPrice)}</td>
@@ -63,7 +63,7 @@ export function EngineeringTowerServicesDialog({open,scope,contractId,workId,str
     </table>
     {visibleRows.length===0&&<p className="tower-style-19">Nenhum serviço encontrado para esta pesquisa.</p>}
    </div>
-   <small className="ui-muted" className="tower-style-20">Exibindo {visibleRows.length} de {towerRows.length} serviços</small>
+   <small className="ui-muted tower-style-20">Exibindo {visibleRows.length} de {towerRows.length} serviços</small>
   </div>
  </Dialog>
  {edit&&<Dialog open variant="contract-item-edit" title="Editar item do contrato" description={structure.name} loading={busy} onClose={()=>!busy&&setEdit(null)} onBack={()=>!busy&&setEdit(null)} onConfirm={()=>void saveEdit()} confirmLabel="Salvar alterações"><div className="engineering-standard-form engineering-contract-item-edit"><div className="engineering-form-grid"><Input label="Serviço / descrição" value={edit.description} onChange={e=>setEdit({...edit,description:e.target.value})} required/><Input label="Unidade" value={edit.unit} onChange={e=>setEdit({...edit,unit:e.target.value})}/><Input label="Quantidade contratada" inputMode="decimal" value={edit.quantity} onChange={e=>setEdit({...edit,quantity:e.target.value})} required/><Input label="Quantidade nesta torre" inputMode="decimal" value={edit.allocationQuantity} onChange={e=>setEdit({...edit,allocationQuantity:e.target.value})} required/><Input label="Valor unitário" inputMode="decimal" value={edit.unitPrice} onChange={e=>setEdit({...edit,unitPrice:e.target.value})}/><Input label="Observações da distribuição" value={edit.allocationNotes} onChange={e=>setEdit({...edit,allocationNotes:e.target.value})}/></div></div></Dialog>}
