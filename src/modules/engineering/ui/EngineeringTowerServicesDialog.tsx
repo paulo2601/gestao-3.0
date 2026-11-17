@@ -10,6 +10,7 @@ type EditDraft={id:string;description:string;unit:string;quantity:string;unitPri
 interface Props{open:boolean;scope:{tenantId:string;companyId:string};contractId:string;workId:string;structure:{id:string;name:string};onClose:()=>void;onChanged:()=>void;}
 
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const moneyField=(value:string)=>value.trim()===''?'':money.format(n(value));
 const qtyFmt=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:3});
 const n=(v:string)=>{const x=Number(v.trim().replace(/\./g,'').replace(',','.'));return Number.isFinite(x)?x:0;};
 function parseCsv(text:string):Row[]{
@@ -75,7 +76,7 @@ export function EngineeringTowerServicesDialog({open,scope,contractId,workId,str
      <Input label="Unidade" value={edit.unit} onChange={e=>setEdit({...edit,unit:e.target.value})}/>
      <Input label="Quantidade contratada" inputMode="decimal" value={edit.quantity} onChange={e=>setEdit({...edit,quantity:e.target.value})} required/>
      <Input label="Quantidade nesta torre" inputMode="decimal" value={edit.allocationQuantity} onChange={e=>setEdit({...edit,allocationQuantity:e.target.value})} required/>
-     <Input label="Valor unitário" inputMode="decimal" value={edit.unitPrice} onChange={e=>setEdit({...edit,unitPrice:e.target.value})}/>
+     <Input label="Valor unitário" inputMode="decimal" value={moneyField(edit.unitPrice)} onChange={e=>setEdit({...edit,unitPrice:e.target.value.replace(/[^\\d,.-]/g,'')})}/>
      <div className="app-edit-form__wide"><Input label="Observações da distribuição" value={edit.allocationNotes} onChange={e=>setEdit({...edit,allocationNotes:e.target.value})}/></div>
     </div>
    </section>
