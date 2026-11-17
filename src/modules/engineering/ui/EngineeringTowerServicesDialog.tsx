@@ -53,7 +53,7 @@ export function EngineeringTowerServicesDialog({open,scope,contractId,workId,str
    <div className="engineering-tower-services__list tower-style-8">
     <table className="tower-style-9">
      <thead className="tower-style-10"><tr>{['Código','Descrição do serviço','Valor total','Qtd. itens','Ações'].map(h=><th key={h} className={h==='Descrição do serviço'?'tower-style-11 tower-style-11--left':'tower-style-11'}>{h}</th>)}</tr></thead>
-     <tbody>{visibleRows.map(({service,allocation})=><tr key={allocation.id} className="tower-style-12">
+     <tbody>{visibleRows.map(({service,allocation},index)=><tr key={allocation.id} className={index%2===1?"tower-style-12 tower-style-12--alternate":"tower-style-12"}>
       <td className="tower-style-13">{String((service as {code?:string}).code??'—')}</td>
       <td className="tower-style-14">{service.description}<div className="tower-style-15">{service.unit} · {money.format(service.unitPrice)} por unidade</div></td>
       <td className="tower-style-16">{money.format(allocation.allocatedQuantity*service.unitPrice)}</td>
