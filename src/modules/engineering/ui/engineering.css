@@ -90,8 +90,8 @@
 .engineering-tower-services .tower-style-11{padding:13px 12px;text-align:center}
 .engineering-tower-services .tower-style-11--left{text-align:left}
 .engineering-tower-services .tower-style-12{border-bottom:1px solid #e4ebf4}
-.engineering-tower-services .tower-style-12:nth-child(even){background:#f0f5fc}
-.engineering-tower-services .tower-style-12:nth-child(odd){background:white}
+.engineering-tower-services .tower-style-12--alternate{background:#f0f5fc}
+.engineering-tower-services .tower-style-12{background:white}
 .engineering-tower-services .tower-style-13{padding:12px;text-align:center;font-weight:700;color:#164b9c}
 .engineering-tower-services .tower-style-14{padding:12px}
 .engineering-tower-services .tower-style-15{font-size:12px;color:#60718b}
