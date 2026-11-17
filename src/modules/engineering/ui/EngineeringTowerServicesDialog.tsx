@@ -66,6 +66,29 @@ export function EngineeringTowerServicesDialog({open,scope,contractId,workId,str
    <small className="ui-muted tower-style-20">Exibindo {visibleRows.length} de {towerRows.length} serviços</small>
   </div>
  </Dialog>
- {edit&&<Dialog open variant="contract-item-edit" title="Editar item do contrato" description={structure.name} loading={busy} onClose={()=>!busy&&setEdit(null)} onBack={()=>!busy&&setEdit(null)} onConfirm={()=>void saveEdit()} confirmLabel="Salvar alterações"><div className="engineering-standard-form engineering-contract-item-edit"><div className="engineering-form-grid"><Input label="Serviço / descrição" value={edit.description} onChange={e=>setEdit({...edit,description:e.target.value})} required/><Input label="Unidade" value={edit.unit} onChange={e=>setEdit({...edit,unit:e.target.value})}/><Input label="Quantidade contratada" inputMode="decimal" value={edit.quantity} onChange={e=>setEdit({...edit,quantity:e.target.value})} required/><Input label="Quantidade nesta torre" inputMode="decimal" value={edit.allocationQuantity} onChange={e=>setEdit({...edit,allocationQuantity:e.target.value})} required/><Input label="Valor unitário" inputMode="decimal" value={edit.unitPrice} onChange={e=>setEdit({...edit,unitPrice:e.target.value})}/><Input label="Observações da distribuição" value={edit.allocationNotes} onChange={e=>setEdit({...edit,allocationNotes:e.target.value})}/></div></div></Dialog>}
+ {edit&&<Dialog open variant="contract-item-edit" title="Editar item do contrato" description={structure.name+' • Serviços do contrato'} loading={busy} onClose={()=>!busy&&setEdit(null)} onBack={()=>!busy&&setEdit(null)} onConfirm={()=>void saveEdit()} confirmLabel="Salvar alterações">
+  <div className="engineering-standard-form engineering-contract-item-edit app-edit-form">
+   <section className="app-edit-form__section">
+    <h3 className="app-edit-form__heading">Dados do serviço</h3>
+    <div className="engineering-form-grid app-edit-form__grid">
+     <div className="app-edit-form__wide"><Input label="Serviço / descrição" value={edit.description} onChange={e=>setEdit({...edit,description:e.target.value})} required/></div>
+     <Input label="Unidade" value={edit.unit} onChange={e=>setEdit({...edit,unit:e.target.value})}/>
+     <Input label="Quantidade contratada" inputMode="decimal" value={edit.quantity} onChange={e=>setEdit({...edit,quantity:e.target.value})} required/>
+     <Input label="Quantidade nesta torre" inputMode="decimal" value={edit.allocationQuantity} onChange={e=>setEdit({...edit,allocationQuantity:e.target.value})} required/>
+     <Input label="Valor unitário" inputMode="decimal" value={edit.unitPrice} onChange={e=>setEdit({...edit,unitPrice:e.target.value})}/>
+     <div className="app-edit-form__wide"><Input label="Observações da distribuição" value={edit.allocationNotes} onChange={e=>setEdit({...edit,allocationNotes:e.target.value})}/></div>
+    </div>
+   </section>
+   <section className="app-edit-form__section">
+    <h3 className="app-edit-form__heading">Resumo financeiro do item</h3>
+    <div className="app-edit-form__stats">
+     <div><small>Qtd. contratada</small><strong>{qtyFmt.format(n(edit.quantity))}</strong></div>
+     <div><small>Qtd. na torre</small><strong>{qtyFmt.format(n(edit.allocationQuantity))}</strong></div>
+     <div><small>Valor unitário</small><strong>{money.format(n(edit.unitPrice))}</strong></div>
+     <div className="app-edit-form__total"><small>Valor total</small><strong>{money.format(n(edit.allocationQuantity)*n(edit.unitPrice))}</strong></div>
+    </div>
+   </section>
+  </div>
+ </Dialog>}
  </>;
 }
