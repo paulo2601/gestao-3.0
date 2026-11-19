@@ -77,7 +77,7 @@ export function FamilyPlanningPage({ companies }: Props) {
   if (!personal) return <section className="family-plan"><h1>Planejamento familiar</h1><p>Selecione uma conta com acesso à empresa Pessoal para visualizar este planejamento.</p></section>;
   return <section className="family-plan">
     <header className="family-plan__header">
-      <div><small>FINANCEIRO · PESSOAL</small><h1>Planejamento financeiro familiar</h1><p>Projeção de 12 meses com cada compromisso discriminado.</p></div>
+      <div><small>FINANCEIRO · PESSOAL</small><h1>Planejamento financeiro familiar</h1><p>Orçamento bruto de 12 meses, com cada compromisso discriminado e baixas identificadas.</p></div>
       <label>Mês inicial <input type="month" value={startMonth} onChange={event => { if (/^\d{4}-(0[1-9]|1[0-2])$/.test(event.target.value)) { setStartMonth(event.target.value); setSelectedMonth(event.target.value); } }}/></label>
     </header>
     <div className="family-plan__setup"><label>Saldo inicial (R$) <input type="number" step="0.01" value={openingBalance} onChange={event => setOpeningBalance(Number(event.target.value) || 0)}/></label><span>Informe o saldo consolidado das contas pessoais na data inicial. Transferências internas não são receitas.</span></div>
@@ -89,7 +89,7 @@ export function FamilyPlanningPage({ companies }: Props) {
       <div className="family-plan__cards">
         <article><small>Receitas previstas (12 meses)</small><strong>{currency.format(projection.reduce((sum, row) => sum + row.income, 0))}</strong></article>
         <article><small>Despesas previstas (12 meses)</small><strong>{currency.format(projection.reduce((sum, row) => sum + row.expenses, 0))}</strong></article>
-        <article><small>Maior necessidade de caixa</small><strong className="family-plan__negative">{currency.format(maxGap)}</strong></article>
+        <article><small>Maior déficit do orçamento bruto</small><strong className="family-plan__negative">{currency.format(maxGap)}</strong></article>
         <article><small>Primeiro mês de recuperação</small><strong>{firstRecovery ? monthName(firstRecovery.month) : 'Não identificado'}</strong></article>
       </div>
       <p className="family-plan__notice">Despesas fora de cartões: <strong>{currency.format(settled)} já baixados</strong> e <strong>{currency.format(outstanding)} pendentes</strong>. Existem <strong>{cardCount} parcelas de cartão</strong> neste período; o pagamento dessas parcelas só pode ser conciliado pelas faturas correspondentes.</p>
@@ -107,7 +107,7 @@ export function FamilyPlanningPage({ companies }: Props) {
           <p className="family-plan__print-footnote">* Para cartões, baixado e pendente dependem da conciliação da fatura. Valores previstos não representam necessariamente pagamentos ainda devidos.</p>
         </section>)}
       </div>
-      <p className="family-plan__notice">Projeção baseada nas parcelas atualmente cadastradas. Para cartão, o valor previsto é a compra parcelada; a coluna de baixas não representa pagamento da fatura. Receitas futuras sem lançamento nem regra de recorrência e valores de quitação de empréstimos não podem ser presumidos. O saldo inicial é uma simulação local e não altera bancos nem lançamentos.</p>
+      <p className="family-plan__notice">Este é um orçamento bruto: o saldo projetado soma valores integrais previstos, inclusive parcelas já baixadas, e não equivale ao saldo bancário futuro nem à necessidade de caixa pendente. Para cartão, o valor previsto é a compra parcelada; a coluna de baixas não representa pagamento da fatura. Receitas futuras sem lançamento nem regra de recorrência e valores de quitação de empréstimos não podem ser presumidos. O saldo inicial é uma simulação local e não altera bancos nem lançamentos.</p>
     </>}
   </section>;
 }
