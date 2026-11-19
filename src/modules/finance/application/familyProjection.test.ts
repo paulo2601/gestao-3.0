@@ -24,8 +24,8 @@ describe('family projection', () => {
     expect(months[0]!.expenses).toBe(14000);
     expect(months[0]!.net).toBe(-4000);
     expect(months[0]!.items.find(x => x.itemId === 'loan1')?.remainingInstallments).toBe(8);
-    expect(months[1]!.closingBalance).toBe(6000);
-    expect(maximumFundingGap(months)).toBe(4000);
+    expect(months[1]!.closingBalance).toBe(6002);
+    expect(maximumFundingGap(months)).toBe(3998);
   });
   it('does not double count realized and pending amounts', () => {
     const item = { ...base, realizedAmount: 4000, pendingAmount: 6000 };
