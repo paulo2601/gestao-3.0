@@ -3,6 +3,7 @@ import type { CompanySummary } from '../../platform/domain/AccessContext';
 import { getFinanceRepositories } from '../infrastructure/createFinanceRepositories';
 import type { FinanceMonthlyItem } from '../domain/monthly';
 import { buildFamilyProjection, maximumFundingGap, projectionMonths } from '../application/familyProjection';
+import { forecastRecurrences } from '../application/forecastRecurrences';
 import './family-planning.css';
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -35,9 +36,12 @@ export function FamilyPlanningPage({ companies }: Props) {
     let active = true;
     setLoading(true); setError('');
     const months = projectionMonths(startMonth);
-    void getFinanceRepositories().monthly.list({
+    const repositories = getFinanceRepositories();
+    void Promise.all([repositories.monthly.list({
       tenantId, companyId, competenceFrom: months[0] + '-01', competenceTo: months[months.length - 1] + '-01',
-    }).then(rows => { if (active) setItems(rows); })
+    }), repositories.recurrences.list({ tenantId, companyId })]).then(([rows, rules]) => {
+      if (active) setItems([...rows, ...forecastRecurrences(rules, rows, months[0], months[months.length - 1])]);
+    })
       .catch((reason: unknown) => { if (active) { setItems([]); setError(reason instanceof Error ? reason.message : 'Não foi possível carregar o planejamento.'); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
