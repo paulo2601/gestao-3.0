@@ -24,8 +24,11 @@
 .family-plan__analytics>div{padding:14px;border:1px solid #dbeafe;border-radius:12px;background:white;min-width:0}
 .family-plan__chart-row{display:grid;grid-template-columns:70px minmax(0,1fr) 120px;align-items:center;gap:10px;font-size:.78rem}
 .family-plan__chart-row>div{display:grid;gap:3px}
-.family-plan__chart-row i{display:block;height:7px;border-radius:4px}
-.family-plan__bar-income{background:#16a34a}.family-plan__bar-expense{background:#ef4444}
+.family-plan__chart-row progress{display:block;width:100%;height:8px;border:0;border-radius:4px;overflow:hidden;background:#e2e8f0}
+.family-plan__chart-row progress::-webkit-progress-bar{background:#e2e8f0}
+.family-plan__bar-income{accent-color:#16a34a}.family-plan__bar-expense{accent-color:#ef4444}
+.family-plan__bar-income::-webkit-progress-value{background:#16a34a}.family-plan__bar-expense::-webkit-progress-value{background:#ef4444}
+.family-plan__bar-income::-moz-progress-bar{background:#16a34a}.family-plan__bar-expense::-moz-progress-bar{background:#ef4444}
 .family-plan__chart-row small{text-align:right}
 .family-plan__insights p{border-bottom:1px solid #e2e8f0;padding:9px 0}
 @media(max-width:800px){.family-plan__breakdown{grid-template-columns:1fr}.family-plan__chart-row{grid-template-columns:70px minmax(0,1fr) 100px}}
