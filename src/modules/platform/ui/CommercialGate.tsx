@@ -1,7 +1,7 @@
 import { useEffect,useState, type ReactNode } from 'react';
 import { checkModuleAccess, recoverModuleAccessSession } from '../infrastructure/PortalMasterRepository';
 const routeModules:Record<string,string>={
- '/':'dashboard','/financeiro':'financeiro','/contas-do-mes':'financeiro',
+ '/':'dashboard','/financeiro':'financeiro','/planejamento-familiar':'financeiro','/contas-do-mes':'financeiro',
  '/bancos':'bancos','/cartoes':'cartoes','/orcamento':'limites','/limites':'limites',
  '/rh':'rh','/engenharia':'engenharia','/orcamentos':'engenharia',
  '/producao':'producao','/relatorios':'relatorios','/usuarios':'usuarios',
