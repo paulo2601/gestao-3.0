@@ -27,6 +27,26 @@ export async function exportFamilyPlanningPdf(months: readonly FamilyMonthProjec
   for (const month of months) {
     line(`${month.month}  |  Receitas: ${money(month.income)}  |  Despesas: ${money(month.expenses)}  |  Resultado: ${money(month.net)}  |  Saldo projetado: ${money(month.closingBalance)}`, 8);
   }
+  const allItems = months.flatMap(month => month.items);
+  const debts = new Map<string, { description: string; count: number; last: number; total: number; pending: number }>();
+  for (const item of allItems) {
+    if (item.entryType !== 'expense' || item.sourceKind !== 'financial_installment' || item.installmentCount <= 1) continue;
+    const existing = debts.get(item.parentId);
+    if (existing) {
+      existing.count++;
+      existing.last = Math.max(existing.last, item.installmentNumber);
+      existing.pending += Math.max(0, item.pendingAmount);
+    } else {
+      debts.set(item.parentId, { description: item.description, count: 1, last: item.installmentNumber, total: item.installmentCount, pending: Math.max(0, item.pendingAmount) });
+    }
+  }
+  y += 4;
+  line('COMPROMISSOS PARCELADOS FORA DOS CARTÕES', 11, true);
+  line('O saldo pendente corresponde apenas às parcelas dentro do período; não é valor de quitação do contrato.', 8);
+  if (!debts.size) line('Nenhum compromisso parcelado identificado.', 8);
+  for (const debt of debts.values()) {
+    line(`${debt.description} | ${debt.count} parcelas no período | última ${debt.last}/${debt.total} | após período: ${Math.max(0, debt.total - debt.last)} | pendente no período: ${money(debt.pending)}`, 8);
+  }
   for (const month of months) {
     newPage();
     line(`LANÇAMENTOS  |  ${month.month}`, 13, true);
