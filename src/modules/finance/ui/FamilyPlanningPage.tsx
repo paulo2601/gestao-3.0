@@ -77,6 +77,14 @@ export function FamilyPlanningPage({ companies }: Props) {
       <div className="family-plan__detail"><h2>Todos os lançamentos — {monthName(month.month)}</h2><p>Resultado do mês: <strong className={month.net < 0 ? 'family-plan__negative' : ''}>{currency.format(month.net)}</strong> · {month.items.length} parcelas/lançamentos</p>
       <div className="family-plan__table-wrap"><table className="family-plan__table"><thead><tr><th>Tipo</th><th>Descrição / identificação</th><th>Vencimento</th><th>Parcela</th><th>Faltam</th><th>Previsto</th><th>Baixado (fora cartão)</th><th>Pendente (fora cartão)</th></tr></thead><tbody>{month.items.map(item => <tr key={item.sourceKind + item.itemId}><td>{item.entryType === 'income' ? 'Entrada' : item.sourceKind === 'card_installment' ? 'Cartão' : 'Saída'}</td><td><strong>{item.description}</strong>{item.counterpartyName && <small>{item.counterpartyName}</small>}</td><td>{item.dueDate.split('-').reverse().join('/')}</td><td>{item.installmentNumber}/{item.installmentCount}</td><td>{item.remainingInstallments}</td><td>{currency.format(item.plannedAmount)}</td><td>{item.sourceKind === 'card_installment' ? '—' : currency.format(item.realizedAmount)}</td><td>{item.sourceKind === 'card_installment' ? '—' : currency.format(item.pendingAmount)}</td></tr>)}</tbody></table>{month.items.length === 0 && <p>Nenhum lançamento identificado para este mês. Confira se receitas e despesas futuras já estão cadastradas.</p>}</div>
       </div>
+      <div className="family-plan__print-all" aria-hidden="true">
+        {projection.map(row => <section key={row.month} className="family-plan__print-month">
+          <h2>{monthName(row.month)} — Receitas {currency.format(row.income)} · Despesas {currency.format(row.expenses)} · Saldo {currency.format(row.closingBalance)}</h2>
+          <table className="family-plan__table"><thead><tr><th>Tipo</th><th>Descrição</th><th>Vencimento</th><th>Parcela</th><th>Faltam</th><th>Previsto</th></tr></thead>
+          <tbody>{row.items.map(item => <tr key={item.sourceKind + item.itemId}><td>{item.entryType === 'income' ? 'Entrada' : item.sourceKind === 'card_installment' ? 'Cartão' : 'Saída'}</td><td>{item.description}</td><td>{item.dueDate.split('-').reverse().join('/')}</td><td>{item.installmentNumber}/{item.installmentCount}</td><td>{item.remainingInstallments}</td><td>{currency.format(item.plannedAmount)}</td></tr>)}</tbody></table>
+          {row.items.length === 0 && <p>Sem lançamentos cadastrados ou projetados.</p>}
+        </section>)}
+      </div>
       <p className="family-plan__notice">Projeção baseada nas parcelas atualmente cadastradas. Para cartão, o valor previsto é a compra parcelada; a coluna de baixas não representa pagamento da fatura. Receitas futuras não lançadas, recorrências ainda não geradas e valores de quitação de empréstimos não podem ser presumidos. O saldo inicial é uma simulação local e não altera bancos nem lançamentos.</p>
     </>}
   </section>;
