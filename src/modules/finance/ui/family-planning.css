@@ -33,3 +33,49 @@
 .family-plan__insights p{border-bottom:1px solid #e2e8f0;padding:9px 0}
 @media(max-width:800px){.family-plan__breakdown{grid-template-columns:1fr}.family-plan__chart-row{grid-template-columns:70px minmax(0,1fr) 100px}}
 @media print{.family-plan__monthly-detail,.family-plan__analytics{display:none!important}}
+
+/* Mobile-first dashboard: show each monthly total without horizontal scrolling. */
+.family-plan__filters{display:flex;flex-wrap:wrap;gap:8px}
+.family-plan__filters button{border:1px solid #bfdbfe;background:#fff;color:#1e40af;border-radius:9px;padding:9px 13px;font-weight:700}
+.family-plan__filters button[aria-pressed="true"]{background:#1d4ed8;color:#fff}
+.family-plan__status{display:inline-block;padding:4px 7px;border-radius:8px;font-size:.73rem;font-weight:700;white-space:nowrap}
+.family-plan__status--paid{background:#dcfce7;color:#166534}
+.family-plan__status--pending{background:#dbeafe;color:#1d4ed8}
+.family-plan__status--review{background:#fef3c7;color:#92400e}
+.family-plan__monthly tbody th button{min-height:36px}
+@media(max-width:700px){
+  .family-plan{min-width:0;width:100%;box-sizing:border-box;overflow-x:hidden}
+  .family-plan__header,.family-plan__header>div{min-width:0;width:100%}
+  .family-plan__header label,.family-plan__header select,.family-plan__header input{max-width:100%;width:100%;box-sizing:border-box}
+  .family-plan__setup{padding:10px;gap:10px}
+  .family-plan__setup label,.family-plan__setup input{min-width:0;max-width:100%;width:100%;box-sizing:border-box}
+  .family-plan__actions button{flex:1 1 130px}
+  .family-plan__detail,.family-plan__monthly-detail{min-width:0}
+  .family-plan__monthly-detail{padding:10px}
+  .family-plan__monthly{white-space:normal;table-layout:fixed}
+  .family-plan__monthly th,.family-plan__monthly td{padding:9px 4px;font-size:.72rem;overflow-wrap:anywhere}
+  .family-plan__monthly th:first-child{width:25%}
+  .family-plan__monthly th:nth-child(2),.family-plan__monthly th:nth-child(3){width:25%}
+  .family-plan__monthly th:nth-child(4){width:25%}
+  .family-plan__monthly th:nth-child(5),.family-plan__monthly td:nth-child(5){display:none}
+  .family-plan__monthly tbody th button{white-space:normal;padding:2px;text-align:left}
+  .family-plan__breakdown-panel .family-plan__table{table-layout:fixed;width:100%}
+  .family-plan__breakdown-panel .family-plan__table th,.family-plan__breakdown-panel .family-plan__table td{padding:8px 4px;font-size:.74rem;overflow-wrap:anywhere}
+  .family-plan__breakdown-panel .family-plan__table th:nth-child(1),.family-plan__breakdown-panel .family-plan__table td:nth-child(1){width:19%}
+  .family-plan__breakdown-panel .family-plan__table th:nth-child(2),.family-plan__breakdown-panel .family-plan__table td:nth-child(2){width:36%;min-width:0}
+  .family-plan__breakdown-panel .family-plan__table th:nth-child(3),.family-plan__breakdown-panel .family-plan__table td:nth-child(3){width:23%}
+  .family-plan__breakdown-panel .family-plan__table th:nth-child(4),.family-plan__breakdown-panel .family-plan__table td:nth-child(4){width:22%}
+  .family-plan__breakdown-panel .family-plan__table td strong{font-size:.74rem;overflow-wrap:anywhere}
+  .family-plan__breakdown-panel .family-plan__table td small{font-size:.69rem}
+  .family-plan__status{font-size:.65rem;white-space:normal}
+  .family-plan__month-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .family-plan__month-totals span{font-size:.76rem;padding:8px}
+  .family-plan__debts .family-plan__table{white-space:normal}
+  .family-plan__debts .family-plan__table th,.family-plan__debts .family-plan__table td{font-size:.71rem;padding:7px 4px;overflow-wrap:anywhere}
+}
+
+.family-plan__disclosure{width:100%;text-align:left;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff;color:#1e40af;padding:12px 15px;font-weight:750;cursor:pointer}
+.family-plan__disclosure[aria-expanded="true"]{background:#dbeafe}
+.family-plan__monthly-detail{scroll-margin-top:140px}
+@media(max-width:700px){.family-plan__cards article{min-height:64px}.family-plan__monthly-detail .family-plan__breakdown{gap:8px}.family-plan__monthly-detail .family-plan__breakdown-panel{border-radius:9px}}
+@media print{.family-plan__disclosure{display:none!important}}
