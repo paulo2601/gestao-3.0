@@ -21,15 +21,15 @@ describe('family projection', () => {
     ];
     const january = { ...base, itemId: 'jan-salary', competenceMonth: '2027-01-01', dueDate: '2027-01-05' };
     const months = buildFamilyProjection([base, ...expenses, january], '2026-12', 2);
-    expect(months[0].expenses).toBe(14000);
-    expect(months[0].net).toBe(-4000);
-    expect(months[0].items.find(x => x.itemId === 'loan1')?.remainingInstallments).toBe(8);
-    expect(months[1].closingBalance).toBe(6000);
+    expect(months[0]!.expenses).toBe(14000);
+    expect(months[0]!.net).toBe(-4000);
+    expect(months[0]!.items.find(x => x.itemId === 'loan1')?.remainingInstallments).toBe(8);
+    expect(months[1]!.closingBalance).toBe(6000);
     expect(maximumFundingGap(months)).toBe(4000);
   });
   it('does not double count realized and pending amounts', () => {
     const item = { ...base, realizedAmount: 4000, pendingAmount: 6000 };
-    expect(buildFamilyProjection([item], '2026-12')[0].income).toBe(10000);
+    expect(buildFamilyProjection([item], '2026-12')[0]!.income).toBe(10000);
   });
   it('rejects duplicated installment identifiers', () => {
     expect(() => buildFamilyProjection([base, base], '2026-12')).toThrow(/duplicada/);
