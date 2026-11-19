@@ -27,6 +27,17 @@ describe('recurrence forecast', () => {
     };
     expect(forecastRecurrences([rule], [existing], '2026-12', '2026-12')).toEqual([]);
   });
+  it('does not duplicate a materialized recurrence whose amount was adjusted', () => {
+    const existing: FinanceMonthlyItem = {
+      tenantId: 't', companyId: 'personal', sourceKind: 'financial_installment',
+      itemId: 'adjusted', parentId: 'entry', competenceMonth: '2026-11-01',
+      dueDate: '2026-11-30', entryType: 'expense', description: 'Aluguel',
+      counterpartyName: null, categoryId: 'housing', costCenterId: null,
+      installmentNumber: 1, installmentCount: 1, plannedAmount: 1450,
+      realizedAmount: 0, pendingAmount: 1450, paymentStatus: 'pending',
+    };
+    expect(forecastRecurrences([rule], [existing], '2026-11', '2026-11')).toEqual([]);
+  });
   it('supports fortnightly recurring expenses', () => {
     const fortnightly = { ...rule, frequency: 'weekly' as const, intervalCount: 2, startDate: '2026-11-27', nextOccurrenceDate: '2026-11-27' };
     expect(forecastRecurrences([fortnightly], [], '2026-12', '2026-12').map(row => row.dueDate))
