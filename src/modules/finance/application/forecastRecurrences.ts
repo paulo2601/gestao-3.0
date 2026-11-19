@@ -12,8 +12,8 @@ function iso(date: Date): string { return date.toISOString().slice(0, 10); }
 
 /**
  * Creates read-only projected occurrences, never writing back to Supabase.
- * A pre-existing installment with the same due date, description, type and
- * amount takes precedence over a forecast to prevent a second charge.
+ * A materialized installment with the same due date, description and type
+ * takes precedence, even if its amount was edited after the recurrence was set.
  */
 export function forecastRecurrences(
   rules: readonly FinancialRecurrenceRule[],
@@ -26,8 +26,7 @@ export function forecastRecurrences(
   const matchesExisting = (rule: FinancialRecurrenceRule, date: string) =>
     existing.some(item => item.companyId === rule.companyId &&
       item.dueDate === date && item.entryType === rule.entryType &&
-      item.description.trim().toLocaleLowerCase('pt-BR') === rule.description.trim().toLocaleLowerCase('pt-BR') &&
-      Math.round(item.plannedAmount * 100) === Math.round(rule.amount * 100));
+      item.description.trim().toLocaleLowerCase('pt-BR') === rule.description.trim().toLocaleLowerCase('pt-BR'));
   const result: FinanceMonthlyItem[] = [];
   for (const rule of rules) {
     if (rule.status !== 'active' || rule.intervalCount < 1) continue;
