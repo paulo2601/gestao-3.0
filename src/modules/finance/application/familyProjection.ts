@@ -26,7 +26,7 @@ function monthKey(date: string): string {
 export function projectionMonths(startMonth: string, count = 12): string[] {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(startMonth)) throw new Error('Mês inicial inválido.');
   if (!Number.isInteger(count) || count < 1 || count > 120) throw new Error('Horizonte inválido.');
-  const [year, month] = startMonth.split('-').map(Number);
+  const [year, month] = startMonth.split('-').map(Number) as [number, number];
   return Array.from({ length: count }, (_, i) => {
     const date = new Date(Date.UTC(year, month - 1 + i, 1));
     return date.toISOString().slice(0, 7);
