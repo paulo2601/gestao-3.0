@@ -9,6 +9,18 @@ function addMonths(date: Date, months: number, anchor: number): Date {
 }
 
 function iso(date: Date): string { return date.toISOString().slice(0, 10); }
+function normalize(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function sameIncomePurpose(ruleDescription: string, entryDescription: string): boolean {
+  const rule = normalize(ruleDescription);
+  const entry = normalize(entryDescription);
+  if (rule === entry) return true;
+  if (rule.includes('adiantamento') && entry.includes('adiantamento')) return true;
+  if (rule.includes('pagamento') && entry.includes('pagamento')) return true;
+  if (rule.includes('recebimento extra') && entry.includes('recebimento comissao')) return true;
+  return false;
+}
 
 /**
  * Creates read-only projected occurrences, never writing back to Supabase.
@@ -26,7 +38,13 @@ export function forecastRecurrences(
   const matchesExisting = (rule: FinancialRecurrenceRule, date: string) =>
     existing.some(item => item.companyId === rule.companyId &&
       item.dueDate === date && item.entryType === rule.entryType &&
-      item.description.trim().toLocaleLowerCase('pt-BR') === rule.description.trim().toLocaleLowerCase('pt-BR'));
+      (
+        normalize(item.description) === normalize(rule.description) ||
+        (rule.entryType === 'income' && item.sourceKind === 'financial_installment' &&
+          item.categoryId === rule.categoryId &&
+          (sameIncomePurpose(rule.description, item.description) ||
+            Math.round(item.plannedAmount * 100) === Math.round(rule.amount * 100)))
+      ));
   const result: FinanceMonthlyItem[] = [];
   for (const rule of rules) {
     if (rule.status !== 'active' || rule.intervalCount < 1) continue;
