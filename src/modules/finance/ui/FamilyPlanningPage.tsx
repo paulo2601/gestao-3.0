@@ -8,7 +8,7 @@ import './family-planning.css';
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const monthName = (key: string) => {
-  const [year, month] = key.split('-').map(Number);
+  const [year, month] = key.split('-').map(Number) as [number, number];
   return new Date(year, month - 1, 1).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
 };
 const currentMonth = () => {
@@ -38,9 +38,9 @@ export function FamilyPlanningPage({ companies }: Props) {
     const months = projectionMonths(startMonth);
     const repositories = getFinanceRepositories();
     void Promise.all([repositories.monthly.list({
-      tenantId, companyId, competenceFrom: months[0] + '-01', competenceTo: months[months.length - 1] + '-01',
+      tenantId, companyId, competenceFrom: months[0]! + '-01', competenceTo: months[months.length - 1]! + '-01',
     }), repositories.recurrences.list({ tenantId, companyId })]).then(([rows, rules]) => {
-      if (active) setItems([...rows, ...forecastRecurrences(rules, rows, months[0], months[months.length - 1])]);
+      if (active) setItems([...rows, ...forecastRecurrences(rules, rows, months[0]!, months[months.length - 1]!)]);
     })
       .catch((reason: unknown) => { if (active) { setItems([]); setError(reason instanceof Error ? reason.message : 'Não foi possível carregar o planejamento.'); } })
       .finally(() => { if (active) setLoading(false); });
@@ -49,11 +49,11 @@ export function FamilyPlanningPage({ companies }: Props) {
   const projection = useMemo(() => buildFamilyProjection(items, startMonth, openingBalance), [items, startMonth, openingBalance]);
   const simulated = useMemo(() => projection.reduce((acc, row) => {
     const net = row.net + monthlyExtraIncome + monthlySavings;
-    const prior = acc.length ? acc[acc.length - 1].closingBalance : openingBalance;
+    const prior = acc.length ? acc[acc.length - 1]!.closingBalance : openingBalance;
     acc.push({ month: row.month, net, closingBalance: Math.round((prior + net) * 100) / 100 });
     return acc;
   }, [] as { month: string; net: number; closingBalance: number }[]), [projection, monthlyExtraIncome, monthlySavings, openingBalance]);
-  const month = projection.find(row => row.month === selectedMonth) ?? projection[0];
+  const month = projection.find(row => row.month === selectedMonth) ?? projection[0]!;
   const maxGap = maximumFundingGap(projection);
   const firstRecovery = projection.find(row => row.closingBalance >= 0 && row.net > 0);
   if (!personal) return <section className="family-plan"><h1>Planejamento familiar</h1><p>Selecione uma conta com acesso à empresa Pessoal para visualizar este planejamento.</p></section>;
