@@ -16,7 +16,7 @@ const currentMonth = () => {
   return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 };
 function isPersonal(company: CompanySummary) {
-  return (company.tradeName + ' ' + company.legalName).toLocaleUpperCase('pt-BR').includes('PESSOAL');
+  return `${company.tradeName ?? ''} ${company.legalName ?? ''}`.toLocaleUpperCase('pt-BR').includes('PESSOAL');
 }
 interface Props { companies: readonly CompanySummary[] }
 export function FamilyPlanningPage({ companies }: Props) {
@@ -29,12 +29,14 @@ export function FamilyPlanningPage({ companies }: Props) {
   const [items, setItems] = useState<readonly FinanceMonthlyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
   const tenantId = personal?.tenantId;
   const companyId = personal?.id;
   useEffect(() => {
     if (!tenantId || !companyId) { setLoading(false); return; }
     let active = true;
     setLoading(true); setError('');
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(startMonth)) { setLoading(false); setError('Selecione um mês inicial válido.'); return; }
     const months = projectionMonths(startMonth);
     const repositories = getFinanceRepositories();
     void Promise.all([repositories.monthly.list({
@@ -45,15 +47,19 @@ export function FamilyPlanningPage({ companies }: Props) {
       .catch((reason: unknown) => { if (active) { setItems([]); setError(reason instanceof Error ? reason.message : 'Não foi possível carregar o planejamento.'); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [tenantId, companyId, startMonth]);
-  const projection = useMemo(() => buildFamilyProjection(items, startMonth, openingBalance), [items, startMonth, openingBalance]);
+  }, [tenantId, companyId, startMonth, reload]);
+  const projectionResult = useMemo(() => {
+    try { return { rows: buildFamilyProjection(items, startMonth, openingBalance), message: '' }; }
+    catch (reason) { return { rows: [] as ReturnType<typeof buildFamilyProjection>, message: reason instanceof Error ? reason.message : 'Erro ao calcular a projeção.' }; }
+  }, [items, startMonth, openingBalance]);
+  const projection = projectionResult.rows;
   const simulated = useMemo(() => projection.reduce((acc, row) => {
     const net = row.net + monthlyExtraIncome + monthlySavings;
     const prior = acc.length ? acc[acc.length - 1]!.closingBalance : openingBalance;
     acc.push({ month: row.month, net, closingBalance: Math.round((prior + net) * 100) / 100 });
     return acc;
   }, [] as { month: string; net: number; closingBalance: number }[]), [projection, monthlyExtraIncome, monthlySavings, openingBalance]);
-  const month = projection.find(row => row.month === selectedMonth) ?? projection[0]!;
+  const month = projection.find(row => row.month === selectedMonth) ?? projection[0];
   const maxGap = maximumFundingGap(projection);
   const outstanding = projection.flatMap(row => row.items).filter(item => item.entryType === 'expense' && item.sourceKind === 'financial_installment').reduce((sum, item) => sum + Math.max(0, item.pendingAmount), 0);
   const firstNegativeIndex = projection.findIndex(row => row.closingBalance < 0);
@@ -62,13 +68,14 @@ export function FamilyPlanningPage({ companies }: Props) {
   return <section className="family-plan">
     <header className="family-plan__header">
       <div><small>FINANCEIRO · PESSOAL</small><h1>Planejamento financeiro familiar</h1><p>Projeção de 12 meses com cada compromisso discriminado.</p></div>
-      <label>Mês inicial <input type="month" value={startMonth} onChange={event => { setStartMonth(event.target.value); setSelectedMonth(event.target.value); }}/></label>
+      <label>Mês inicial <input type="month" value={startMonth} onChange={event => { if (/^\d{4}-(0[1-9]|1[0-2])$/.test(event.target.value)) { setStartMonth(event.target.value); setSelectedMonth(event.target.value); } }}/></label>
     </header>
     <div className="family-plan__setup"><label>Saldo inicial (R$) <input type="number" step="0.01" value={openingBalance} onChange={event => setOpeningBalance(Number(event.target.value) || 0)}/></label><span>Informe o saldo consolidado das contas pessoais na data inicial. Transferências internas não são receitas.</span></div>
     <div className="family-plan__setup family-plan__actions"><label>Receita extra mensal (R$) <input type="number" step="0.01" value={monthlyExtraIncome} onChange={event => setMonthlyExtraIncome(Number(event.target.value) || 0)}/></label><label>Redução mensal de despesas (R$) <input type="number" step="0.01" value={monthlySavings} onChange={event => setMonthlySavings(Number(event.target.value) || 0)}/></label><button type="button" onClick={() => window.print()}>Imprimir / salvar PDF</button><span>Simulação separada dos valores reais; nenhum lançamento será alterado.</span></div>
-    {error && <p role="alert" className="family-plan__error">{error}</p>}
+    {(error || projectionResult.message) && <p role="alert" className="family-plan__error">{error || projectionResult.message}</p>}
+    <button type="button" onClick={() => setReload(value => value + 1)} disabled={loading}>Atualizar dados financeiros</button>
     {loading && <p role="status">Carregando compromissos financeiros...</p>}
-    {!loading && !error && <>
+    {!loading && !error && !projectionResult.message && month && <>
       <div className="family-plan__cards">
         <article><small>Receitas previstas (12 meses)</small><strong>{currency.format(projection.reduce((sum, row) => sum + row.income, 0))}</strong></article>
         <article><small>Despesas previstas (12 meses)</small><strong>{currency.format(projection.reduce((sum, row) => sum + row.expenses, 0))}</strong></article>
@@ -88,7 +95,7 @@ export function FamilyPlanningPage({ companies }: Props) {
           {row.items.length === 0 && <p>Sem lançamentos cadastrados ou projetados.</p>}
         </section>)}
       </div>
-      <p className="family-plan__notice">Projeção baseada nas parcelas atualmente cadastradas. Para cartão, o valor previsto é a compra parcelada; a coluna de baixas não representa pagamento da fatura. Receitas futuras não lançadas, recorrências ainda não geradas e valores de quitação de empréstimos não podem ser presumidos. O saldo inicial é uma simulação local e não altera bancos nem lançamentos.</p>
+      <p className="family-plan__notice">Projeção baseada nas parcelas atualmente cadastradas. Para cartão, o valor previsto é a compra parcelada; a coluna de baixas não representa pagamento da fatura. Receitas futuras sem lançamento nem regra de recorrência e valores de quitação de empréstimos não podem ser presumidos. O saldo inicial é uma simulação local e não altera bancos nem lançamentos.</p>
     </>}
   </section>;
 }
