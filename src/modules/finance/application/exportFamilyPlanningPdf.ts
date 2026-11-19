@@ -25,7 +25,10 @@ export async function exportFamilyPlanningPdf(months: readonly FamilyMonthProjec
   y += 3;
   line('RESUMO MENSAL', 11, true);
   for (const month of months) {
+    const pendingNonCard = month.items.filter(item => item.entryType === 'expense' && item.sourceKind === 'financial_installment')
+      .reduce((sum, item) => sum + Math.max(0, item.pendingAmount), 0);
     line(`${month.month}  |  Receitas: ${money(month.income)}  |  Despesas: ${money(month.expenses)}  |  Resultado: ${money(month.net)}  |  Saldo projetado: ${money(month.closingBalance)}`, 8);
+    line(`  Pendente fora cartões: ${money(pendingNonCard)}  |  Cartões: conferir pagamentos por fatura`, 8);
   }
   const allItems = months.flatMap(month => month.items);
   const debts = new Map<string, { description: string; count: number; last: number; total: number; pending: number }>();
