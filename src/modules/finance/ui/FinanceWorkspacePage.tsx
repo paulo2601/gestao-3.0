@@ -158,6 +158,8 @@ export function FinanceWorkspacePage({ companies, initialCompanyId }: FinanceWor
       <b>{overdueCount}</b><i>›</i>
     </button>
 
+    {companyLabel(selectedCompany) === 'Pessoal' && <button type="button" className="finance-workspace__late" onClick={() => void navigate('/planejamento-familiar')}><span className="finance-workspace__late-icon"><Icon name="calendar" /></span><span className="finance-workspace__late-copy"><strong>Planejamento financeiro familiar</strong><small>12 meses, parcelas, dívidas e saldo acumulado</small></span><i>›</i></button>}
+
     <div className="finance-workspace__quick">
       <h2>Ações rápidas</h2>
       <div className="finance-workspace__quick-grid">
