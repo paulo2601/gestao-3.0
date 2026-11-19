@@ -4,3 +4,29 @@
 .family-plan__print-all{display:none}@media print{.family-plan__detail{display:none!important}.family-plan__print-all{display:block!important}.family-plan__print-month{break-before:page;break-inside:auto}.family-plan__print-month h2{font-size:13px;margin:0 0 9px}.family-plan__print-month tr{break-inside:avoid}.family-plan__print-month:first-child{break-before:auto}}
 
 @media print{.family-plan__detail.family-plan__debts{display:grid!important;break-before:page;gap:7px}.family-plan__debts h2{font-size:13px}.family-plan__print-footnote{font-size:8px;color:#555;margin:8px 0}.family-plan__print-month{break-before:page}.family-plan__print-month:first-child{break-before:page}.family-plan__print-all{break-inside:auto}.family-plan__print-month table{width:100%;table-layout:fixed}.family-plan__print-month td:nth-child(2),.family-plan__print-month th:nth-child(2){overflow-wrap:anywhere;text-align:left;width:30%}.family-plan__print-month tr{break-inside:avoid}}
+
+.family-plan select{border:1px solid #cbd5e1;border-radius:9px;padding:9px 11px;background:#fff;color:#0f172a;min-width:180px}
+.family-plan__positive{color:#15803d!important}
+.family-plan__monthly tbody th button{text-align:left;white-space:nowrap}
+.family-plan__monthly tbody tr.family-plan__selected{background:#dbeafe}
+.family-plan__monthly-detail{border:1px solid #bfdbfe;background:#fff;border-radius:16px;padding:15px}
+.family-plan__month-totals{display:flex;gap:10px;flex-wrap:wrap}
+.family-plan__month-totals span{padding:9px 12px;background:#eff6ff;border-radius:9px;font-size:.86rem}
+.family-plan__breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.family-plan__breakdown-panel{min-width:0;border:1px solid #dbeafe;border-radius:12px;overflow:hidden;background:white}
+.family-plan__breakdown-panel h3{margin:0;padding:12px;background:#f8fafc;font-size:1rem}
+.family-plan__breakdown-panel .family-plan__table-wrap{border:0;border-radius:0}
+.family-plan__breakdown-panel .family-plan__table{white-space:normal}
+.family-plan__breakdown-panel .family-plan__table th,.family-plan__breakdown-panel .family-plan__table td{padding:9px 7px}
+.family-plan__breakdown-panel .family-plan__table th:first-child,.family-plan__breakdown-panel .family-plan__table td:first-child{text-align:left}
+.family-plan__breakdown-panel .family-plan__table th:nth-child(2),.family-plan__breakdown-panel .family-plan__table td:nth-child(2){text-align:left;min-width:130px}
+.family-plan__breakdown-panel .family-plan__table td small{display:block;color:#64748b}
+.family-plan__analytics>div{padding:14px;border:1px solid #dbeafe;border-radius:12px;background:white;min-width:0}
+.family-plan__chart-row{display:grid;grid-template-columns:70px minmax(0,1fr) 120px;align-items:center;gap:10px;font-size:.78rem}
+.family-plan__chart-row>div{display:grid;gap:3px}
+.family-plan__chart-row i{display:block;height:7px;border-radius:4px}
+.family-plan__bar-income{background:#16a34a}.family-plan__bar-expense{background:#ef4444}
+.family-plan__chart-row small{text-align:right}
+.family-plan__insights p{border-bottom:1px solid #e2e8f0;padding:9px 0}
+@media(max-width:800px){.family-plan__breakdown{grid-template-columns:1fr}.family-plan__chart-row{grid-template-columns:70px minmax(0,1fr) 100px}}
+@media print{.family-plan__monthly-detail,.family-plan__analytics{display:none!important}}
