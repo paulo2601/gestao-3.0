@@ -30,6 +30,7 @@ export function FamilyPlanningPage({ companies }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reload, setReload] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const tenantId = personal?.tenantId;
   const companyId = personal?.id;
   useEffect(() => {
@@ -73,6 +74,16 @@ export function FamilyPlanningPage({ companies }: Props) {
     else groups.set(key, { description: item.description, pending: Math.max(0, item.pendingAmount), installments: 1, latest: item.installmentNumber, total: item.installmentCount });
     return groups;
   }, new Map<string, { description: string; pending: number; installments: number; latest: number; total: number }>());
+  async function downloadPdf() {
+    if (loading || error || projectionResult.message || projection.length !== 12 || exporting) return;
+    setExporting(true);
+    try {
+      const { exportFamilyPlanningPdf } = await import('../application/exportFamilyPlanningPdf');
+      await exportFamilyPlanningPdf(projection);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Não foi possível gerar o PDF.');
+    } finally { setExporting(false); }
+  }
   const firstNegativeIndex = projection.findIndex(row => row.closingBalance < 0);
   const firstRecovery = firstNegativeIndex < 0 ? undefined : projection.find((row, index) => index > firstNegativeIndex && row.closingBalance >= 0);
   if (!personal) return <section className="family-plan"><h1>Planejamento familiar</h1><p>Selecione uma conta com acesso à empresa Pessoal para visualizar este planejamento.</p></section>;
@@ -82,7 +93,7 @@ export function FamilyPlanningPage({ companies }: Props) {
       <label>Mês inicial <input type="month" value={startMonth} onChange={event => { if (/^\d{4}-(0[1-9]|1[0-2])$/.test(event.target.value)) { setStartMonth(event.target.value); setSelectedMonth(event.target.value); } }}/></label>
     </header>
     <div className="family-plan__setup"><label>Saldo inicial (R$) <input type="number" step="0.01" value={openingBalance} onChange={event => setOpeningBalance(Number(event.target.value) || 0)}/></label><span>Informe o saldo consolidado das contas pessoais na data inicial. Transferências internas não são receitas.</span></div>
-    <div className="family-plan__setup family-plan__actions"><label>Receita extra mensal (R$) <input type="number" step="0.01" value={monthlyExtraIncome} onChange={event => setMonthlyExtraIncome(Number(event.target.value) || 0)}/></label><label>Redução mensal de despesas (R$) <input type="number" step="0.01" value={monthlySavings} onChange={event => setMonthlySavings(Number(event.target.value) || 0)}/></label><button type="button" onClick={() => window.print()}>Imprimir / salvar PDF</button><span>Simulação separada dos valores reais; nenhum lançamento será alterado.</span></div>
+    <div className="family-plan__setup family-plan__actions"><label>Receita extra mensal (R$) <input type="number" step="0.01" value={monthlyExtraIncome} onChange={event => setMonthlyExtraIncome(Number(event.target.value) || 0)}/></label><label>Redução mensal de despesas (R$) <input type="number" step="0.01" value={monthlySavings} onChange={event => setMonthlySavings(Number(event.target.value) || 0)}/></label><button type="button" onClick={() => void downloadPdf()} disabled={loading || exporting || projection.length !== 12}>{exporting ? 'Gerando PDF...' : 'Baixar PDF detalhado'}</button><button type="button" onClick={() => window.print()}>Imprimir</button><span>Simulação separada dos valores reais; nenhum lançamento será alterado.</span></div>
     {(error || projectionResult.message) && <p role="alert" className="family-plan__error">{error || projectionResult.message}</p>}
     <button type="button" onClick={() => setReload(value => value + 1)} disabled={loading}>Atualizar dados financeiros</button>
     {loading && <p role="status">Carregando compromissos financeiros...</p>}
