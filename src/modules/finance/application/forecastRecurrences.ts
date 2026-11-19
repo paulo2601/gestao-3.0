@@ -18,7 +18,6 @@ function sameIncomePurpose(ruleDescription: string, entryDescription: string): b
   if (rule === entry) return true;
   if (rule.includes('adiantamento') && entry.includes('adiantamento')) return true;
   if (rule.includes('pagamento') && entry.includes('pagamento')) return true;
-  if (rule.includes('recebimento extra') && entry.includes('recebimento comissao')) return true;
   return false;
 }
 
