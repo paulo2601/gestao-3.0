@@ -189,6 +189,9 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   const [templates, setTemplates] = useState<readonly SmartTemplate[]>([]);
   const manuallyEdited = useRef<Set<string>>(new Set());
   const manualCompany = useRef(false);
+  const initializedForOpen = useRef(false);
+  const launchLock = useRef(false);
+  const [savedEntryPendingCompletion, setSavedEntryPendingCompletion] = useState(false);
   const [paymentAccounts, setPaymentAccounts] = useState<readonly OwnedAccount[]>([]);
   const [paymentCards, setPaymentCards] = useState<readonly OwnedCard[]>([]);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -214,8 +217,13 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   });
 
   useEffect(() => {
-    if (!open) return;
-    setCompanyId(initialCompanyId || companies[0]?.id || '');
+    if (!open) {
+      initializedForOpen.current = false;
+      return;
+    }
+    if (initializedForOpen.current) return;
+    initializedForOpen.current = true;
+    setCompanyId((current) => current && companies.some((item) => item.id === current) ? current : initialCompanyId || companies[0]?.id || '');
     manuallyEdited.current.clear();
     manualCompany.current = false;
     setMoreOptions(false);
@@ -228,6 +236,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
       counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
     });
+  // Inicializar somente na abertura; atualizações de referências não podem apagar um rascunho.
   }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
 
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
@@ -398,9 +407,6 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       set('description', description);
       return;
     }
-    if (!manualCompany.current && match.companyId && match.companyId !== companyId && companies.some((item) => item.id === match.companyId)) {
-      setCompanyId(match.companyId);
-    }
     setForm((current) => {
       const suggested = {
         entryType: match.entryType,
@@ -425,7 +431,6 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     setLocalSuccess(null);
     if (keepData) return;
     manuallyEdited.current.clear();
-    manualCompany.current = false;
     setForm({
       entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: 'pix', launchType: 'single',
       installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
@@ -469,24 +474,35 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   }
 
   async function launch(keepData: boolean) {
+    if (launchLock.current || submitting) return;
+    launchLock.current = true;
     operations.clearFeedback();
     setLocalError(null);
     setLocalSuccess(null);
     const amount = amountFromDigits(form.amountDigits);
     if (!company || !form.description.trim() || !Number.isFinite(amount) || amount <= 0 || !form.categoryId) {
       setLocalError('Preencha descrição, valor e categoria.');
+      launchLock.current = false;
       return;
     }
     if (form.paymentMethod === 'credit' && (!form.cardRef || form.entryType !== 'expense')) {
       setLocalError('Selecione um cartão válido.');
+      launchLock.current = false;
       return;
     }
     const immediatePayment = ['pix', 'debit', 'cash'].includes(form.paymentMethod);
     if (immediatePayment && !form.accountRef) {
       setLocalError('Selecione o banco/conta usado no pagamento.');
+      launchLock.current = false;
+      return;
+    }
+    if (savedEntryPendingCompletion) {
+      setLocalError('O lançamento anterior pode ter sido gravado parcialmente. Confira o registro antes de tentar novamente.');
+      launchLock.current = false;
       return;
     }
     setSubmitting(true);
+    let entryCreated = false;
     try {
       if (form.launchType === 'recurring') {
         const count = Math.max(1, Math.trunc(Number(form.recurrenceCount || '1')));
@@ -533,6 +549,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           installmentCount: form.launchType === 'installment' ? Math.max(2, Math.trunc(Number(form.installmentCount || '2'))) : 1,
           notes: form.notes.trim() || null,
         });
+        entryCreated = true;
         const includeInBudget = isCrIncome ? form.includeInBudget : true;
         const budgetUpdate = await getSupabaseClient()
           .from('financial_entries')
@@ -581,6 +598,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
 
       // A gravação já foi confirmada. Falhas de atualização visual não podem
       // transformar um lançamento concluído em erro nem incentivar duplicação.
+      setSavedEntryPendingCompletion(false);
       resetAfterSave(keepData);
       setLocalSuccess(keepData ? 'Lançamento concluído. Todos os dados foram mantidos.' : 'Lançamento concluído. Pronto para o próximo lançamento.');
       // Notifique as telas imediatamente após a confirmação da gravação.
@@ -592,8 +610,15 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         // Falha de atualização de cadastros não desfaz o lançamento salvo.
       });
     } catch (error) {
-      setLocalError(error instanceof Error && error.message ? error.message : 'Não foi possível concluir o lançamento.');
+      if (entryCreated) {
+        setSavedEntryPendingCompletion(true);
+        window.dispatchEvent(new Event('finance-data-changed'));
+        setLocalError('O lançamento foi criado, mas uma etapa posterior falhou. Confira o pagamento e não lance novamente para evitar duplicidade.');
+      } else {
+        setLocalError(error instanceof Error && error.message ? error.message : 'Não foi possível concluir o lançamento.');
+      }
     } finally {
+      launchLock.current = false;
       setSubmitting(false);
     }
   }
