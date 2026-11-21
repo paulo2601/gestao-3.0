@@ -27,6 +27,11 @@ export interface PlatformSession {
   selectCompany: (companyId: string) => void;
 }
 
+// The dedicated green Gestão Pessoal company must never appear in the blue app.
+const GREEN_PERSONAL_COMPANY_ID = 'a01d9c46-fc5b-46ef-b742-5e54dca94d01';
+function excludeGreenPersonal(contexts: readonly AccessContext[]): readonly AccessContext[] {
+  return contexts.map(context => ({ ...context, companies: context.companies.filter(company => company.id !== GREEN_PERSONAL_COMPANY_ID) })).filter(context => context.companies.length > 0);
+}
 const ACCESS_CACHE_VERSION = 'v1';
 function companyStorageKey(userId: string): string { return `gestao.activeCompanyId:${userId}`; }
 function accessStorageKey(userId: string): string { return `gestao.accessContexts:${ACCESS_CACHE_VERSION}:${userId}`; }
@@ -71,7 +76,7 @@ export function usePlatformSession(): PlatformSession {
   const hydrateAccess = useCallback(async () => {
     const currentUser = await authGateway.getCurrentUser();
     if (!currentUser) { setUser(null); setContexts([]); setActiveCompanyId(null); setStatus('anonymous'); return; }
-    const cachedContexts = readStoredContexts(currentUser.id);
+    const cachedContexts = excludeGreenPersonal(readStoredContexts(currentUser.id));
     const cachedCompanies = flattenAuthorizedCompanies(cachedContexts);
     if (cachedCompanies.length > 0) {
       const storedCompanyId = readStoredCompany(currentUser.id);
@@ -82,12 +87,12 @@ export function usePlatformSession(): PlatformSession {
 
     // A fresh login or password recovery can race the initial access lookup.
     // Refresh the auth token once before concluding that a new tenant has no companies.
-    let nextContexts = await accessRepository.listContextsForCurrentUser();
+    let nextContexts = excludeGreenPersonal(await accessRepository.listContextsForCurrentUser());
     let nextCompanies = flattenAuthorizedCompanies(nextContexts);
     if (nextCompanies.length === 0) {
       const refreshError = await authGateway.refreshSessionError();
       if (!refreshError) {
-        nextContexts = await accessRepository.listContextsForCurrentUser();
+        nextContexts = excludeGreenPersonal(await accessRepository.listContextsForCurrentUser());
         nextCompanies = flattenAuthorizedCompanies(nextContexts);
       }
     }
