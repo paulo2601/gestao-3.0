@@ -1,6 +1,6 @@
 import type { CompanyScope } from './registries';
 
-export type BankInstitution = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6';
+export type BankInstitution = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'mercadopago';
 
 export interface FinancialAccountBalance extends CompanyScope {
   accountId: string;
