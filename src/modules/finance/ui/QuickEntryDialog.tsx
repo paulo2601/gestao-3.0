@@ -612,7 +612,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     {!company ? <Feedback tone="danger" title="Empresa obrigatória" message="Selecione uma empresa para continuar." /> : !references && operations.state.busy ? <LoadingState label="Carregando dados do lançamento…" /> : <>
       {(localError || (!localSuccess && operations.state.errorMessage)) && <Feedback tone="danger" title="Não foi possível lançar" message={localError || operations.state.errorMessage || ''} />}
       {(localSuccess ?? operations.state.successMessage) && <Feedback tone="success" title="Lançamento concluído" message={localSuccess ?? operations.state.successMessage ?? ''} />}
-      <div className="quick-entry">
+      <div className={`quick-entry${PERSONAL_APP ? " quick-entry--personal" : ""}`}>
         <div className="quick-entry__hero">
           <div className="quick-entry__type-switch" role="group" aria-label="Tipo do lançamento">
             <Button variant="tertiary" className={`quick-entry__type-choice quick-entry__type-choice--expense${form.entryType === 'expense' ? ' is-selected' : ''}`} aria-pressed={form.entryType === 'expense'} onClick={() => set('entryType', 'expense')}>
