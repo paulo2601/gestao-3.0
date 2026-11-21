@@ -37,3 +37,12 @@
 .app-shell--personal .app-page{width:calc(100% - 24px);min-width:0;max-width:100%;box-sizing:border-box}
 .app-shell--personal .app-mobile-nav{bottom:0;padding-bottom:max(7px,env(safe-area-inset-bottom,0px));border-radius:28px 28px 0 0}
 }
+
+/* Android standalone may report zero safe-area insets even when system bars
+   visually overlay the web viewport. Keep a conservative PWA-only fallback. */
+@media(max-width:760px) and (display-mode:standalone){
+.app-shell--personal{--personal-system-top:max(env(safe-area-inset-top,0px),28px);--personal-system-bottom:max(env(safe-area-inset-bottom,0px),28px)}
+.app-shell--personal .app-header{padding-block-start:var(--personal-system-top)}
+.app-shell--personal .app-mobile-nav{bottom:var(--personal-system-bottom);padding-bottom:7px}
+.app-shell--personal .app-page{padding-bottom:calc(104px + var(--personal-system-bottom))}
+}
