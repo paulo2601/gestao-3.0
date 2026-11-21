@@ -647,16 +647,16 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         <div className="quick-entry__form-card">
           <div className="quick-entry__two-col">
             <Input label="Data" type="date" value={form.date} onChange={(event) => set('date', event.target.value)} required />
-            <Input label="Valor" inputMode="numeric" placeholder="R$ 0,00" value={formatMoneyDigits(form.amountDigits)} onChange={(event) => set('amountDigits', digitsOnly(event.target.value))} required />
+            <Input label="Valor" autoComplete={PERSONAL_APP ? "off" : undefined} inputMode="numeric" placeholder="R$ 0,00" value={formatMoneyDigits(form.amountDigits)} onChange={(event) => set('amountDigits', digitsOnly(event.target.value))} required />
           </div>
-          <Input label="Descrição" placeholder="Ex.: Café da manhã" value={form.description} onChange={(event) => smartFill(event.target.value)} required />
+          <Input label="Descrição" autoComplete={PERSONAL_APP ? "off" : undefined} placeholder="Ex.: Café da manhã" value={form.description} onChange={(event) => smartFill(event.target.value)} required />
 
           <div className="quick-entry__two-col">
             <div className="quick-entry__registry-field"><div className="quick-entry__registry-control">
               <Select label="Categoria" value={form.categoryId} onChange={(event) => set('categoryId', event.target.value)} options={categoryOptions} required />
               <Button className="quick-entry__add" aria-label="Adicionar categoria" onClick={() => { setInlineRegistry(inlineRegistry === 'category' ? null : 'category'); setNewRegistryName(''); }}>＋</Button>
             </div>{inlineRegistry === 'category' && <div className="quick-entry__registry-create"><Input label="Nova categoria" value={newRegistryName} onChange={(event) => setNewRegistryName(event.target.value)} /><Button disabled={busy || !newRegistryName.trim()} onClick={() => { void createInlineRegistry('category'); }}>Adicionar</Button></div>}</div>
-            <Input label={form.entryType === 'expense' ? 'Fornecedor' : 'Pagador / origem'} placeholder="Selecione / digite" value={form.counterparty} onChange={(event) => set('counterparty', event.target.value)} />
+            <Input label={form.entryType === 'expense' ? 'Fornecedor' : 'Pagador / origem'} autoComplete={PERSONAL_APP ? "off" : undefined} placeholder="Selecione / digite" value={form.counterparty} onChange={(event) => set('counterparty', event.target.value)} />
           </div>
 
           {!PERSONAL_APP && <div className="quick-entry__company-section">
