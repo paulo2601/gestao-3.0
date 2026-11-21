@@ -8,8 +8,8 @@ const appName = secondary ? 'Gestão 3.0 — 2' : 'Gestão 3.0';
 const shortName = secondary ? 'Gestão 2' : 'Gestão';
 const appId = secondary ? '/gestao-3-0-secondary' : '/gestao-3-0-cr';
 const themeColor = secondary ? '#168568' : '#061b3a';
-const icon = secondary ? '/gestao-secondary-icon.svg' : '/gestao-icon-192.png';
-const icon512 = secondary ? '/gestao-secondary-icon.svg' : '/gestao-icon-512.png';
+const icon = secondary ? '/gestao-secondary-icon-192.png' : '/gestao-icon-192.png';
+const icon512 = secondary ? '/gestao-secondary-icon-512.png' : '/gestao-icon-512.png';
 
 export default defineConfig({
   define: {
@@ -38,8 +38,9 @@ export default defineConfig({
           lang: 'pt-BR', id: appId, start_url: '/?source=pwa', scope: '/',
           display: 'standalone', background_color: themeColor, theme_color: themeColor,
           icons: [
-            { src: icon, sizes: secondary ? 'any' : '192x192', type: secondary ? 'image/svg+xml' : 'image/png', purpose: 'any' },
-            { src: icon512, sizes: secondary ? 'any' : '512x512', type: secondary ? 'image/svg+xml' : 'image/png', purpose: 'any' },
+            { src: icon, sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           ],
         }) });
       },
