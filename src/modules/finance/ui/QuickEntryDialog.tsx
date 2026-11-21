@@ -13,12 +13,13 @@ import type { FinancialAccount } from '../domain/registries';
 import { getFinanceRepositories } from '../infrastructure/createFinanceRepositories';
 import { useFinanceOperations } from './useFinanceOperations';
 import './quick-entry.css';
+import type { BenefitCard } from './PersonalBenefits';
 
 declare const __GESTAO_APP_VARIANT__: 'primary' | 'secondary';
 const PERSONAL_APP = __GESTAO_APP_VARIANT__ === 'secondary';
 type EntryType = 'expense' | 'income';
 type LaunchType = 'single' | 'installment' | 'recurring';
-type PaymentMethod = 'pix' | 'debit' | 'credit' | 'cash' | 'transfer' | 'boleto' | 'other';
+type PaymentMethod = 'pix' | 'debit' | 'credit' | 'benefit' | 'cash' | 'transfer' | 'boleto' | 'other';
 type InlineRegistry = 'costCenter' | 'category';
 type OwnedAccount = FinancialAccount & { ownerLabel: string };
 type OwnedCard = CreditCard & { ownerLabel: string };
@@ -195,6 +196,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   const manualCompany = useRef(false);
   const [paymentAccounts, setPaymentAccounts] = useState<readonly OwnedAccount[]>([]);
   const [paymentCards, setPaymentCards] = useState<readonly OwnedCard[]>([]);
+  const [benefitCards, setBenefitCards] = useState<BenefitCard[]>([]);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -236,6 +238,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     });
   }, [firstCompanyId, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
 
+  useEffect(() => { if (!open || !PERSONAL_APP || !companies.length) return; let cancelled = false; void getSupabaseClient().from('personal_benefit_cards').select('*').in('company_id', companies.map(c => c.id)).eq('status', 'active').then(({data}) => { if (!cancelled) setBenefitCards((data || []) as BenefitCard[]); }); return () => { cancelled = true; }; }, [open, companies]);
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
   const scope = useMemo(() => ({ tenantId: company?.tenantId ?? '', companyId: company?.id ?? '' }), [company?.id, company?.tenantId]);
   const operations = useFinanceOperations(scope, 'quick');
@@ -369,12 +372,14 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   const categories = (references?.categories ?? []).filter((item) => item.status === 'active' && (item.kind === 'both' || item.kind === form.entryType));
   const costCenters = PERSONAL_APP ? activeCostCenters.filter(item => item.name === 'Paulo' || item.name === 'Camila').map(item => ({ item, label: item.name })) : canonicalCostCenters(activeCostCenters);
   const accountOptions = [{ value: '', label: 'Selecione' }, ...paymentAccounts.map((item) => ({ value: paymentRef(item.companyId, item.id), label: PERSONAL_APP ? item.name : `${item.ownerLabel} · ${item.name}` }))];
+  const benefitOptions = [{ value: '', label: 'Selecione o benefício' }, ...benefitCards.filter(card => card.company_id === company?.id).map(card => ({ value: card.id, label: card.name }))];
   const cardOptions = [{ value: '', label: 'Selecione o cartão' }, ...paymentCards.map((item) => ({ value: paymentRef(item.companyId, item.id), label: `${item.ownerLabel} · ${item.name}` }))];
   const categoryOptions = [{ value: '', label: 'Selecione' }, ...categories.map((item) => ({ value: item.id, label: item.name }))];
   const costCenterOptions = [{ value: '', label: 'Selecione' }, ...costCenters.map(({ item, label }) => ({ value: item.id, label }))];
   const paymentOptions = [
     { value: 'pix', label: 'Pix' }, { value: 'debit', label: 'Cartão de débito' },
     ...(form.entryType === 'expense' ? [{ value: 'credit', label: 'Cartão de crédito' }] : []),
+    ...(PERSONAL_APP ? [{ value: 'benefit', label: 'Cartão de benefício (VR/VA)' }] : []),
     { value: 'cash', label: 'Dinheiro' }, { value: 'transfer', label: 'Transferência' },
     { value: 'boleto', label: 'Boleto' }, { value: 'other', label: 'Outro' },
   ];
@@ -386,7 +391,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
 
   function setPaymentMethod(value: PaymentMethod) {
     manuallyEdited.current.add('paymentMethod');
-    setForm((current) => ({ ...current, paymentMethod: value }));
+    setForm((current) => ({ ...current, paymentMethod: value, launchType: value === 'benefit' ? 'single' : current.launchType, cardRef: value === 'benefit' ? '' : current.cardRef }));
   }
 
   function selectCompany(nextCompanyId: string) {
@@ -492,6 +497,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       setLocalError('Preencha descrição, valor e categoria.');
       return;
     }
+    if (PERSONAL_APP && form.paymentMethod === 'benefit' && (!form.cardRef || form.launchType !== 'single')) { setLocalError('Selecione um cartão de benefício e o lançamento Único. Recorrências de benefício ainda não estão habilitadas.'); return; }
     if (form.paymentMethod === 'credit' && (!form.cardRef || form.entryType !== 'expense')) {
       setLocalError('Selecione um cartão válido.');
       return;
@@ -511,7 +517,20 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     }
     setSubmitting(true);
     try {
-      if (form.launchType === 'recurring') {
+      if (PERSONAL_APP && form.paymentMethod === 'benefit') {
+        const benefit = benefitCards.find(card => card.id === form.cardRef && card.company_id === company.id);
+        if (!benefit) throw new Error('Cartão de benefício não encontrado para esta empresa.');
+        const db = getSupabaseClient();
+        if (form.entryType === 'expense') {
+          const { data: prior, error: priorError } = await db.from('personal_benefit_movements').select('amount,direction').eq('card_id', benefit.id);
+          if (priorError) throw priorError;
+          const balance = Number(benefit.opening_balance) + (prior || []).reduce((sum, item) => sum + Number(item.amount) * (item.direction === 'credit' ? 1 : -1), 0);
+          if (balance < amount) throw new Error('Saldo insuficiente no cartão de benefício.');
+        }
+        const { error: movementError } = await db.from('personal_benefit_movements').insert({ tenant_id: company.tenantId, company_id: company.id, card_id: benefit.id, movement_date: form.date, description: form.description.trim(), amount, direction: form.entryType === 'income' ? 'credit' : 'debit', category_id: form.categoryId });
+        if (movementError) throw movementError;
+        window.dispatchEvent(new Event('finance-benefit-changed'));
+      } else if (form.launchType === 'recurring') {
         const count = form.ongoingInstallment && PERSONAL_APP ? Number(form.totalInstallments) - Number(form.currentInstallment) + 1 : Math.max(1, Math.trunc(Number(form.recurrenceCount || '1')));
         await operations.createRecurrence({
           entryType: form.entryType, description: form.description.trim(), counterpartyName: form.counterparty.trim() || null,
@@ -680,7 +699,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
 
           <div className="quick-entry__two-col">
             <Select label="Forma de pagamento" value={form.paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)} options={paymentOptions} />
-            {form.paymentMethod === 'credit' ? <Select label="Cartão" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={cardOptions} required /> : <Select label="Banco / Conta" value={form.accountRef} onChange={(event) => set('accountRef', event.target.value)} options={accountOptions} />}
+            {form.paymentMethod === 'benefit' ? <Select label="Cartão de benefício" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={benefitOptions} required /> : form.paymentMethod === 'credit' ? <Select label="Cartão" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={cardOptions} required /> : <Select label="Banco / Conta" value={form.accountRef} onChange={(event) => set('accountRef', event.target.value)} options={accountOptions} />}
           </div>
         </div>
 
@@ -690,10 +709,10 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
             <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'single' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'single'} onClick={() => set('launchType', 'single')}>
               <span className="quick-entry__launch-check">{form.launchType === 'single' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">▱</span><span><strong>Único</strong><small>À vista</small></span>
             </Button>
-            <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'installment' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'installment'} onClick={() => set('launchType', 'installment')}>
+            <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'installment' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'installment'} onClick={() => { if (form.paymentMethod !== 'benefit') set('launchType', 'installment'); }} disabled={form.paymentMethod === 'benefit'}>
               <span className="quick-entry__launch-check">{form.launchType === 'installment' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">▤</span><span><strong>Parcelado</strong><small>Várias parcelas</small></span>
             </Button>
-            {form.paymentMethod !== 'credit' && <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'recurring' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'recurring'} onClick={() => set('launchType', 'recurring')}>
+            {form.paymentMethod !== 'credit' && form.paymentMethod !== 'benefit' && <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'recurring' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'recurring'} onClick={() => set('launchType', 'recurring')}>
               <span className="quick-entry__launch-check">{form.launchType === 'recurring' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">⟳</span><span><strong>Recorrente</strong><small>Mensal ou quinzenal</small></span>
             </Button>}
           </div>
