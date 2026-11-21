@@ -54,7 +54,7 @@ export function Dialog({
     document.body.style.overflow = 'hidden';
 
     const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(focusableSelector);
-    firstFocusable?.focus();
+    firstFocusable?.focus({ preventScroll: true });
 
     return () => {
       document.body.style.overflow = previousOverflow;
