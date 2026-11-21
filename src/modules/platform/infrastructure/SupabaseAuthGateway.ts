@@ -113,7 +113,7 @@ export class SupabaseAuthGateway implements AuthGateway {
     if(error)throw error;
   }
   async signOut(): Promise<void> {
-    const { error } = await getSupabaseClient().auth.signOut();
+    const { error } = await getSupabaseClient().auth.signOut({ scope: 'local' });
 
     if (error) {
       throw error;
