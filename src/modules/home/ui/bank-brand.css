@@ -9,6 +9,8 @@
 .bank-brand--bradesco{--bank-fg:#fff;--bank-accent:#fff;--bank-bg:#c9144f;--bank-bg-2:#9f0c3c;--bank-text:#fff;--bank-muted:rgba(255,255,255,.84);--bank-track:rgba(255,255,255,.24)}
 .bank-brand--bb{--bank-fg:#173f8a;--bank-accent:#173f8a;--bank-bg:#f9df16;--bank-bg-2:#efc800;--bank-text:#173f8a;--bank-muted:rgba(23,63,138,.76);--bank-track:rgba(23,63,138,.18)}
 .bank-brand--sicredi{--bank-fg:#fff;--bank-accent:#fff;--bank-bg:#37a447;--bank-bg-2:#278637;--bank-text:#fff;--bank-muted:rgba(255,255,255,.84);--bank-track:rgba(255,255,255,.24)}
+.bank-brand--mercadopago{--bank-fg:#123c77;--bank-accent:#009ee3;--bank-bg:#009ee3;--bank-bg-2:#0074bd;--bank-text:#fff;--bank-muted:rgba(255,255,255,.86);--bank-track:rgba(255,255,255,.24)}
+.bank-brand--mercadopago .bank-brand__mark{background:#fff;color:#0878bf;border-radius:10px;padding:8px 6px;font-size:.8rem;line-height:1.05;white-space:normal;text-align:center}
 .bank-brand--c6{--bank-fg:#fff;--bank-accent:#fff;--bank-bg:#1c1f24;--bank-bg-2:#090b0e;--bank-text:#fff;--bank-muted:rgba(255,255,255,.78);--bank-track:rgba(255,255,255,.22)}
 .bank-brand__mark{display:inline-flex;width:max-content;max-width:100%;align-items:center;justify-content:flex-start;color:var(--bank-fg);font-weight:900;letter-spacing:-.04em;line-height:1;white-space:nowrap}
 .bank-brand--nubank .bank-brand__mark{font-size:1.35rem;text-transform:lowercase}
