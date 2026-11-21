@@ -213,10 +213,17 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     includeInBudget: false,
   });
 
-  // A fresh companies array after a save must not reset the user's retained form.
+  // Initialize only when the dialog opens. Parent refreshes after saving can
+  // change initial props without representing a new entry session.
   const firstCompanyId = companies[0]?.id ?? '';
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      wasOpen.current = false;
+      return;
+    }
+    if (wasOpen.current) return;
+    wasOpen.current = true;
     setCompanyId(initialCompanyId || firstCompanyId);
     manuallyEdited.current.clear();
     manualCompany.current = false;
