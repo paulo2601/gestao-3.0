@@ -87,3 +87,32 @@
   padding-bottom:max(12px,env(safe-area-inset-bottom,0px));
 }
 }
+
+/* Gestão Pessoal: the income/expense quick-entry dialog must use the same
+   Android-safe viewport as bank and card dialogs, without its old 100dvh box. */
+@media(max-width:760px) and (display-mode:standalone){
+:root:has(.app-shell--personal) .ui-dialog-backdrop[data-variant="quick-entry-personal"]{
+  inset-block-start:max(env(safe-area-inset-top,0px),28px);
+  inset-block-end:max(env(safe-area-inset-bottom,0px),28px);
+  height:auto;
+  min-height:0;
+  padding:0;
+  overflow:hidden;
+}
+:root:has(.app-shell--personal) .ui-dialog-backdrop[data-variant="quick-entry-personal"] .ui-dialog{
+  height:100%;
+  max-height:100%;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+}
+:root:has(.app-shell--personal) .ui-dialog-backdrop[data-variant="quick-entry-personal"] .ui-dialog__content{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+}
+:root:has(.app-shell--personal) .ui-dialog-backdrop[data-variant="quick-entry-personal"] .ui-dialog__footer{
+  flex:0 0 auto;
+  padding-bottom:12px;
+}
+}
