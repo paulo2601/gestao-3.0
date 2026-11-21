@@ -197,6 +197,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   const [paymentAccounts, setPaymentAccounts] = useState<readonly OwnedAccount[]>([]);
   const [paymentCards, setPaymentCards] = useState<readonly OwnedCard[]>([]);
   const [benefitCards, setBenefitCards] = useState<BenefitCard[]>([]);
+  const benefitCompanyIds = companies.map(item => item.id).join(',');
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -238,7 +239,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     });
   }, [firstCompanyId, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
 
-  useEffect(() => { if (!open || !PERSONAL_APP || !companies.length) return; let cancelled = false; void getSupabaseClient().from('personal_benefit_cards').select('*').in('company_id', companies.map(c => c.id)).eq('status', 'active').then(({data}) => { if (!cancelled) setBenefitCards((data || []) as BenefitCard[]); }); return () => { cancelled = true; }; }, [open, companies]);
+  useEffect(() => { if (!open || !PERSONAL_APP || !benefitCompanyIds) return; let cancelled = false; void getSupabaseClient().from('personal_benefit_cards').select('*').in('company_id', benefitCompanyIds.split(',')).eq('status', 'active').then(({data}) => { if (!cancelled) setBenefitCards((data || []) as BenefitCard[]); }); return () => { cancelled = true; }; }, [open, benefitCompanyIds]);
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
   const scope = useMemo(() => ({ tenantId: company?.tenantId ?? '', companyId: company?.id ?? '' }), [company?.id, company?.tenantId]);
   const operations = useFinanceOperations(scope, 'quick');
