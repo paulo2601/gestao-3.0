@@ -10,7 +10,7 @@ const brl = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency
 export const benefitBalance = (card: BenefitCard, movements: BenefitMovement[]) =>
   Number(card.opening_balance) + movements.filter(m => m.card_id === card.id).reduce((sum, m) => sum + Number(m.amount) * (m.direction === 'credit' ? 1 : -1), 0);
 
-export function PersonalBenefits({ companies }: { companies: readonly CompanySummary[] }) {
+export function PersonalBenefits({ companies, createSignal = 0 }: { companies: readonly CompanySummary[]; createSignal?: number }) {
   const [cards, setCards] = useState<BenefitCard[]>([]);
   const [movements, setMovements] = useState<BenefitMovement[]>([]);
   const [recurring, setRecurring] = useState<RecurringCredit[]>([]);
@@ -24,6 +24,7 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [reportMonth, setReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  useEffect(() => { if (createSignal > 0) { setCreating(true); setSelectedCard(null); } }, [createSignal]);
   const companyKeys = companies.map(c => c.id).join(',');
   const load = useCallback(async () => {
     const companyIds = companyKeys.split(',').filter(Boolean);
@@ -69,47 +70,48 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
     setBusy(false); if (issue) { setError(issue.code === '23505' ? 'Este crédito mensal já foi confirmado.' : issue.message); return; }
     await load(); window.dispatchEvent(new Event('finance-benefit-changed'));
   }
-  const reportMovements = movements.filter(m => m.movement_date.startsWith(reportMonth));
+  const activeCard = cards.find(card => card.id === selectedCard);
+  const reportMovements = movements.filter(m => m.card_id === selectedCard && m.movement_date.startsWith(reportMonth));
   const reportCredits = reportMovements.filter(m => m.direction === 'credit').reduce((s,m) => s + Number(m.amount), 0);
   const reportExpenses = reportMovements.filter(m => m.direction === 'debit').reduce((s,m) => s + Number(m.amount), 0);
   function exportReport() {
     const quote = (value: string) => '"' + value.replaceAll('"','""') + '"';
     const lines = [['Data','Cartão','Descrição','Tipo','Valor (R$)'].map(quote).join(';'), ...reportMovements.map(m => [m.movement_date, cards.find(c => c.id === m.card_id)?.name || '', m.description, m.direction === 'credit' ? 'Crédito' : 'Despesa', Number(m.amount).toFixed(2).replace('.',',')].map(quote).join(';'))];
-    const blob = new Blob(['\\uFEFF' + lines.join('\\r\\n')], { type: 'text/csv;charset=utf-8' });
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'relatorio-beneficios-' + reportMonth + '.csv'; link.click(); URL.revokeObjectURL(url);
   }
-  return <section style={{ marginTop: 24 }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-      <h2>Cartões de benefício</h2><Button onClick={() => setCreating(!creating)}>+ Cartão de benefício</Button>
-    </div>
-    <p>VR, VA e outros saldos pré-pagos. Não compõem o saldo bancário nem a fatura de crédito.</p>
-    {error && <p role="alert" style={{ color: 'crimson' }}>{error}</p>}
-    {creating && <div style={{ display: 'grid', gap: 10, maxWidth: 420, marginBottom: 16 }}>
-      <label>Nome do cartão<input value={name} onChange={e => setName(e.target.value)} /></label>
-      <label>Responsável / empresa<select value={companyId || companies[0]?.id || ''} onChange={e => setCompanyId(e.target.value)}>{companies.map(c => <option key={c.id} value={c.id}>{c.tradeName || c.legalName}</option>)}</select></label>
-      <label>Saldo inicial (R$)<input type="number" min="0" step="0.01" value={opening} onChange={e => setOpening(e.target.value)} /></label>
-      <Button disabled={busy} onClick={() => { void create(); }}>Salvar benefício</Button>
+  return <section className="personal-benefits">
+    {error && <p role="alert" className="personal-benefits__error">{error}</p>}
+    {creating && <div className="personal-benefits__panel">
+      <div className="personal-benefits__panel-header"><h2>Novo cartão de benefício</h2><Button variant="secondary" onClick={() => setCreating(false)}>Cancelar</Button></div>
+      <div className="personal-benefits__form">
+        <label>Nome do cartão<input value={name} onChange={e => setName(e.target.value)} /></label>
+        <label>Responsável / empresa<select value={companyId || companies[0]?.id || ''} onChange={e => setCompanyId(e.target.value)}>{companies.map(company => <option key={company.id} value={company.id}>{company.tradeName || company.legalName}</option>)}</select></label>
+        <label>Saldo inicial (R$)<input type="number" min="0" step="0.01" value={opening} onChange={e => setOpening(e.target.value)} /></label>
+        <Button disabled={busy} onClick={() => { void create(); }}>Salvar benefício</Button>
+      </div>
     </div>}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 12 }}>
-      {cards.map(card => <div key={card.id} style={{ border: '1px solid var(--border-color, #d4ddd6)', borderRadius: 14, padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-          <strong>{card.name}</strong>
-          {card.provider.trim().toUpperCase() === 'VR' && <span aria-label="VR Benefícios" title="VR Benefícios" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#008b55', color: '#fff', borderRadius: 9, width: 66, height: 52, flexShrink: 0, fontWeight: 900, letterSpacing: '-2px', fontSize: 27, lineHeight: 1 }}>VR<span style={{ background: '#a78a44', letterSpacing: 0, fontSize: 8, width: '100%', textAlign: 'center', marginTop: 3, padding: '3px 0', borderRadius: '0 0 7px 7px' }}>Benefícios</span></span>}
-        </div><div style={{ fontSize: 12 }}>Cartão de benefício · {card.provider}</div>
-        <div style={{ marginTop: 12 }}>Saldo disponível</div><strong style={{ fontSize: 24 }}>{brl(benefitBalance(card, movements))}</strong>
-        <div style={{ marginTop: 12, fontSize: 13 }}><strong>Crédito mensal</strong></div>
-        {recurring.find(r => r.card_id === card.id && r.active) ? (() => { const rule = recurring.find(r => r.card_id === card.id && r.active)!; const currentMonth = new Date().toISOString().slice(0,7); const credited = movements.some(m => m.card_id === card.id && m.direction === 'credit' && m.movement_date.startsWith(currentMonth) && m.description === rule.description); return <div><p>{brl(Number(rule.amount))} · dia {rule.day_of_month} · {credited ? 'Crédito registrado neste mês' : 'Aguardando confirmação'}</p><Button disabled={busy || credited} onClick={() => { void confirmCredit(card, rule); }}>Confirmar recebimento deste mês</Button></div>; })() : <div style={{ display: 'grid', gap: 6 }}><label>Valor mensal (R$)<input type="number" min="0.01" step="0.01" value={recurringAmount[card.id] || ''} onChange={e => setRecurringAmount(v => ({ ...v, [card.id]: e.target.value }))} /></label><label>Dia do crédito<input type="number" min="1" max="31" value={recurringDay[card.id] || ''} onChange={e => setRecurringDay(v => ({ ...v, [card.id]: e.target.value }))} /></label><Button disabled={busy} onClick={() => { void saveRecurring(card); }}>Configurar crédito mensal</Button></div>}
-        <div style={{ marginTop: 12, fontSize: 13 }}>Movimentações <button type="button" onClick={() => setSelectedCard(selectedCard === card.id ? null : card.id)}>{selectedCard === card.id ? 'Ocultar histórico' : 'Ver histórico completo'}</button></div>
-        {movements.filter(m => m.card_id === card.id).slice(0, selectedCard === card.id ? undefined : 8).map(m => <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '5px 0' }}><span>{m.movement_date.split('-').reverse().join('/')} · {m.description}</span><strong>{m.direction === 'credit' ? '+' : '−'} {brl(Number(m.amount))}</strong></div>)}
-      </div>)}
-    </div>
-    <section style={{ marginTop: 24 }} aria-label="Relatório de benefícios">
-      <h3>Relatório mensal de benefícios</h3>
-      <p>Créditos e compras são apresentados separadamente, sem compor entradas, saídas ou saldo bancário.</p>
-      <label>Competência <input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} /></label>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, margin: '12px 0' }}><div>Créditos <strong>{brl(reportCredits)}</strong></div><div>Despesas <strong>{brl(reportExpenses)}</strong></div><div>Variação do benefício <strong>{brl(reportCredits - reportExpenses)}</strong></div></div>
-      <Button onClick={exportReport} disabled={!reportMovements.length}>Exportar relatório CSV</Button>
-      <div style={{ marginTop: 12 }}>{reportMovements.map(m => <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '6px 0' }}><span>{m.movement_date.split('-').reverse().join('/')} · {cards.find(c => c.id === m.card_id)?.name} · {m.description}</span><strong>{m.direction === 'credit' ? '+' : '−'} {brl(Number(m.amount))}</strong></div>)}</div>
-    </section>
+    {cards.length > 0 && <div className="personal-benefits__cards">
+      {cards.map(card => <button type="button" key={card.id} className="personal-benefits__card" onClick={() => { setSelectedCard(card.id); setCreating(false); }}>
+        <span className="personal-benefits__card-top"><span className="personal-benefits__brand">VR</span><span className="personal-benefits__card-name">{card.name}</span></span>
+        <span className="personal-benefits__card-label">Saldo disponível</span><strong className="personal-benefits__card-balance">{brl(benefitBalance(card, movements))}</strong>
+        <span className="personal-benefits__card-foot">Benefício pré-pago <span>Ver extrato ›</span></span>
+      </button>)}
+    </div>}
+    {activeCard && <div className="personal-benefits__panel" aria-label="Detalhes do cartão de benefício">
+      <div className="personal-benefits__panel-header"><div><h2>{activeCard.name}</h2><p>Extrato e informações do benefício</p></div><Button variant="secondary" onClick={() => setSelectedCard(null)}>Fechar</Button></div>
+      <div className="personal-benefits__summary">
+        <div><span>Saldo disponível</span><strong>{brl(benefitBalance(activeCard, movements))}</strong></div>
+        <div><span>Créditos do mês</span><strong>{brl(reportCredits)}</strong></div>
+        <div><span>Despesas do mês</span><strong>{brl(reportExpenses)}</strong></div>
+        <div><span>Variação do mês</span><strong>{brl(reportCredits - reportExpenses)}</strong></div>
+      </div>
+      <div className="personal-benefits__toolbar"><label>Competência <input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} /></label><Button variant="secondary" onClick={exportReport} disabled={!reportMovements.length}>Exportar CSV</Button></div>
+      <h3>Movimentações do mês</h3>
+      {reportMovements.length === 0 ? <p>Nenhuma movimentação nesta competência.</p> : <div className="personal-benefits__movements">{reportMovements.map(m => <div key={m.id}><span>{m.movement_date.split('-').reverse().join('/')} · {m.description}</span><strong>{m.direction === 'credit' ? '+' : '−'} {brl(Number(m.amount))}</strong></div>)}</div>}
+      <div className="personal-benefits__recurring"><h3>Crédito mensal</h3>
+        {recurring.find(rule => rule.card_id === activeCard.id && rule.active) ? (() => { const rule = recurring.find(item => item.card_id === activeCard.id && item.active)!; const now = new Date(); const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); const credited = movements.some(m => m.card_id === activeCard.id && m.direction === 'credit' && m.movement_date.startsWith(currentMonth) && m.description === rule.description); return <div><p>{brl(Number(rule.amount))} · dia {rule.day_of_month} · {credited ? 'Crédito registrado neste mês' : 'Aguardando confirmação'}</p><Button disabled={busy || credited} onClick={() => { void confirmCredit(activeCard, rule); }}>Confirmar recebimento deste mês</Button></div>; })() : <div className="personal-benefits__form"><label>Valor mensal (R$)<input type="number" min="0.01" step="0.01" value={recurringAmount[activeCard.id] || ''} onChange={e => setRecurringAmount(v => ({ ...v, [activeCard.id]: e.target.value }))} /></label><label>Dia do crédito<input type="number" min="1" max="31" value={recurringDay[activeCard.id] || ''} onChange={e => setRecurringDay(v => ({ ...v, [activeCard.id]: e.target.value }))} /></label><Button disabled={busy} onClick={() => { void saveRecurring(activeCard); }}>Configurar crédito mensal</Button></div>}
+      </div>
+    </div>}
   </section>;
 }
