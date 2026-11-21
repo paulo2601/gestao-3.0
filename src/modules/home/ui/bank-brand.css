@@ -49,3 +49,23 @@
 .bank-logo__name{display:block;max-width:100%;font-size:.68rem;font-weight:750;line-height:1.15;letter-spacing:normal;white-space:normal;overflow-wrap:anywhere;text-align:center;color:var(--bank-muted)}
 .bank-brand .bank-brand__mark .bank-logo{background:transparent;border-radius:0;padding:0;min-width:0;white-space:normal;font-style:normal;letter-spacing:normal;text-transform:none}
 .bank-brand--mercadopago .bank-brand__mark .bank-logo{background:transparent;color:#fff;padding:0}
+
+
+/* Keep brand symbols visible: previous white Itaú tile masked white SVGs. */
+.banks-page .banks-page__account-card .bank-brand__mark,
+.cards-page .cards-page__card .bank-brand__mark{
+  background:transparent;
+  color:var(--bank-text);
+  border:0;
+  padding:0;
+  border-radius:0;
+  overflow:visible;
+  min-width:0;
+}
+.bank-brand--itau .bank-brand__mark,
+.bank-brand--mercadopago .bank-brand__mark{background:transparent;color:var(--bank-text);padding:0}
+.bank-brand .bank-logo__symbol{background:transparent;min-width:0}
+.bank-brand .bank-logo__symbol img{background:transparent}
+.bank-brand .bank-logo__fallback{font-size:clamp(.66rem,1vw,.85rem);letter-spacing:-.025em;line-height:1.15;overflow-wrap:normal;word-break:normal;hyphens:none}
+.bank-brand--santander .bank-logo__fallback{font-size:.65rem;letter-spacing:-.045em}
+.bank-brand .bank-logo__name{font-size:.65rem;overflow-wrap:normal;word-break:normal;hyphens:none}
