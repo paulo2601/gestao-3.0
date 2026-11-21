@@ -473,3 +473,14 @@
 .planning-forecast__flow-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;border-bottom:1px solid var(--border);padding:12px 0}
 @media(max-width:950px){.planning-forecast__item .planning-forecast__actions{grid-column:2/-1;justify-content:flex-start}.planning-forecast__flow-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.planning-forecast__totals{grid-template-columns:1fr}.planning-forecast__item .planning-forecast__actions{grid-column:1/-1}.planning-forecast__selection{position:static}}
+
+/* Indicadores do período selecionado: cards modernos e leitura imediata. */
+.planning-forecast__totals{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.planning-forecast__totals>div{position:relative;gap:9px;min-height:132px;padding:22px 24px;border-radius:22px;box-shadow:0 8px 24px rgb(15 23 42 / 5%);overflow:hidden}
+.planning-forecast__totals>div:nth-child(1){background:linear-gradient(125deg,#f6fff8,#e9f9ee);border-color:#9ed9ac}
+.planning-forecast__totals>div:nth-child(2){background:linear-gradient(125deg,#fffafa,#ffebeb);border-color:#f3aaaa}
+.planning-forecast__totals>div:nth-child(3){background:linear-gradient(125deg,#f7faff,#eaf1ff);border-color:#a9c4ff}
+.planning-forecast__totals span{font-size:.95rem;color:#34445c}
+.planning-forecast__totals strong{font-size:clamp(1.45rem,2vw,2rem);line-height:1.2}
+.planning-forecast__totals small{font-size:.8rem;color:#526782;font-weight:600}
+@media(max-width:760px){.planning-forecast__totals{grid-template-columns:1fr}.planning-forecast__totals>div{min-height:100px;padding:16px 18px}}
