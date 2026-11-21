@@ -25,13 +25,13 @@ interface BanksPageProps { company: CompanySummary; companies?: readonly Company
 type DialogKind = 'account' | 'accountDelete' | 'transfer' | 'plan' | 'extract' | 'movementEdit' | 'movementDelete' | null;
 type ExtractTab = 'realized' | 'forecast';
 type MovementFilter = 'all' | 'inflow' | 'outflow';
-type BankTone = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'generic';
+type BankTone = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'mercadopago' | 'generic';
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const bankInstitutionOptions = [
   { value: '', label: 'Selecione…' },
   { value: 'itau', label: 'Itaú' }, { value: 'nubank', label: 'Nubank' }, { value: 'inter', label: 'Inter' },
-  { value: 'santander', label: 'Santander' }, { value: 'caixa', label: 'Caixa' }, { value: 'sicoob', label: 'Sicoob' },
+  { value: 'santander', label: 'Santander' }, { value: 'caixa', label: 'Caixa' }, { value: 'sicoob', label: 'Sicoob' }, { value: 'mercadopago', label: 'Mercado Pago' },
   { value: 'bradesco', label: 'Bradesco' }, { value: 'bb', label: 'Banco do Brasil' }, { value: 'sicredi', label: 'Sicredi' }, { value: 'c6', label: 'C6 Bank' },
 ];
 function companyName(company: CompanySummary): string { return company.tradeName ?? company.legalName; }
@@ -46,6 +46,7 @@ function key(prefix: string): string { return `${prefix}:${crypto.randomUUID()}`
 function csvCell(value: string | number): string { return `"${String(value).replaceAll('"', '""')}"`; }
 function bankVisual(value: string | null, fallbackName: string): { tone: BankTone; mark: string; bank: string } {
   const raw = `${value ?? ''} ${fallbackName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR');
+  if (value === 'mercadopago' || raw.includes('MERCADO PAGO')) return { tone: 'mercadopago', mark: 'mercado pago', bank: 'Mercado Pago' };
   if (raw.includes('NUBANK')) return { tone: 'nubank', mark: 'nu', bank: 'Nubank' };
   if (raw.includes('ITAU')) return { tone: 'itau', mark: 'itaú', bank: 'Itaú' };
   if (raw.includes('INTER')) return { tone: 'inter', mark: 'inter', bank: 'Inter' };
