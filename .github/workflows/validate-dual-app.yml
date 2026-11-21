@@ -1,0 +1,29 @@
+name: Validate dual app builds
+
+on:
+  push:
+    branches: [feature/dual-app-installations]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+      - name: Validate secondary PWA build
+        run: |
+          npm run build:secondary
+          test -s dist/manifest-secondary.webmanifest
+          test -s dist/gestao-secondary-icon-192.png
+          test -s dist/gestao-secondary-icon-512.png
+          node -e "const m=require('./dist/manifest-secondary.webmanifest'); if(m.id!=='/gestao-3-0-secondary') process.exit(1)"
