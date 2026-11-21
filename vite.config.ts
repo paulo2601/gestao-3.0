@@ -24,6 +24,8 @@ export default defineConfig({
         if (!secondary) return html;
         return html
           .replace('/manifest.webmanifest?v=4', '/manifest-secondary.webmanifest')
+          // Android standalone: let the browser reserve system status/navigation bars.
+          .replace('width=device-width, initial-scale=1.0, viewport-fit=cover', 'width=device-width, initial-scale=1.0, viewport-fit=auto')
           .replace('/gestao-app-icon.svg?v=4', '/gestao-secondary-icon.svg')
           .replace('/gestao-icon-192.png?v=4', '/gestao-secondary-icon-192.png')
           .replace('<title>Gestão 3.0</title>', '<title>Gestão Pessoal</title>')
