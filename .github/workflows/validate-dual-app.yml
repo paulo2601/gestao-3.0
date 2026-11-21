@@ -15,8 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-      - run: npm ci
+      # Repository currently has no package-lock.json; npm ci and setup-node npm cache require it.
+      - run: npm install --no-package-lock --no-audit --no-fund
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
