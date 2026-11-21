@@ -265,7 +265,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     setLocalSuccess(null);
     setForm({
       entryType: 'expense', date: initialValues?.date ?? today(), description: initialValues?.description ?? '', amountDigits: initialValues?.amount ? String(Math.round(initialValues.amount * 100)) : '', paymentMethod: initialPaymentMethod ?? 'pix', launchType: 'single',
-      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
+      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12', ongoingCardInstallment: false, accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
       counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
     });
   }, [firstCompanyId, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
@@ -480,7 +480,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     manualCompany.current = false;
     setForm({
       entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: 'pix', launchType: 'single',
-      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
+      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12', ongoingCardInstallment: false, accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
       counterparty: '', notes: '', includeInBudget: false,
     });
   }
