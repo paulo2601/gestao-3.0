@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
 import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 import { Button } from '../../../shared/ui/Button';
+import './personal-benefits.css';
 
 export type BenefitCard = { id: string; tenant_id: string; company_id: string; name: string; provider: string; opening_balance: number; status: string };
 type RecurringCredit = { id: string; card_id: string; description: string; amount: number; day_of_month: number; active: boolean };
