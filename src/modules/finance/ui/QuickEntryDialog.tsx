@@ -201,6 +201,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [autoSettle, setAutoSettle] = useState(false);
+  const [autoSettleFrom, setAutoSettleFrom] = useState<string | null>(null);
+  const autoSettleEffective = autoSettle || (autoSettleFrom !== null && today() >= autoSettleFrom);
   const [autoSettleReady, setAutoSettleReady] = useState(false);
   const [savingAutoSettle, setSavingAutoSettle] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -209,11 +211,13 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     if (!PERSONAL_APP || !companyId) return;
     let cancelled = false;
     setAutoSettle(false);
+    setAutoSettleFrom(null);
     setAutoSettleReady(false);
-    void getSupabaseClient().from('personal_finance_preferences').select('auto_settle_on_entry').eq('company_id', companyId).maybeSingle().then(({ data, error }) => {
+    void getSupabaseClient().from('personal_finance_preferences').select('auto_settle_on_entry,auto_settle_from').eq('company_id', companyId).maybeSingle().then(({ data, error }) => {
       if (cancelled) return;
       if (error) { setLocalError('Não foi possível consultar o modo de lançamentos. A baixa automática ficará bloqueada.'); return; }
       setAutoSettle(data?.auto_settle_on_entry === true);
+      setAutoSettleFrom(data?.auto_settle_from ?? null);
       setAutoSettleReady(true);
     });
     return () => { cancelled = true; };
@@ -223,10 +227,10 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     if (!selected || !autoSettleReady || savingAutoSettle) return;
     setSavingAutoSettle(true);
     const { error } = await getSupabaseClient().from('personal_finance_preferences').upsert({
-      company_id: selected.id, tenant_id: selected.tenantId, auto_settle_on_entry: enabled, updated_at: new Date().toISOString(),
+      company_id: selected.id, tenant_id: selected.tenantId, auto_settle_on_entry: enabled, auto_settle_from: null, updated_at: new Date().toISOString(),
     }, { onConflict: 'company_id' });
     if (error) setLocalError('Não foi possível alterar o modo de lançamentos: ' + error.message);
-    else { setAutoSettle(enabled); setLocalError(null); }
+    else { setAutoSettle(enabled); setAutoSettleFrom(null); setLocalError(null); }
     setSavingAutoSettle(false);
   }
   const [form, setForm] = useState({
@@ -613,7 +617,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         if (budgetUpdate.error) throw budgetUpdate.error;
         const account = parsePaymentRef(form.accountRef);
         if (account) await getFinanceRepositories().entries.setPlannedAccount(scope, created.entryId, account.resourceId, account.companyId);
-        const shouldAutoSettle = (!PERSONAL_APP || (autoSettleReady && autoSettle)) && ['pix', 'debit', 'cash'].includes(form.paymentMethod)
+        const shouldAutoSettle = (!PERSONAL_APP || (autoSettleReady && autoSettleEffective)) && ['pix', 'debit', 'cash'].includes(form.paymentMethod)
           && form.launchType === 'single'
           && form.date <= today();
         if (shouldAutoSettle) {
@@ -726,8 +730,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           </div>{inlineRegistry === 'costCenter' && <div className="quick-entry__registry-create"><Input label="Nova obra / centro de custo" value={newRegistryName} onChange={(event) => setNewRegistryName(event.target.value)} /><Button disabled={busy || !newRegistryName.trim()} onClick={() => { void createInlineRegistry('costCenter'); }}>Adicionar</Button></div>}</div>
 
           {PERSONAL_APP && <div className="quick-entry__budget-toggle" style={{ marginBottom: 12 }}>
-            <label><input type="checkbox" checked={autoSettle} disabled={!autoSettleReady || savingAutoSettle || submitting} onChange={event => { void changeAutoSettle(event.target.checked); }} />
-              <span><strong>Baixa automática de Pix, débito e dinheiro</strong><small>{autoSettle ? 'Operação normal: lançamentos únicos com data de hoje ou anterior são pagos automaticamente.' : 'Cadastro inicial: despesas ficam pendentes, mesmo com Pix e conta selecionada.'}</small></span>
+            <label><input type="checkbox" checked={autoSettleEffective} disabled={!autoSettleReady || savingAutoSettle || submitting} onChange={event => { void changeAutoSettle(event.target.checked); }} />
+              <span><strong>Baixa automática de Pix, débito e dinheiro</strong><small>{autoSettleEffective ? 'Operação normal: lançamentos únicos com data de hoje ou anterior são pagos automaticamente.' : autoSettleFrom ? `Cadastro inicial até ${autoSettleFrom.split('-').reverse().join('/')}. A baixa automática volta nessa data.` : 'Cadastro inicial: despesas ficam pendentes, mesmo com Pix e conta selecionada.'}</small></span>
             </label>
           </div>}
           <div className="quick-entry__two-col">
