@@ -9,3 +9,76 @@
 .banks-page__account-balance{grid-column:2;grid-row:2;justify-self:start;font-size:1.5rem}
 .banks-page__account-hint{grid-column:2;grid-row:3;justify-self:start}
 }
+
+
+/* Approved Gestão Pessoal desktop layout: four compact cards per wide row.
+   Keep the bank marks already provided by bankVisual; never replace them. */
+@media(min-width:761px){
+.app-shell--personal .banks-page__accounts{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+.app-shell--personal .banks-page .banks-page__account-card{
+  min-height:158px;
+  display:grid;
+  grid-template-columns:94px minmax(0,1fr);
+  grid-template-rows:auto auto auto;
+  align-content:center;
+  align-items:center;
+  column-gap:14px;
+  row-gap:7px;
+  padding:44px 14px 16px;
+  text-align:left;
+}
+.app-shell--personal .banks-page .banks-page__account-card .bank-brand__mark{
+  grid-column:1;
+  grid-row:1/4;
+  min-width:0;
+  width:100%;
+  max-width:94px;
+  justify-self:center;
+  justify-content:center;
+  font-size:clamp(1rem,1.45vw,1.35rem);
+  overflow:hidden;
+}
+.app-shell--personal .banks-page__account-copy{
+  grid-column:2;
+  grid-row:1;
+  min-width:0;
+  gap:4px;
+  padding-right:0;
+}
+.app-shell--personal .banks-page__account-copy>strong{
+  font-size:1rem;
+  line-height:1.25;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.app-shell--personal .banks-page__account-copy>small{font-size:.76rem}
+.app-shell--personal .banks-page__account-balance{
+  grid-column:2;
+  grid-row:2;
+  justify-self:start;
+  min-width:0;
+  font-size:clamp(1.15rem,1.6vw,1.5rem);
+  line-height:1.15;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.app-shell--personal .banks-page__account-hint{
+  grid-column:2;
+  grid-row:3;
+  justify-self:start;
+  font-size:.75rem;
+  line-height:1.25;
+}
+}
+@media(min-width:1150px){
+.app-shell--personal .banks-page__accounts{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(min-width:1500px){
+.app-shell--personal .banks-page__accounts{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(min-width:761px) and (max-width:1149px){
+.app-shell--personal .banks-page .banks-page__account-card{grid-template-columns:94px minmax(0,1fr)}
+}
