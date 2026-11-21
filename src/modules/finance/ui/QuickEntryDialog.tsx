@@ -14,6 +14,8 @@ import { getFinanceRepositories } from '../infrastructure/createFinanceRepositor
 import { useFinanceOperations } from './useFinanceOperations';
 import './quick-entry.css';
 
+declare const __GESTAO_APP_VARIANT__: 'primary' | 'secondary';
+const PERSONAL_APP = __GESTAO_APP_VARIANT__ === 'secondary';
 type EntryType = 'expense' | 'income';
 type LaunchType = 'single' | 'installment' | 'recurring';
 type PaymentMethod = 'pix' | 'debit' | 'credit' | 'cash' | 'transfer' | 'boleto' | 'other';
@@ -636,7 +638,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
             <Input label={form.entryType === 'expense' ? 'Fornecedor' : 'Pagador / origem'} placeholder="Selecione / digite" value={form.counterparty} onChange={(event) => set('counterparty', event.target.value)} />
           </div>
 
-          <div className="quick-entry__company-section">
+          {!PERSONAL_APP && <div className="quick-entry__company-section">
             <strong className="quick-entry__section-label">▥ Empresa</strong>
             <div className="quick-entry__company-options">
               {companies.map((item) => {
@@ -648,7 +650,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
                 </Button>;
               })}
             </div>
-          </div>
+          </div>}
 
           <div className="quick-entry__registry-field"><div className="quick-entry__registry-control">
             <Select label="Obra / Centro de custo" value={form.costCenterId} onChange={(event) => set('costCenterId', event.target.value)} options={costCenterOptions} />
