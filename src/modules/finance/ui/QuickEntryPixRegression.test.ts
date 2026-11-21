@@ -9,7 +9,9 @@ describe('quick entry immediate payment regression guard', () => {
   });
 
   it('auto-settles only single current or past Pix, debit and cash payments', () => {
-    expect(quickEntrySource).toContain("const shouldAutoSettle = ['pix', 'debit', 'cash'].includes(form.paymentMethod)");
+    expect(quickEntrySource).toContain("const shouldAutoSettle = (!PERSONAL_APP || (autoSettleReady && autoSettleEffective)) && ['pix', 'debit', 'cash'].includes(form.paymentMethod)");
+    expect(quickEntrySource).toContain("today() >= autoSettleFrom");
+    expect(quickEntrySource).toContain("setAutoSettleFrom(data?.auto_settle_from ?? null)");
     expect(quickEntrySource).toContain("&& form.launchType === 'single'");
     expect(quickEntrySource).toContain("&& form.date <= today()");
     expect(quickEntrySource).toContain('await operations.settleInstallment({');
