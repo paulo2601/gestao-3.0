@@ -288,6 +288,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           .from('financial_entries')
           .select('id,company_id,payment_method,planned_account_id,planned_account_company_id,created_at')
           .eq('tenant_id', tenantId)
+          .in('company_id', companies.map(item => item.id))
           .order('created_at', { ascending: false })
           .limit(250)
           .returns<FinancialTemplateMetaRow[]>(),
@@ -359,7 +360,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
 
   const activeCostCenters = (references?.costCenters ?? []).filter((item) => item.status === 'active');
   const categories = (references?.categories ?? []).filter((item) => item.status === 'active' && (item.kind === 'both' || item.kind === form.entryType));
-  const costCenters = canonicalCostCenters(activeCostCenters);
+  const costCenters = PERSONAL_APP ? activeCostCenters.filter(item => item.name === 'Paulo' || item.name === 'Camila').map(item => ({ item, label: item.name })) : canonicalCostCenters(activeCostCenters);
   const accountOptions = [{ value: '', label: 'Selecione' }, ...paymentAccounts.map((item) => ({ value: paymentRef(item.companyId, item.id), label: `${item.ownerLabel} · ${item.name}` }))];
   const cardOptions = [{ value: '', label: 'Selecione o cartão' }, ...paymentCards.map((item) => ({ value: paymentRef(item.companyId, item.id), label: `${item.ownerLabel} · ${item.name}` }))];
   const categoryOptions = [{ value: '', label: 'Selecione' }, ...categories.map((item) => ({ value: item.id, label: item.name }))];
