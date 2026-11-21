@@ -22,7 +22,7 @@ export function ViewportDiagnostics() {
         `header top ${bounds?.top.toFixed(0) ?? '-'} height ${bounds?.height.toFixed(0) ?? '-'}`,
         `scrollY ${window.scrollY.toFixed(0)} DPR ${window.devicePixelRatio.toFixed(2)}`,
         `display ${window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'}`,
-      ].join(' | '));
+      ].join('\n'));
     };
     measure();
     window.addEventListener('resize', measure);
@@ -36,5 +36,5 @@ export function ViewportDiagnostics() {
       window.visualViewport?.removeEventListener('scroll', measure);
     };
   }, []);
-  return <output aria-label="Diagnóstico de área útil" style={{ position:'fixed', bottom:'max(8px, env(safe-area-inset-bottom, 0px))', left:8, right:8, zIndex:9999, padding:10, borderRadius:8, background:'#101827', color:'#fff', fontSize:12, lineHeight:1.4, overflowWrap:'anywhere', pointerEvents:'none' }}>{snapshot}</output>;
+  return <output aria-label="Diagnóstico de área útil" style={{ position:'fixed', top:64, left:8, right:8, zIndex:9999, padding:10, borderRadius:8, background:'#101827', color:'#fff', fontSize:12, lineHeight:1.5, whiteSpace:'pre-wrap', overflowWrap:'anywhere', maxHeight:'50dvh', overflowY:'auto', pointerEvents:'none' }}>{snapshot}</output>;
 }
