@@ -16,21 +16,21 @@ A branch `feature/dual-app-installations` contém:
 
 Exemplo Linux/macOS/CI:
 ```sh
-npm ci
+npm install --no-package-lock
 npm run typecheck
 npm run test
-GESTAO_APP_VARIANT=secondary npm run build
+npm run build:secondary
 npx wrangler deploy --config wrangler.secondary.jsonc
 ```
 
-O endereço previsto para a segunda instalação, **somente após deploy**, será `https://gestao-3-0-2.pauloroberto-87.workers.dev/` (confirmar após publicar). O deploy não está autorizado nem executado nesta etapa.
+O endereço previsto para a segunda instalação, **somente após deploy**, será `https://gestao-3-0-2.pauloroberto-87.workers.dev/` (confirmar após publicar). O deploy ainda não foi executado nesta etapa.
 
 Ambos devem usar o **mesmo projeto Supabase**, com as mesmas variáveis de build `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. Nunca incluir `service_role` no front-end.
 
 ## Pendências de validação antes de publicar
 
 1. Conferir `npm run typecheck`, `npm run test`, `npm run build` e build secundário.
-2. Criar ícones PNG 192 e 512 para Android: o SVG verde é provisório e pode não atender a todos os instaladores.
+2. Confirmar que os ícones PNG 192 e 512 gerados pelo script são válidos e aparecem corretamente na instalação Android.
 3. Conferir se a nova URL precisa constar nas Redirect URLs do Supabase Auth (recuperação de senha, convites, passkeys).
 4. Testar logins distintos simultâneos, logout, atualização de sessão, permissões e recuperação.
 5. Confirmar que ambos são instaláveis no Samsung e recebem atualização sem interferência.
