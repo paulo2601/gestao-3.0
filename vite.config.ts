@@ -27,7 +27,6 @@ export default defineConfig({
           .replace('/gestao-app-icon.svg?v=4', '/gestao-secondary-icon.svg')
           .replace('/gestao-icon-192.png?v=4', '/gestao-secondary-icon-192.png')
           .replace('<title>Gestão 3.0</title>', '<title>Gestão Pessoal</title>')
-          .replace('width=device-width, initial-scale=1.0, viewport-fit=cover', 'width=device-width, initial-scale=1.0')
           .replace('content="black-translucent"', 'content="default"')
           .replace('content="#071426"', 'content="#168568"')
           .replace('content="Gestão"', 'content="Gestão Pessoal"');
