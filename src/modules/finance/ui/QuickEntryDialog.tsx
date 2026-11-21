@@ -241,7 +241,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     paymentMethod: 'pix' as PaymentMethod,
     launchType: 'single' as LaunchType,
     installmentCount: '2',
-    recurrenceCount: '12', recurrenceFrequency: 'monthly' as 'monthly' | 'weekly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12',
+    recurrenceCount: '12', recurrenceFrequency: 'monthly' as 'monthly' | 'weekly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12', ongoingCardInstallment: false,
     accountRef: '',
     cardRef: '',
     categoryId: '',
@@ -548,6 +548,13 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         return;
       }
     }
+    if (PERSONAL_APP && form.paymentMethod === 'credit' && form.launchType === 'installment' && form.ongoingCardInstallment) {
+      const current = Number(form.currentInstallment), total = Number(form.totalInstallments);
+      if (!Number.isSafeInteger(current) || !Number.isSafeInteger(total) || current < 1 || total < 2 || total > 120 || current > total) {
+        setLocalError('Informe a parcela atual e o total de parcelas do cartão (até 120).');
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       if (PERSONAL_APP && form.paymentMethod === 'benefit') {
@@ -596,18 +603,36 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           p_installment_count: installmentCount,
           p_notes: form.notes.trim() || null,
         };
-        const result = card.companyId === company.id
-          ? await getSupabaseClient().rpc('create_card_purchase', {
-              ...baseArgs,
-              p_company_id: company.id,
-              p_idempotency_key: idempotencyKey('quick-card-purchase'),
-            })
-          : await getSupabaseClient().rpc('create_card_purchase_cross_company', {
-              ...baseArgs,
+        const ongoingCard = PERSONAL_APP && form.launchType === 'installment' && form.ongoingCardInstallment;
+        const result = ongoingCard
+          ? await getSupabaseClient().rpc('create_ongoing_card_purchase', {
+              p_tenant_id: company.tenantId,
               p_card_company_id: card.companyId,
               p_expense_company_id: company.id,
-              p_idempotency_key: idempotencyKey('quick-card-purchase-cross-company'),
-            });
+              p_card_id: card.resourceId,
+              p_first_statement_month: form.date.slice(0, 7) + '-01',
+              p_description: form.description.trim(),
+              p_counterparty_name: form.counterparty.trim() || null,
+              p_category_id: form.categoryId,
+              p_cost_center_id: form.costCenterId || null,
+              p_installment_amount: amount,
+              p_current_installment: Number(form.currentInstallment),
+              p_total_installments: Number(form.totalInstallments),
+              p_idempotency_key: idempotencyKey('quick-card-ongoing'),
+              p_notes: form.notes.trim() || null,
+            })
+          : card.companyId === company.id
+            ? await getSupabaseClient().rpc('create_card_purchase', {
+                ...baseArgs,
+                p_company_id: company.id,
+                p_idempotency_key: idempotencyKey('quick-card-purchase'),
+              })
+            : await getSupabaseClient().rpc('create_card_purchase_cross_company', {
+                ...baseArgs,
+                p_card_company_id: card.companyId,
+                p_expense_company_id: company.id,
+                p_idempotency_key: idempotencyKey('quick-card-purchase-cross-company'),
+              });
         if (result.error) throw new Error(result.error.message || 'Não foi possível concluir o lançamento no cartão.');
         window.dispatchEvent(new Event('finance-card-order-changed'));
       } else {
@@ -764,7 +789,9 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
               <span className="quick-entry__launch-check">{form.launchType === 'recurring' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">⟳</span><span><strong>Recorrente</strong><small>Mensal ou quinzenal</small></span>
             </Button>}
           </div>
-          {form.launchType === 'installment' && <Input label="Quantidade de parcelas" type="number" min="2" max="120" value={form.installmentCount} onChange={(event) => set('installmentCount', event.target.value)} required />}
+          {PERSONAL_APP && form.paymentMethod === 'credit' && form.launchType === 'installment' && <label className="quick-entry__budget-toggle"><input type="checkbox" checked={form.ongoingCardInstallment} onChange={event=>set('ongoingCardInstallment',event.target.checked)} /> Compra já parcelada (em andamento)</label>}
+          {form.launchType === 'installment' && !(PERSONAL_APP && form.paymentMethod === 'credit' && form.ongoingCardInstallment) && <Input label="Quantidade de parcelas" type="number" min="2" max="120" value={form.installmentCount} onChange={(event) => set('installmentCount', event.target.value)} required />}
+          {PERSONAL_APP && form.paymentMethod === 'credit' && form.launchType === 'installment' && form.ongoingCardInstallment && <div className="quick-entry__ongoing-card"><p>Informe o valor de <strong>uma parcela</strong> no campo Valor. A data acima indica o mês da primeira fatura a cadastrar. As parcelas anteriores não serão recriadas.</p><div className="quick-entry__field-grid"><Input label="Parcela atual" type="number" min="1" max="120" value={form.currentInstallment} onChange={event=>set('currentInstallment',event.target.value)} required /><Input label="Total de parcelas" type="number" min="2" max="120" value={form.totalInstallments} onChange={event=>set('totalInstallments',event.target.value)} required /></div></div>}
           {form.launchType === 'recurring' && form.paymentMethod !== 'benefit' && <Select label="Frequência" value={form.recurrenceFrequency} onChange={(event) => set('recurrenceFrequency', event.target.value as 'monthly' | 'weekly')} options={[{ value: 'monthly', label: 'Mensal' }, { value: 'weekly', label: 'Quinzenal (a cada 2 semanas)' }]} />}
           {PERSONAL_APP && form.paymentMethod !== 'benefit' && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && <label className="quick-entry__budget-toggle"><input type="checkbox" checked={form.ongoingInstallment} onChange={event=>set('ongoingInstallment',event.target.checked)} /> Parcelamento em andamento</label>}
           {PERSONAL_APP && form.paymentMethod !== 'benefit' && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && form.ongoingInstallment && <div className="quick-entry__field-grid"><Input label="Parcela atual" type="number" min="1" max="1200" value={form.currentInstallment} onChange={event=>set('currentInstallment',event.target.value)} required /><Input label="Total de parcelas" type="number" min="1" max="1200" value={form.totalInstallments} onChange={event=>set('totalInstallments',event.target.value)} required /></div>}
