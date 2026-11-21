@@ -11,6 +11,8 @@ function assert(condition, message) {
 }
 
 assert(manifest.id === '/gestao-3-0-secondary', 'Secondary app ID is incorrect');
+assert(manifest.name === 'Gestão Pessoal' && manifest.short_name === 'Gestão Pessoal', 'Secondary app name is incorrect');
+assert(html.includes('<title>Gestão Pessoal</title>'), 'Secondary page title is incorrect');
 assert(manifest.display === 'standalone', 'Secondary PWA must open standalone');
 assert(manifest.start_url.startsWith('/'), 'Secondary start URL must be same-origin');
 assert(html.includes('/manifest-secondary.webmanifest'), 'HTML is not linked to secondary manifest');
