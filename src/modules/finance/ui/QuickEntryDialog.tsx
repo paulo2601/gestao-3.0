@@ -529,6 +529,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       setLocalError('Preencha descrição, valor e categoria.');
       return;
     }
+    if (PERSONAL_APP && form.paymentMethod === 'benefit' && form.entryType === 'income' && form.launchType === 'single' && form.date > today()) { setLocalError('Crédito futuro do benefício: selecione Recorrente para programar sem alterar o saldo atual.'); return; }
     if (PERSONAL_APP && form.paymentMethod === 'benefit' && (!form.cardRef || (form.launchType !== 'single' && !(form.entryType === 'income' && form.launchType === 'recurring')))) { setLocalError('Selecione um cartão de benefício. Para créditos mensais, use Recorrente; despesas devem ser Único.'); return; }
     if (form.paymentMethod === 'credit' && (!form.cardRef || form.entryType !== 'expense')) {
       setLocalError('Selecione um cartão válido.');
@@ -759,7 +760,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
             <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'installment' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'installment'} onClick={() => { if (form.paymentMethod !== 'benefit') set('launchType', 'installment'); }} disabled={form.paymentMethod === 'benefit'}>
               <span className="quick-entry__launch-check">{form.launchType === 'installment' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">▤</span><span><strong>Parcelado</strong><small>Várias parcelas</small></span>
             </Button>
-            {form.paymentMethod !== 'credit' && (form.paymentMethod !== 'benefit' || form.entryType === 'income') && <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'recurring' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'recurring'} onClick={() => set('launchType', 'recurring')}>
+            {form.paymentMethod !== 'credit' && (form.paymentMethod !== 'benefit' || form.entryType === 'income') && <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'recurring' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'recurring'} onClick={() => { set('launchType', 'recurring'); if (form.paymentMethod === 'benefit') set('recurrenceFrequency', 'monthly'); }}>
               <span className="quick-entry__launch-check">{form.launchType === 'recurring' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">⟳</span><span><strong>Recorrente</strong><small>Mensal ou quinzenal</small></span>
             </Button>}
           </div>
