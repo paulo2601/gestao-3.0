@@ -30,9 +30,9 @@ export function getSupabaseClient(): SupabaseClient {
   const url = readEnvironmentValue('VITE_SUPABASE_URL');
   const publishableKey = readEnvironmentValue('VITE_SUPABASE_PUBLISHABLE_KEY');
 
-  client = createClient(url, publishableKey, {
+  // Separate authentication storage for each installable app variant.\n  // Deploy variants on separate origins for full isolation of localStorage, cookies and service workers.\n  const variant = import.meta.env.VITE_GESTAO_APP_VARIANT === 'secondary' ? 'secondary' : 'primary';\n  client = createClient(url, publishableKey, {
     auth: {
-      persistSession: true,
+      storageKey: `gestao-auth-${variant}`,\n      persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
       experimental: { passkey: true },
