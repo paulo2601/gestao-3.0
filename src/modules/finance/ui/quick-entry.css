@@ -45,3 +45,12 @@
 
 /* Keep the previous stable form logic without showing the temporary settlement toggle. */
 .quick-entry__auto-settle-toggle[hidden]{display:none!important}
+
+/* Stable payment placement: do not depend on :last-child when hidden controls exist. */
+@media(min-width:761px){
+.quick-entry__form-card>.quick-entry__payment-fields{grid-column:7/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0;width:100%}
+.quick-entry__form-card>.quick-entry__payment-fields>.ui-field{min-width:0;width:100%}
+.quick-entry__form-card>.quick-entry__payment-fields .ui-field__control,.quick-entry__form-card>.quick-entry__payment-fields select{min-width:0;width:100%;max-width:100%}
+}
+@media(max-width:760px){.quick-entry__form-card>.quick-entry__payment-fields{width:100%;min-width:0;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.quick-entry__form-card>.quick-entry__payment-fields{grid-template-columns:1fr}}
