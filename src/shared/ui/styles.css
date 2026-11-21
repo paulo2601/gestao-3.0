@@ -117,32 +117,13 @@
 }
 }
 
-/* Personal standalone dialogs: paint the entire viewport so the underlying
-   dashboard never shows through the reserved Android navigation-bar gap.
-   Keep the dialog itself inset, preserving the validated safe touch area. */
+/* Personal PWA: paint the reserved Android-bar gap without changing the
+   proven dialog geometry or moving the footer back under system controls. */
 @media(max-width:760px) and (display-mode:standalone){
 :root:has(.app-shell--personal) .ui-dialog-backdrop{
-  top:0;
-  bottom:0;
-  height:100dvh;
-  max-height:100dvh;
-  padding-top:max(env(safe-area-inset-top,0px),28px);
-  padding-bottom:max(env(safe-area-inset-bottom,0px),28px);
-  background:var(--surface);
-  overflow:hidden;
+  box-shadow:0 0 0 100px var(--surface);
 }
 :root:has(.app-shell--personal) .ui-dialog-backdrop[data-variant="quick-entry-personal"]{
-  inset-block-start:0;
-  inset-block-end:0;
-  height:100dvh;
-  max-height:100dvh;
-  padding-top:max(env(safe-area-inset-top,0px),28px);
-  padding-bottom:max(env(safe-area-inset-bottom,0px),28px);
-  background:#eef5fb;
-}
-:root:has(.app-shell--personal) .ui-dialog-backdrop .ui-dialog{
-  height:100%;
-  max-height:100%;
-  min-height:0;
+  box-shadow:0 0 0 100px #eef5fb;
 }
 }
