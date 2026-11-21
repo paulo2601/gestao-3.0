@@ -8,6 +8,7 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
   hint?: string;
   icon?: ReactNode;
   prefix?: ReactNode;
+  allowNegativeCurrency?: boolean;
 }
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -22,14 +23,16 @@ const dateLabel = /(?:^|\s)(data|vencimento|admiss[aã]o|vig[eê]ncia|demiss[aã
 
 function formatCurrencyValue(value: InputHTMLAttributes<HTMLInputElement>['value']): string {
   if (value === undefined || value === null || value === '') return '';
+  if (value === '-') return '-';
   const numeric = typeof value === 'number' ? value : Number(String(value).replace(',', '.'));
   return Number.isFinite(numeric) ? currencyFormatter.format(numeric) : '';
 }
 
-function currencyNumberFromInput(raw: string): number | null {
+function currencyNumberFromInput(raw: string, allowNegative = false): number | string | null {
   const digits = raw.replace(/\D/g, '');
-  if (!digits) return null;
-  return Number(digits) / 100;
+  const negative = allowNegative && raw.trimStart().startsWith('-');
+  if (!digits) return negative ? '-' : null;
+  return (negative ? -1 : 1) * Number(digits) / 100;
 }
 
 function inferredIcon(label: string): ReactNode {
@@ -40,7 +43,7 @@ function inferredIcon(label: string): ReactNode {
   return null;
 }
 
-export function Input({ label, error, hint, icon, prefix, id, className = '', type, value, onChange, inputMode, ...props }: InputProps) {
+export function Input({ label, error, hint, icon, prefix, id, className = '', type, value, onChange, inputMode, allowNegativeCurrency = false, ...props }: InputProps) {
   const inputId = id ?? `input-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   const helpId = `${inputId}-help`;
   const resolvedType = type ?? (dateLabel.test(label) ? 'date' : undefined);
@@ -51,7 +54,7 @@ export function Input({ label, error, hint, icon, prefix, id, className = '', ty
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     if (isCurrency) {
-      const numeric = currencyNumberFromInput(event.currentTarget.value);
+      const numeric = currencyNumberFromInput(event.currentTarget.value, allowNegativeCurrency);
       event.currentTarget.value = numeric === null ? '' : String(numeric);
     }
     onChange?.(event);
@@ -71,7 +74,7 @@ export function Input({ label, error, hint, icon, prefix, id, className = '', ty
           aria-invalid={Boolean(error)}
           aria-describedby={error || hint ? helpId : undefined}
           type={isCurrency ? 'text' : resolvedType}
-          inputMode={isCurrency ? 'numeric' : inputMode}
+          inputMode={isCurrency ? (allowNegativeCurrency ? 'decimal' : 'numeric') : inputMode}
           autoComplete={isCurrency ? 'off' : props.autoComplete}
           value={resolvedValue}
           onChange={handleChange}
