@@ -31,3 +31,6 @@
 /* Responsive form content: modal shell rules live in canonical shared styles. */
 @media(max-width:600px){.quick-entry--personal,.quick-entry--personal *{box-sizing:border-box}.quick-entry--personal .quick-entry__two-col,.quick-entry--personal .quick-entry__two-col>*{min-width:0}.quick-entry--personal input,.quick-entry--personal select{min-width:0;max-width:100%}}
 @media(max-width:370px){.quick-entry--personal .quick-entry__two-col{grid-template-columns:1fr}.quick-entry--personal .quick-entry__footer-actions{gap:4px}.quick-entry--personal .quick-entry__footer-action{font-size:.7rem;padding-inline:3px!important}}
+
+/* Spacing for the temporary automatic-settlement control (no inline styles). */
+.quick-entry__auto-settle-toggle{margin-bottom:12px}
