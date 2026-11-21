@@ -17,6 +17,7 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
   const [opening, setOpening] = useState('0');
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [error, setError] = useState('');
   const load = useCallback(async () => {
     const companyIds = companies.map(c => c.id);
@@ -57,8 +58,8 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
       {cards.map(card => <div key={card.id} style={{ border: '1px solid var(--border-color, #d4ddd6)', borderRadius: 14, padding: 16 }}>
         <strong>{card.name}</strong><div style={{ fontSize: 12 }}>Cartão de benefício · {card.provider}</div>
         <div style={{ marginTop: 12 }}>Saldo disponível</div><strong style={{ fontSize: 24 }}>{brl(benefitBalance(card, movements))}</strong>
-        <div style={{ marginTop: 12, fontSize: 13 }}>Movimentações</div>
-        {movements.filter(m => m.card_id === card.id).slice(0, 8).map(m => <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '5px 0' }}><span>{m.movement_date.split('-').reverse().join('/')} · {m.description}</span><strong>{m.direction === 'credit' ? '+' : '−'} {brl(Number(m.amount))}</strong></div>)}
+        <div style={{ marginTop: 12, fontSize: 13 }}>Movimentações <button type="button" onClick={() => setSelectedCard(selectedCard === card.id ? null : card.id)}>{selectedCard === card.id ? 'Ocultar histórico' : 'Ver histórico completo'}</button></div>
+        {movements.filter(m => m.card_id === card.id).slice(0, selectedCard === card.id ? undefined : 8).map(m => <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '5px 0' }}><span>{m.movement_date.split('-').reverse().join('/')} · {m.description}</span><strong>{m.direction === 'credit' ? '+' : '−'} {brl(Number(m.amount))}</strong></div>)}
       </div>)}
     </div>
   </section>;
