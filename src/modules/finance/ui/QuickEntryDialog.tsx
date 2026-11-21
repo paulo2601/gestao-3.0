@@ -496,7 +496,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         await operations.createRecurrence({
           entryType: form.entryType, description: form.description.trim(), counterpartyName: form.counterparty.trim() || null,
           categoryId: form.categoryId, costCenterId: form.costCenterId || null, amount, frequency: form.recurrenceFrequency, intervalCount: form.recurrenceFrequency === 'weekly' ? 2 : 1,
-          startDate: form.date, endDate: form.recurrenceFrequency === 'weekly' ? new Date(Date.parse(form.date + 'T12:00:00Z') + (count - 1) * 14 * 86400000).toISOString().slice(0, 10) : recurrenceEnd(form.date, count), notes: form.notes.trim() || null,
+          startDate: form.date, endDate: form.recurrenceFrequency === 'weekly' ? new Date(Date.parse(form.date + 'T12:00:00Z') + (count - 1) * 14 * 86400000).toISOString().slice(0, 10) : recurrenceEnd(form.date, count), notes: [form.notes.trim(), ...(PERSONAL_APP && form.accountRef ? [`[personal-planned-account:${form.accountRef}]`] : [])].filter(Boolean).join('\n') || null,
         });
       } else if (form.paymentMethod === 'credit') {
         const card = parsePaymentRef(form.cardRef);
