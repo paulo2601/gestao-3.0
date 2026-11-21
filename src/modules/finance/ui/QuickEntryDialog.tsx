@@ -204,6 +204,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   const [autoSettleFrom, setAutoSettleFrom] = useState<string | null>(null);
   const autoSettleEffective = autoSettle || (autoSettleFrom !== null && today() >= autoSettleFrom);
   const [autoSettleReady, setAutoSettleReady] = useState(false);
+  const [savingAutoSettle, setSavingAutoSettle] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [localSuccess, setLocalSuccess] = useState<string | null>(null);
   useEffect(() => {
@@ -221,6 +222,17 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     });
     return () => { cancelled = true; };
   }, [companyId]);
+  async function changeAutoSettle(enabled: boolean) {
+    const selected = companies.find(item => item.id === companyId);
+    if (!selected || !autoSettleReady || savingAutoSettle) return;
+    setSavingAutoSettle(true);
+    const { error } = await getSupabaseClient().from('personal_finance_preferences').upsert({
+      company_id: selected.id, tenant_id: selected.tenantId, auto_settle_on_entry: enabled, auto_settle_from: null, updated_at: new Date().toISOString(),
+    }, { onConflict: 'company_id' });
+    if (error) setLocalError('Não foi possível alterar o modo de lançamentos: ' + error.message);
+    else { setAutoSettle(enabled); setAutoSettleFrom(null); setLocalError(null); }
+    setSavingAutoSettle(false);
+  }
   const [form, setForm] = useState({
     entryType: 'expense' as EntryType,
     date: today(),
@@ -721,6 +733,11 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
             <Select label="Forma de pagamento" value={form.paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)} options={paymentOptions} />
             {form.paymentMethod === 'benefit' ? <Select label="Cartão de benefício" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={benefitOptions} required /> : form.paymentMethod === 'credit' ? <Select label="Cartão" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={cardOptions} required /> : <Select label="Banco / Conta" value={form.accountRef} onChange={(event) => set('accountRef', event.target.value)} options={accountOptions} />}
           </div>
+          {PERSONAL_APP && <div className="quick-entry__budget-toggle quick-entry__auto-settle-toggle" hidden aria-hidden="true">
+            <label><input type="checkbox" checked={autoSettleEffective} disabled={!autoSettleReady || savingAutoSettle || submitting} onChange={event => { void changeAutoSettle(event.target.checked); }} />
+              <span><strong>Baixa automática de Pix, débito e dinheiro</strong><small>{autoSettleEffective ? 'Operação normal: lançamentos únicos com data de hoje ou anterior são pagos automaticamente.' : autoSettleFrom ? `Cadastro inicial até ${autoSettleFrom.split('-').reverse().join('/')}. A baixa automática volta nessa data.` : 'Cadastro inicial: despesas ficam pendentes, mesmo com Pix e conta selecionada.'}</small></span>
+            </label>
+          </div>}
         </div>
 
         <div className="quick-entry__launch-section">
