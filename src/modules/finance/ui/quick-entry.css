@@ -42,3 +42,6 @@
 .quick-entry--personal .quick-entry__auto-settle-toggle span{display:flex;flex-direction:column;min-width:0;gap:4px;overflow-wrap:break-word}
 .quick-entry--personal .quick-entry__auto-settle-toggle strong{font-size:13px;line-height:1.4}
 .quick-entry--personal .quick-entry__auto-settle-toggle small{font-size:12px;line-height:1.45}
+
+/* Keep the previous stable form logic without showing the temporary settlement toggle. */
+.quick-entry__auto-settle-toggle[hidden]{display:none!important}
