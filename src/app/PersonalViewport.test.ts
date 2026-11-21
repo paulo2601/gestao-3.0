@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('Gestão Pessoal Android viewport contract', () => {
-  it('preserves viewport-fit cover so system safe-area insets can be exposed', () => {
+  it('uses browser-managed system bars for the personal Android standalone app', () => {
     const html = read('../../index.html');
     const vite = read('../../vite.config.ts');
     expect(html).toContain('viewport-fit=cover');
-    expect(vite).not.toContain(".replace('width=device-width, initial-scale=1.0, viewport-fit=cover'");
+    expect(vite).toContain(".replace('width=device-width, initial-scale=1.0, viewport-fit=cover', 'width=device-width, initial-scale=1.0, viewport-fit=auto')");
   });
   it('uses safe-area padding in normal-flow header instead of phone-specific dimensions', () => {
     const shell = read('./shell.css');
