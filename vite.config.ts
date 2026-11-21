@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react';
 const buildVersion = process.env.GITHUB_SHA ?? new Date().toISOString();
 const appVariant = process.env.GESTAO_APP_VARIANT === 'secondary' ? 'secondary' : 'primary';
 const secondary = appVariant === 'secondary';
-const appName = secondary ? 'Gestão 3.0 — 2' : 'Gestão 3.0';
-const shortName = secondary ? 'Gestão 2' : 'Gestão';
+const appName = secondary ? 'Gestão Pessoal' : 'Gestão 3.0';
+const shortName = secondary ? 'Gestão Pessoal' : 'Gestão';
 const appId = secondary ? '/gestao-3-0-secondary' : '/gestao-3-0-cr';
 const themeColor = secondary ? '#168568' : '#061b3a';
 const icon = secondary ? '/gestao-secondary-icon-192.png' : '/gestao-icon-192.png';
@@ -26,7 +26,7 @@ export default defineConfig({
           .replace('/manifest.webmanifest?v=4', '/manifest-secondary.webmanifest')
           .replace('/gestao-app-icon.svg?v=4', '/gestao-secondary-icon.svg')
           .replace('/gestao-icon-192.png?v=4', '/gestao-secondary-icon-192.png')
-          .replace('<title>Gestão 3.0</title>', '<title>Gestão 3.0 — 2</title>')
+          .replace('<title>Gestão 3.0</title>', '<title>Gestão Pessoal</title>')
           .replace('content="#071426"', 'content="#168568"')
           .replace('content="Gestão"', 'content="Gestão 2"');
       },
@@ -34,7 +34,7 @@ export default defineConfig({
         this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: buildVersion }) });
         // Emit the selected manifest under the standard URL for the deployed variant.
         this.emitFile({ type: 'asset', fileName: 'manifest-secondary.webmanifest', source: JSON.stringify({
-          name: appName, short_name: shortName, description: 'Gestão financeira, RH e engenharia.',
+          name: appName, short_name: shortName, description: secondary ? 'Gestão financeira pessoal compartilhada.' : 'Gestão financeira, RH e engenharia.',
           lang: 'pt-BR', id: appId, start_url: '/?source=pwa', scope: '/',
           display: 'standalone', background_color: themeColor, theme_color: themeColor,
           icons: [
