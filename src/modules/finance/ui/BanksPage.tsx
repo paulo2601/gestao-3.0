@@ -169,7 +169,13 @@ export function BanksPage({ company, companies = [company], showHeader = true }:
       }
     } catch (error) {
       console.error('Erro ao salvar conta bancária:', error);
-      setAccountSaveError(error instanceof Error && error.message ? `Não foi possível salvar a conta: ${error.message}` : 'Não foi possível salvar a conta. Verifique a conexão e tente novamente.');
+      const failure = error as { code?: string; message?: string; details?: string; hint?: string } | null;
+      const message = failure?.code === '23505'
+        ? 'Já existe uma conta com esse nome nesta empresa. Escolha outro nome ou edite a conta existente.'
+        : failure?.code === '42501' || failure?.code === 'PGRST301'
+          ? 'Seu usuário não tem permissão para cadastrar esta conta. Verifique o acesso à empresa Pessoal.'
+          : failure?.message || (typeof error === 'string' ? error : 'Erro não identificado na gravação.');
+      setAccountSaveError(`Não foi possível salvar a conta: ${message}${failure?.code ? ` (código ${failure.code})` : ''}`);
       setAccountSaving(false);
       return;
     }
