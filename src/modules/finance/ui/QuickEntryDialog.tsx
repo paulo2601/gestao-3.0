@@ -177,9 +177,11 @@ function canonicalCostCenters<T extends { id: string; code: string | null; name:
 }
 
 function recurrenceEnd(start: string, count: number): string {
-  const date = new Date(`${start}T12:00:00`);
-  date.setMonth(date.getMonth() + Math.max(0, count - 1));
-  return date.toISOString().slice(0, 10);
+  const [year, month, day] = start.split('-').map(Number);
+  const first = new Date(Date.UTC(year, month - 1 + Math.max(0, count - 1), 1, 12));
+  const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  first.setUTCDate(Math.min(day, lastDay));
+  return first.toISOString().slice(0, 10);
 }
 
 export function QuickEntryDialog({ open, companies, initialCompanyId = '', initialPaymentMethod, initialAccountRef = '', initialCardRef = '', embedded = false, initialValues, onSaved, onClose }: QuickEntryDialogProps) {
