@@ -1,0 +1,28 @@
+/* Personal prepaid benefits: compact cards and on-demand statements */
+.cards-page__benefits{margin:16px 0 20px}
+.personal-benefits{display:grid;gap:14px}
+.personal-benefits__error{color:#b42318}
+.personal-benefits__cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.personal-benefits__card{display:flex;flex-direction:column;gap:8px;text-align:left;cursor:pointer;border:1px solid #d4e8dc;border-radius:16px;padding:18px;background:linear-gradient(125deg,#008b55,#006b47);color:#fff;min-height:172px;box-shadow:0 8px 22px rgba(0,87,53,.12)}
+.personal-benefits__card:hover{filter:brightness(1.06)}
+.personal-benefits__card-top,.personal-benefits__card-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.personal-benefits__brand{font-size:30px;font-weight:900;letter-spacing:-2px}
+.personal-benefits__card-name{font-weight:700}
+.personal-benefits__card-label{font-size:12px;opacity:.85;margin-top:8px}
+.personal-benefits__card-balance{font-size:26px}
+.personal-benefits__card-foot{font-size:12px;opacity:.9;margin-top:auto}
+.personal-benefits__panel{background:var(--surface,#fff);border:1px solid #dce3ed;border-radius:16px;padding:20px;display:grid;gap:18px}
+.personal-benefits__panel-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.personal-benefits__panel-header h2,.personal-benefits__panel-header p{margin:0}
+.personal-benefits__panel-header p{margin-top:5px;color:var(--text-muted,#64748b)}
+.personal-benefits__form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end;gap:12px}
+.personal-benefits__form label,.personal-benefits__toolbar label{display:grid;gap:6px;font-weight:600}
+.personal-benefits__form input,.personal-benefits__form select,.personal-benefits__toolbar input{min-height:40px;border:1px solid #cbd5e1;border-radius:9px;padding:8px;background:var(--surface,#fff);color:inherit}
+.personal-benefits__summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.personal-benefits__summary>div{display:grid;gap:8px;border:1px solid #e2e8f0;border-radius:12px;padding:14px}
+.personal-benefits__summary span{font-size:13px;color:var(--text-muted,#64748b)}
+.personal-benefits__summary strong{font-size:20px}
+.personal-benefits__toolbar{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.personal-benefits__movements>div{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid #e2e8f0}
+.personal-benefits__recurring{border-top:1px solid #e2e8f0;padding-top:14px}
+@media(max-width:600px){.personal-benefits__panel{padding:14px}.personal-benefits__summary{grid-template-columns:repeat(2,minmax(0,1fr))}.personal-benefits__summary strong{font-size:17px}}
