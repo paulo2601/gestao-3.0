@@ -65,7 +65,7 @@ export function Dialog({
   useEffect(() => {
     const wasLoading = previousLoadingRef.current;
     previousLoadingRef.current = loading;
-    if (!open || variant !== 'quick-entry' || !wasLoading || loading) return;
+    if (!open || (variant !== 'quick-entry' && variant !== 'quick-entry-personal') || !wasLoading || loading) return;
 
     const content = dialogRef.current?.querySelector<HTMLElement>('.ui-dialog__content');
     requestAnimationFrame(() => {
