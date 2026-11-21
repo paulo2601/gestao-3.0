@@ -20,7 +20,7 @@ import './card-statement-refresh.css';
 import { sharePrintableElement } from '../../../shared/utils/reportShare';
 import { QuickEntryDialog } from './QuickEntryDialog';
 
-type CardTone = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'mercadopago' | 'generic';
+type CardTone = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'mercadopago' | 'renner' | 'havan' | 'generic';
 type ListedCard = CreditCardLimit & { companyName: string; bankInstitution: FinancialBankInstitution | null; lastFour: string | null; dueDay: number; closingDay: number; defaultPaymentAccountId: string | null; status: CreditCard['status'] };
 type CardDialog = 'companyReport' | 'details' | 'create' | 'edit' | 'delete' | 'activityEdit' | 'activityDelete' | null;
 type CardForm = { companyId: string; sourceCompanyId: string; name: string; bankInstitution: FinancialBankInstitution | ''; creditLimit: string; closingDay: string; dueDay: string; status: CreditCard['status']; lastFour: string; defaultPaymentAccountId: string };
@@ -32,7 +32,7 @@ const bankInstitutionOptions = [
   { value: '', label: 'Selecione…' },
   { value: 'itau', label: 'Itaú' }, { value: 'nubank', label: 'Nubank' }, { value: 'inter', label: 'Inter' },
   { value: 'santander', label: 'Santander' }, { value: 'caixa', label: 'Caixa' }, { value: 'sicoob', label: 'Sicoob' }, { value: 'mercadopago', label: 'Mercado Pago' },
-  { value: 'bradesco', label: 'Bradesco' }, { value: 'bb', label: 'Banco do Brasil' }, { value: 'sicredi', label: 'Sicredi' }, { value: 'c6', label: 'C6 Bank' },
+  { value: 'renner', label: 'Lojas Renner' }, { value: 'havan', label: 'Havan' }, { value: 'bradesco', label: 'Bradesco' }, { value: 'bb', label: 'Banco do Brasil' }, { value: 'sicredi', label: 'Sicredi' }, { value: 'c6', label: 'C6 Bank' },
 ];
 const emptyActivityForm: ActivityForm = { date:'', description:'', amount:'', expenseCompanyId:'', cardId:'', counterparty:'', categoryId:'', costCenterId:'', installmentCount:'1', notes:'' };
 function companyName(company: CompanySummary): string { return company.tradeName ?? company.legalName; }
@@ -43,6 +43,8 @@ function dateLabel(value: string): string { return value.split('-').reverse().jo
 function money(value: string): number { return Number(value.replace(',', '.')); }
 function cardVisual(institution: FinancialBankInstitution | null, name: string): { tone: CardTone; mark: string; institution: string } {
   const raw = `${institution ?? ''} ${name}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR');
+  if (institution === 'renner' || raw.includes('RENNER')) return { tone: 'renner', mark: 'Renner', institution: 'Lojas Renner' };
+  if (institution === 'havan' || raw.includes('HAVAN')) return { tone: 'havan', mark: 'Havan', institution: 'Havan' };
   if (institution === 'mercadopago' || raw.includes('MERCADO PAGO')) return { tone: 'mercadopago', mark: 'mercado pago', institution: 'Mercado Pago' };
   if (institution === 'nubank' || raw.includes('NUBANK') || raw.includes('NU ')) return { tone: 'nubank', mark: 'nu', institution: 'Nubank' };
   if (institution === 'itau' || raw.includes('ITAU') || raw.includes('ITI')) return { tone: 'itau', mark: raw.includes('ITI') ? 'iti' : 'itaú', institution: 'Itaú' };
