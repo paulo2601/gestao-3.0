@@ -23,6 +23,7 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
   const [busy, setBusy] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [reportMonth, setReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const companyKeys = companies.map(c => c.id).join(',');
   const load = useCallback(async () => {
     const companyIds = companyKeys.split(',').filter(Boolean);
@@ -68,6 +69,15 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
     setBusy(false); if (issue) { setError(issue.code === '23505' ? 'Este crédito mensal já foi confirmado.' : issue.message); return; }
     await load(); window.dispatchEvent(new Event('finance-benefit-changed'));
   }
+  const reportMovements = movements.filter(m => m.movement_date.startsWith(reportMonth));
+  const reportCredits = reportMovements.filter(m => m.direction === 'credit').reduce((s,m) => s + Number(m.amount), 0);
+  const reportExpenses = reportMovements.filter(m => m.direction === 'debit').reduce((s,m) => s + Number(m.amount), 0);
+  function exportReport() {
+    const quote = (value: string) => '"' + value.replaceAll('"','""') + '"';
+    const lines = [['Data','Cartão','Descrição','Tipo','Valor (R$)'].map(quote).join(';'), ...reportMovements.map(m => [m.movement_date, cards.find(c => c.id === m.card_id)?.name || '', m.description, m.direction === 'credit' ? 'Crédito' : 'Despesa', Number(m.amount).toFixed(2).replace('.',',')].map(quote).join(';'))];
+    const blob = new Blob(['\\uFEFF' + lines.join('\\r\\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'relatorio-beneficios-' + reportMonth + '.csv'; link.click(); URL.revokeObjectURL(url);
+  }
   return <section style={{ marginTop: 24 }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
       <h2>Cartões de benefício</h2><Button onClick={() => setCreating(!creating)}>+ Cartão de benefício</Button>
@@ -90,5 +100,13 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
         {movements.filter(m => m.card_id === card.id).slice(0, selectedCard === card.id ? undefined : 8).map(m => <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '5px 0' }}><span>{m.movement_date.split('-').reverse().join('/')} · {m.description}</span><strong>{m.direction === 'credit' ? '+' : '−'} {brl(Number(m.amount))}</strong></div>)}
       </div>)}
     </div>
+    <section style={{ marginTop: 24 }} aria-label="Relatório de benefícios">
+      <h3>Relatório mensal de benefícios</h3>
+      <p>Créditos e compras são apresentados separadamente, sem compor entradas, saídas ou saldo bancário.</p>
+      <label>Competência <input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} /></label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, margin: '12px 0' }}><div>Créditos <strong>{brl(reportCredits)}</strong></div><div>Despesas <strong>{brl(reportExpenses)}</strong></div><div>Variação do benefício <strong>{brl(reportCredits - reportExpenses)}</strong></div></div>
+      <Button onClick={exportReport} disabled={!reportMovements.length}>Exportar relatório CSV</Button>
+      <div style={{ marginTop: 12 }}>{reportMovements.map(m => <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '6px 0' }}><span>{m.movement_date.split('-').reverse().join('/')} · {cards.find(c => c.id === m.card_id)?.name} · {m.description}</span><strong>{m.direction === 'credit' ? '+' : '−'} {brl(Number(m.amount))}</strong></div>)}</div>
+    </section>
   </section>;
 }
