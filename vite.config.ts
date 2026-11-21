@@ -25,7 +25,7 @@ export default defineConfig({
         return html
           .replace('/manifest.webmanifest?v=4', '/manifest-secondary.webmanifest')
           .replace('/gestao-app-icon.svg?v=4', '/gestao-secondary-icon.svg')
-          .replace('/gestao-icon-192.png?v=4', '/gestao-secondary-icon.svg')
+          .replace('/gestao-icon-192.png?v=4', '/gestao-secondary-icon-192.png')
           .replace('<title>Gestão 3.0</title>', '<title>Gestão 3.0 — 2</title>')
           .replace('content="#071426"', 'content="#168568"')
           .replace('content="Gestão"', 'content="Gestão 2"');
