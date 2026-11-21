@@ -729,15 +729,15 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
             <Button className="quick-entry__add" aria-label="Adicionar obra ou centro de custo" onClick={() => { setInlineRegistry(inlineRegistry === 'costCenter' ? null : 'costCenter'); setNewRegistryName(''); }}>＋</Button>
           </div>{inlineRegistry === 'costCenter' && <div className="quick-entry__registry-create"><Input label="Nova obra / centro de custo" value={newRegistryName} onChange={(event) => setNewRegistryName(event.target.value)} /><Button disabled={busy || !newRegistryName.trim()} onClick={() => { void createInlineRegistry('costCenter'); }}>Adicionar</Button></div>}</div>
 
+          <div className="quick-entry__two-col">
+            <Select label="Forma de pagamento" value={form.paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)} options={paymentOptions} />
+            {form.paymentMethod === 'benefit' ? <Select label="Cartão de benefício" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={benefitOptions} required /> : form.paymentMethod === 'credit' ? <Select label="Cartão" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={cardOptions} required /> : <Select label="Banco / Conta" value={form.accountRef} onChange={(event) => set('accountRef', event.target.value)} options={accountOptions} />}
+          </div>
           {PERSONAL_APP && <div className="quick-entry__budget-toggle quick-entry__auto-settle-toggle">
             <label><input type="checkbox" checked={autoSettleEffective} disabled={!autoSettleReady || savingAutoSettle || submitting} onChange={event => { void changeAutoSettle(event.target.checked); }} />
               <span><strong>Baixa automática de Pix, débito e dinheiro</strong><small>{autoSettleEffective ? 'Operação normal: lançamentos únicos com data de hoje ou anterior são pagos automaticamente.' : autoSettleFrom ? `Cadastro inicial até ${autoSettleFrom.split('-').reverse().join('/')}. A baixa automática volta nessa data.` : 'Cadastro inicial: despesas ficam pendentes, mesmo com Pix e conta selecionada.'}</small></span>
             </label>
           </div>}
-          <div className="quick-entry__two-col">
-            <Select label="Forma de pagamento" value={form.paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)} options={paymentOptions} />
-            {form.paymentMethod === 'benefit' ? <Select label="Cartão de benefício" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={benefitOptions} required /> : form.paymentMethod === 'credit' ? <Select label="Cartão" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={cardOptions} required /> : <Select label="Banco / Conta" value={form.accountRef} onChange={(event) => set('accountRef', event.target.value)} options={accountOptions} />}
-          </div>
         </div>
 
         <div className="quick-entry__launch-section">
