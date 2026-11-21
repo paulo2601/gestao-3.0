@@ -205,7 +205,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     paymentMethod: 'pix' as PaymentMethod,
     launchType: 'single' as LaunchType,
     installmentCount: '2',
-    recurrenceCount: '12', recurrenceFrequency: 'monthly' as 'monthly' | 'weekly',
+    recurrenceCount: '12', recurrenceFrequency: 'monthly' as 'monthly' | 'weekly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12',
     accountRef: '',
     cardRef: '',
     categoryId: '',
@@ -227,7 +227,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     setLocalSuccess(null);
     setForm({
       entryType: 'expense', date: initialValues?.date ?? today(), description: initialValues?.description ?? '', amountDigits: initialValues?.amount ? String(Math.round(initialValues.amount * 100)) : '', paymentMethod: initialPaymentMethod ?? 'pix', launchType: 'single',
-      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
+      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
       counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
     });
   }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
@@ -489,14 +489,22 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       setLocalError('Selecione o banco/conta usado no pagamento.');
       return;
     }
+    if (PERSONAL_APP && form.launchType === 'recurring' && form.ongoingInstallment) {
+      const current = Number(form.currentInstallment);
+      const total = Number(form.totalInstallments);
+      if (form.recurrenceFrequency !== 'monthly' || !Number.isSafeInteger(current) || !Number.isSafeInteger(total) || current < 1 || total < current || total > 1200) {
+        setLocalError('Informe parcela atual e total válidos (até 1.200 parcelas) para a recorrência mensal.');
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       if (form.launchType === 'recurring') {
-        const count = Math.max(1, Math.trunc(Number(form.recurrenceCount || '1')));
+        const count = form.ongoingInstallment && PERSONAL_APP ? Number(form.totalInstallments) - Number(form.currentInstallment) + 1 : Math.max(1, Math.trunc(Number(form.recurrenceCount || '1')));
         await operations.createRecurrence({
           entryType: form.entryType, description: form.description.trim(), counterpartyName: form.counterparty.trim() || null,
           categoryId: form.categoryId, costCenterId: form.costCenterId || null, amount, frequency: form.recurrenceFrequency, intervalCount: form.recurrenceFrequency === 'weekly' ? 2 : 1,
-          startDate: form.date, endDate: form.recurrenceFrequency === 'weekly' ? new Date(Date.parse(form.date + 'T12:00:00Z') + (count - 1) * 14 * 86400000).toISOString().slice(0, 10) : recurrenceEnd(form.date, count), notes: [form.notes.trim(), ...(PERSONAL_APP && form.accountRef ? [`[personal-planned-account:${form.accountRef}]`] : [])].filter(Boolean).join('\n') || null,
+          startDate: form.date, endDate: form.recurrenceFrequency === 'weekly' ? new Date(Date.parse(form.date + 'T12:00:00Z') + (count - 1) * 14 * 86400000).toISOString().slice(0, 10) : recurrenceEnd(form.date, count), notes: [form.notes.trim(), ...(PERSONAL_APP && form.ongoingInstallment ? [`[personal-installments:${form.currentInstallment}/${form.totalInstallments}]`] : []), ...(PERSONAL_APP && form.accountRef ? [`[personal-planned-account:${form.accountRef}]`] : [])].filter(Boolean).join('\n') || null,
         });
       } else if (form.paymentMethod === 'credit') {
         const card = parsePaymentRef(form.cardRef);
@@ -679,7 +687,9 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           </div>
           {form.launchType === 'installment' && <Input label="Quantidade de parcelas" type="number" min="2" max="120" value={form.installmentCount} onChange={(event) => set('installmentCount', event.target.value)} required />}
           {form.launchType === 'recurring' && <Select label="Frequência" value={form.recurrenceFrequency} onChange={(event) => set('recurrenceFrequency', event.target.value as 'monthly' | 'weekly')} options={[{ value: 'monthly', label: 'Mensal' }, { value: 'weekly', label: 'Quinzenal (a cada 2 semanas)' }]} />}
-          {form.launchType === 'recurring' && <Input label="Quantidade de repetições" type="number" min="1" max="120" value={form.recurrenceCount} onChange={(event) => set('recurrenceCount', event.target.value)} required />}
+          {PERSONAL_APP && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && <label className="quick-entry__budget-toggle"><input type="checkbox" checked={form.ongoingInstallment} onChange={event=>set('ongoingInstallment',event.target.checked)} /> Parcelamento em andamento</label>}
+          {PERSONAL_APP && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && form.ongoingInstallment && <div className="quick-entry__field-grid"><Input label="Parcela atual" type="number" min="1" max="1200" value={form.currentInstallment} onChange={event=>set('currentInstallment',event.target.value)} required /><Input label="Total de parcelas" type="number" min="1" max="1200" value={form.totalInstallments} onChange={event=>set('totalInstallments',event.target.value)} required /></div>}
+          {form.launchType === 'recurring' && !(PERSONAL_APP && form.ongoingInstallment && form.recurrenceFrequency === 'monthly') && <Input label="Quantidade de repetições" type="number" min="1" max="120" value={form.recurrenceCount} onChange={(event) => set('recurrenceCount', event.target.value)} required />}
           {isCrIncome && form.launchType !== 'recurring' && <label className="quick-entry__budget-toggle">
             <input type="checkbox" checked={form.includeInBudget} onChange={(event) => set('includeInBudget', event.target.checked)} />
             <span><strong>Considerar no orçamento</strong><small>Desmarcado: registra a entrada financeira, mas não soma na receita realizada do orçamento da CR.</small></span>
