@@ -46,3 +46,13 @@
 .app-shell--personal .app-mobile-nav{bottom:var(--personal-system-bottom);padding-bottom:7px}
 .app-shell--personal .app-page{padding-bottom:calc(104px + var(--personal-system-bottom))}
 }
+
+
+/* Desktop shortcuts mirror the existing mobile finance actions. */
+.app-desktop-finance-shortcuts{display:flex;gap:8px;align-items:center;width:min(1180px,calc(100% - 32px));margin:0 auto;padding:8px 0 12px}
+.app-desktop-finance-shortcuts__item{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 18px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:.9rem;font-weight:750;text-decoration:none;cursor:pointer}
+.app-desktop-finance-shortcuts__item:hover{border-color:var(--primary);color:var(--primary)}
+.app-desktop-finance-shortcuts__item--active{background:var(--primary);border-color:var(--primary);color:#fff}
+@media(max-width:760px){.app-desktop-finance-shortcuts{display:none}}
+@media(min-width:1200px){.app-desktop-finance-shortcuts{width:calc(100% - 48px);max-width:1560px}}
+@media(min-width:1600px){.app-desktop-finance-shortcuts{width:calc(100% - 64px);max-width:1760px}}
