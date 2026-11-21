@@ -443,3 +443,17 @@
 @media(max-width:1450px){.planning-forecast__item.ui-card>.ui-card__content{grid-template-columns:45px minmax(150px,1fr) minmax(145px,1fr) minmax(130px,1fr);gap:12px}.planning-forecast__item .planning-forecast__meta:nth-of-type(4){grid-column:auto}.planning-forecast__item .planning-forecast__amount{grid-column:3}.planning-forecast__item .planning-forecast__actions{grid-column:4;justify-content:flex-end}}
 @media(max-width:950px){.planning-forecast__item.ui-card>.ui-card__content{grid-template-columns:45px minmax(0,1fr) auto}.planning-forecast__item .planning-forecast__name{grid-column:2}.planning-forecast__item .planning-forecast__meta{grid-column:2/-1}.planning-forecast__item .planning-forecast__amount{grid-column:3;grid-row:1/2}.planning-forecast__item .planning-forecast__actions{grid-column:2/-1;justify-content:flex-start}}
 @media(max-width:520px){.planning-forecast__item.ui-card>.ui-card__content{grid-template-columns:40px minmax(0,1fr);padding:13px}.planning-forecast__item .planning-forecast__amount{grid-column:2;grid-row:auto}.planning-forecast__item .planning-forecast__meta,.planning-forecast__item .planning-forecast__actions{grid-column:1/-1}}
+
+
+/* Stable columns: rows with one or two action buttons must share identical positions. */
+@media(min-width:1451px){
+.planning-forecast__item.ui-card>.ui-card__content{
+ grid-template-columns:48px minmax(170px,1.2fr) minmax(120px,1fr) minmax(180px,1.25fr) minmax(125px,.85fr) minmax(135px,.9fr) 176px;
+}
+.planning-forecast__item .planning-forecast__actions{width:176px;justify-content:flex-end;flex-wrap:nowrap}
+.planning-forecast__item .planning-forecast__actions .ui-button{min-width:0}
+}
+@media(min-width:951px) and (max-width:1450px){
+.planning-forecast__item.ui-card>.ui-card__content{grid-template-columns:45px minmax(145px,1fr) minmax(140px,1fr) minmax(140px,1fr)}
+.planning-forecast__item .planning-forecast__actions{justify-content:flex-end}
+}
