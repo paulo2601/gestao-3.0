@@ -529,7 +529,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       setLocalError('Preencha descrição, valor e categoria.');
       return;
     }
-    if (PERSONAL_APP && form.paymentMethod === 'benefit' && (!form.cardRef || form.launchType !== 'single')) { setLocalError('Selecione um cartão de benefício e o lançamento Único. Recorrências de benefício ainda não estão habilitadas.'); return; }
+    if (PERSONAL_APP && form.paymentMethod === 'benefit' && (!form.cardRef || (form.launchType !== 'single' && !(form.entryType === 'income' && form.launchType === 'recurring')))) { setLocalError('Selecione um cartão de benefício. Para créditos mensais, use Recorrente; despesas devem ser Único.'); return; }
     if (form.paymentMethod === 'credit' && (!form.cardRef || form.entryType !== 'expense')) {
       setLocalError('Selecione um cartão válido.');
       return;
@@ -553,6 +553,15 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         const benefit = benefitCards.find(card => card.id === form.cardRef && card.company_id === company.id);
         if (!benefit) throw new Error('Cartão de benefício não encontrado para esta empresa.');
         const db = getSupabaseClient();
+        if (form.launchType === 'recurring') {
+          if (form.entryType !== 'income' || form.recurrenceFrequency !== 'monthly') throw new Error('Créditos recorrentes de benefício devem ser receitas mensais.');
+          const startDay = Number(form.date.slice(8, 10));
+          const { error: ruleError } = await db.from('personal_benefit_recurring_credits').upsert({
+            tenant_id: company.tenantId, company_id: company.id, card_id: benefit.id,
+            description: form.description.trim(), amount, day_of_month: startDay, active: true,
+          }, { onConflict: 'card_id' });
+          if (ruleError) throw ruleError;
+        } else {
         if (form.entryType === 'expense') {
           const { data: prior, error: priorError } = await db.from('personal_benefit_movements').select('amount,direction').eq('card_id', benefit.id);
           if (priorError) throw priorError;
@@ -561,6 +570,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         }
         const { error: movementError } = await db.from('personal_benefit_movements').insert({ tenant_id: company.tenantId, company_id: company.id, card_id: benefit.id, movement_date: form.date, description: form.description.trim(), amount, direction: form.entryType === 'income' ? 'credit' : 'debit', category_id: form.categoryId });
         if (movementError) throw movementError;
+        }
         window.dispatchEvent(new Event('finance-benefit-changed'));
       } else if (form.launchType === 'recurring') {
         const count = form.ongoingInstallment && PERSONAL_APP ? Number(form.totalInstallments) - Number(form.currentInstallment) + 1 : Math.max(1, Math.trunc(Number(form.recurrenceCount || '1')));
@@ -749,15 +759,15 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
             <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'installment' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'installment'} onClick={() => { if (form.paymentMethod !== 'benefit') set('launchType', 'installment'); }} disabled={form.paymentMethod === 'benefit'}>
               <span className="quick-entry__launch-check">{form.launchType === 'installment' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">▤</span><span><strong>Parcelado</strong><small>Várias parcelas</small></span>
             </Button>
-            {form.paymentMethod !== 'credit' && form.paymentMethod !== 'benefit' && <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'recurring' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'recurring'} onClick={() => set('launchType', 'recurring')}>
+            {form.paymentMethod !== 'credit' && (form.paymentMethod !== 'benefit' || form.entryType === 'income') && <Button variant="tertiary" className={`quick-entry__launch-choice${form.launchType === 'recurring' ? ' is-selected' : ''}`} aria-pressed={form.launchType === 'recurring'} onClick={() => set('launchType', 'recurring')}>
               <span className="quick-entry__launch-check">{form.launchType === 'recurring' ? '✓' : '○'}</span><span className="quick-entry__launch-icon">⟳</span><span><strong>Recorrente</strong><small>Mensal ou quinzenal</small></span>
             </Button>}
           </div>
           {form.launchType === 'installment' && <Input label="Quantidade de parcelas" type="number" min="2" max="120" value={form.installmentCount} onChange={(event) => set('installmentCount', event.target.value)} required />}
-          {form.launchType === 'recurring' && <Select label="Frequência" value={form.recurrenceFrequency} onChange={(event) => set('recurrenceFrequency', event.target.value as 'monthly' | 'weekly')} options={[{ value: 'monthly', label: 'Mensal' }, { value: 'weekly', label: 'Quinzenal (a cada 2 semanas)' }]} />}
-          {PERSONAL_APP && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && <label className="quick-entry__budget-toggle"><input type="checkbox" checked={form.ongoingInstallment} onChange={event=>set('ongoingInstallment',event.target.checked)} /> Parcelamento em andamento</label>}
-          {PERSONAL_APP && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && form.ongoingInstallment && <div className="quick-entry__field-grid"><Input label="Parcela atual" type="number" min="1" max="1200" value={form.currentInstallment} onChange={event=>set('currentInstallment',event.target.value)} required /><Input label="Total de parcelas" type="number" min="1" max="1200" value={form.totalInstallments} onChange={event=>set('totalInstallments',event.target.value)} required /></div>}
-          {form.launchType === 'recurring' && !(PERSONAL_APP && form.ongoingInstallment && form.recurrenceFrequency === 'monthly') && <Input label="Quantidade de repetições" type="number" min="1" max="120" value={form.recurrenceCount} onChange={(event) => set('recurrenceCount', event.target.value)} required />}
+          {form.launchType === 'recurring' && form.paymentMethod !== 'benefit' && <Select label="Frequência" value={form.recurrenceFrequency} onChange={(event) => set('recurrenceFrequency', event.target.value as 'monthly' | 'weekly')} options={[{ value: 'monthly', label: 'Mensal' }, { value: 'weekly', label: 'Quinzenal (a cada 2 semanas)' }]} />}
+          {PERSONAL_APP && form.paymentMethod !== 'benefit' && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && <label className="quick-entry__budget-toggle"><input type="checkbox" checked={form.ongoingInstallment} onChange={event=>set('ongoingInstallment',event.target.checked)} /> Parcelamento em andamento</label>}
+          {PERSONAL_APP && form.paymentMethod !== 'benefit' && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && form.ongoingInstallment && <div className="quick-entry__field-grid"><Input label="Parcela atual" type="number" min="1" max="1200" value={form.currentInstallment} onChange={event=>set('currentInstallment',event.target.value)} required /><Input label="Total de parcelas" type="number" min="1" max="1200" value={form.totalInstallments} onChange={event=>set('totalInstallments',event.target.value)} required /></div>}
+          {form.launchType === 'recurring' && form.paymentMethod !== 'benefit' && !(PERSONAL_APP && form.ongoingInstallment && form.recurrenceFrequency === 'monthly') && <Input label="Quantidade de repetições" type="number" min="1" max="120" value={form.recurrenceCount} onChange={(event) => set('recurrenceCount', event.target.value)} required />}
           {isCrIncome && form.launchType !== 'recurring' && <label className="quick-entry__budget-toggle">
             <input type="checkbox" checked={form.includeInBudget} onChange={(event) => set('includeInBudget', event.target.checked)} />
             <span><strong>Considerar no orçamento</strong><small>Desmarcado: registra a entrada financeira, mas não soma na receita realizada do orçamento da CR.</small></span>
