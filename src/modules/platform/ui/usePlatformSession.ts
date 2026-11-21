@@ -27,7 +27,14 @@ export interface PlatformSession {
   selectCompany: (companyId: string) => void;
 }
 
-const ACCESS_CACHE_VERSION = 'v1';
+declare const __GESTAO_APP_VARIANT__: 'primary' | 'secondary';
+const PERSONAL_APP = __GESTAO_APP_VARIANT__ === 'secondary';
+const PERSONAL_COMPANY_ID = '6f4f2ea3-749e-4200-b927-6d04d9d41ef1';
+function scopeContexts(contexts: readonly AccessContext[]): readonly AccessContext[] {
+  if (!PERSONAL_APP) return contexts;
+  return contexts.map(context => ({...context, companies: context.companies.filter(company => company.id === PERSONAL_COMPANY_ID)})).filter(context => context.companies.length > 0);
+}
+const ACCESS_CACHE_VERSION = PERSONAL_APP ? 'pessoal-v2' : 'v1';
 function companyStorageKey(userId: string): string { return `gestao.activeCompanyId:${userId}`; }
 function accessStorageKey(userId: string): string { return `gestao.accessContexts:${ACCESS_CACHE_VERSION}:${userId}`; }
 function readStoredContexts(userId: string): readonly AccessContext[] {
@@ -71,7 +78,7 @@ export function usePlatformSession(): PlatformSession {
   const hydrateAccess = useCallback(async () => {
     const currentUser = await authGateway.getCurrentUser();
     if (!currentUser) { setUser(null); setContexts([]); setActiveCompanyId(null); setStatus('anonymous'); return; }
-    const cachedContexts = readStoredContexts(currentUser.id);
+    const cachedContexts = scopeContexts(readStoredContexts(currentUser.id));
     const cachedCompanies = flattenAuthorizedCompanies(cachedContexts);
     if (cachedCompanies.length > 0) {
       const storedCompanyId = readStoredCompany(currentUser.id);
@@ -82,12 +89,12 @@ export function usePlatformSession(): PlatformSession {
 
     // A fresh login or password recovery can race the initial access lookup.
     // Refresh the auth token once before concluding that a new tenant has no companies.
-    let nextContexts = await accessRepository.listContextsForCurrentUser();
+    let nextContexts = scopeContexts(await accessRepository.listContextsForCurrentUser());
     let nextCompanies = flattenAuthorizedCompanies(nextContexts);
     if (nextCompanies.length === 0) {
       const refreshError = await authGateway.refreshSessionError();
       if (!refreshError) {
-        nextContexts = await accessRepository.listContextsForCurrentUser();
+        nextContexts = scopeContexts(await accessRepository.listContextsForCurrentUser());
         nextCompanies = flattenAuthorizedCompanies(nextContexts);
       }
     }
@@ -150,7 +157,7 @@ export function usePlatformSession(): PlatformSession {
     await authGateway.signOut(); try{window.localStorage.removeItem('gestao.biometric.unlock');}catch{/* preferência indisponível */} setUser(null); setContexts([]); setActiveCompanyId(null); setErrorMessage(null); setNoticeMessage(null); setStatus('anonymous');
   }, [authGateway, user]);
 
-  const companies = flattenAuthorizedCompanies(contexts);
+  const companies = flattenAuthorizedCompanies(scopeContexts(contexts));
   const selectCompany = useCallback((companyId: string) => {
     if (companyId === ALL_COMPANIES_ID && companies.length > 1) {
       setActiveCompanyId(ALL_COMPANIES_ID);
@@ -163,5 +170,5 @@ export function usePlatformSession(): PlatformSession {
     }
   }, [companies, user]);
 
-  return { status, user, contexts, companies, activeCompanyId, errorMessage, noticeMessage, signIn, signInWithPasskey, bootstrapFirstOwner, signOut, selectCompany };
+  return { status, user, contexts: scopeContexts(contexts), companies, activeCompanyId: PERSONAL_APP ? (companies[0]?.id ?? null) : activeCompanyId, errorMessage, noticeMessage, signIn, signInWithPasskey, bootstrapFirstOwner, signOut, selectCompany };
 }
