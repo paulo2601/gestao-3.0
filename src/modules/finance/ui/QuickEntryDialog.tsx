@@ -586,7 +586,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         if (budgetUpdate.error) throw budgetUpdate.error;
         const account = parsePaymentRef(form.accountRef);
         if (account) await getFinanceRepositories().entries.setPlannedAccount(scope, created.entryId, account.resourceId, account.companyId);
-        const shouldAutoSettle = ['pix', 'debit', 'cash'].includes(form.paymentMethod)
+        const shouldAutoSettle = !PERSONAL_APP && ['pix', 'debit', 'cash'].includes(form.paymentMethod)
           && form.launchType === 'single'
           && form.date <= today();
         if (shouldAutoSettle) {
