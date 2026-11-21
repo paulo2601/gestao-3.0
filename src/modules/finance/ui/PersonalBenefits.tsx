@@ -19,8 +19,9 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
   const [busy, setBusy] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const companyKeys = companies.map(c => c.id).join(',');
   const load = useCallback(async () => {
-    const companyIds = companies.map(c => c.id);
+    const companyIds = companyKeys.split(',').filter(Boolean);
     if (!companyIds.length) return;
     const db = getSupabaseClient();
     const [c, m] = await Promise.all([
@@ -28,9 +29,10 @@ export function PersonalBenefits({ companies }: { companies: readonly CompanySum
       db.from('personal_benefit_movements').select('id,card_id,movement_date,description,amount,direction').in('company_id', companyIds).order('movement_date', { ascending: false }),
     ]);
     if (c.error || m.error) { setError(c.error?.message || m.error?.message || 'Erro ao consultar benefícios'); return; }
+    setError('');
     setCards((c.data || []) as BenefitCard[]);
     setMovements((m.data || []) as BenefitMovement[]);
-  }, [companies]);
+  }, [companyKeys]);
   useEffect(() => { void load(); const refresh = () => { void load(); }; window.addEventListener('finance-benefit-changed', refresh); return () => window.removeEventListener('finance-benefit-changed', refresh); }, [load]);
   async function create() {
     const company = companies.find(c => c.id === (companyId || companies[0]?.id));
