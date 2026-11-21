@@ -729,7 +729,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
             <Button className="quick-entry__add" aria-label="Adicionar obra ou centro de custo" onClick={() => { setInlineRegistry(inlineRegistry === 'costCenter' ? null : 'costCenter'); setNewRegistryName(''); }}>＋</Button>
           </div>{inlineRegistry === 'costCenter' && <div className="quick-entry__registry-create"><Input label="Nova obra / centro de custo" value={newRegistryName} onChange={(event) => setNewRegistryName(event.target.value)} /><Button disabled={busy || !newRegistryName.trim()} onClick={() => { void createInlineRegistry('costCenter'); }}>Adicionar</Button></div>}</div>
 
-          <div className="quick-entry__two-col">
+          <div className="quick-entry__two-col quick-entry__payment-fields">
             <Select label="Forma de pagamento" value={form.paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)} options={paymentOptions} />
             {form.paymentMethod === 'benefit' ? <Select label="Cartão de benefício" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={benefitOptions} required /> : form.paymentMethod === 'credit' ? <Select label="Cartão" value={form.cardRef} onChange={(event) => set('cardRef', event.target.value)} options={cardOptions} required /> : <Select label="Banco / Conta" value={form.accountRef} onChange={(event) => set('accountRef', event.target.value)} options={accountOptions} />}
           </div>
