@@ -275,7 +275,10 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   }, [companies, open]);
 
   useEffect(() => {
-    if (!open || companies.length === 0) return;
+    if (!open || companies.length === 0 || PERSONAL_APP) {
+      if (PERSONAL_APP) setTemplates([]);
+      return;
+    }
     let cancelled = false;
     const loadTemplates = () => void (async () => {
       const repositories = getFinanceRepositories();
@@ -395,6 +398,11 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   }
 
   function smartFill(description: string) {
+    // Personal finance is independent: never infer payer, recurrence or other fields from past descriptions.
+    if (PERSONAL_APP) {
+      set('description', description);
+      return;
+    }
     const query = normalized(description);
     if (query.length < 3) {
       set('description', description);
