@@ -251,10 +251,17 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     includeInBudget: false,
   });
 
-  // A fresh companies array after a save must not reset the user's retained form.
+  // Initialize only when opening: refreshing the parent after a save must not
+  // wipe fields intentionally retained by 'Lançar e manter dados'.
   const firstCompanyId = companies[0]?.id ?? '';
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      wasOpen.current = false;
+      return;
+    }
+    if (wasOpen.current) return;
+    wasOpen.current = true;
     setCompanyId(initialCompanyId || firstCompanyId);
     manuallyEdited.current.clear();
     manualCompany.current = false;
