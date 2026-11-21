@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FinancialBankInstitution } from '../../finance/domain/registries';
 
 const icons: Partial<Record<FinancialBankInstitution, string>> = {
-  renner: 'lojasrenner', havan: 'havan',
+  cea: 'cea', renner: 'lojasrenner', havan: 'havan',
   santander: 'santander', nubank: 'nubank', itau: 'itau', inter: 'bancointer',
   caixa: 'caixa', bradesco: 'bradesco', bb: 'bancodobrasil',
   mercadopago: 'mercadopago', sicredi: 'sicredi', c6: 'c6bank', sicoob: 'sicoob',
