@@ -28,7 +28,7 @@ export default defineConfig({
           .replace('/gestao-icon-192.png?v=4', '/gestao-secondary-icon-192.png')
           .replace('<title>Gestão 3.0</title>', '<title>Gestão Pessoal</title>')
           .replace('content="#071426"', 'content="#168568"')
-          .replace('content="Gestão"', 'content="Gestão 2"');
+          .replace('content="Gestão"', 'content="Gestão Pessoal"');
       },
       generateBundle() {
         this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: buildVersion }) });
