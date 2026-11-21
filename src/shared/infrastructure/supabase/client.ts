@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-let client: SupabaseClient | undefined;
+declare const __GESTAO_APP_VARIANT__: string;\n\nlet client: SupabaseClient | undefined;
 
 type SupabaseEnvironmentKey =
   | 'VITE_SUPABASE_URL'
@@ -30,7 +30,7 @@ export function getSupabaseClient(): SupabaseClient {
   const url = readEnvironmentValue('VITE_SUPABASE_URL');
   const publishableKey = readEnvironmentValue('VITE_SUPABASE_PUBLISHABLE_KEY');
 
-  // Separate authentication storage for each installable app variant.\n  // Deploy variants on separate origins for full isolation of localStorage, cookies and service workers.\n  const variant = import.meta.env.VITE_GESTAO_APP_VARIANT === 'secondary' ? 'secondary' : 'primary';\n  client = createClient(url, publishableKey, {
+  // Separate authentication storage for each installable app variant.\n  // Deploy variants on separate origins for full isolation of localStorage, cookies and service workers.\n  const variant = __GESTAO_APP_VARIANT__ === 'secondary' ? 'secondary' : 'primary';\n  client = createClient(url, publishableKey, {
     auth: {
       storageKey: `gestao-auth-${variant}`,\n      persistSession: true,
       autoRefreshToken: true,
