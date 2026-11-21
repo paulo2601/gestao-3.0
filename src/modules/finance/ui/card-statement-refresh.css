@@ -22,3 +22,10 @@
 .statement-view--refreshed .statement-view__activity-heading strong{font-size:17px}
 @media(max-width:1000px){.statement-view--refreshed .statement-view__hero{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.statement-view--refreshed .statement-view__hero{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.statement-view--refreshed .statement-view__usage{grid-column:1/-1}.statement-view--refreshed .statement-view__dates>*{padding:6px}.statement-view--refreshed .statement-view__totals>*{padding:6px}}
+
+/* Mercado Pago: render the real brand mark instead of the text block; preserve other bank icons. */
+.statement-view--refreshed .statement-view__bank-symbol.bank-brand--mercadopago{background:#fff;border:1px solid #d4e4f5;box-shadow:0 2px 6px #123d7712;overflow:hidden;min-width:44px;width:44px;height:44px;padding:5px;color:#009ee3}
+.statement-view__mercadopago-logo{display:block;width:100%;height:100%;object-fit:contain}
+.statement-view--refreshed .statement-view__identity{min-width:0}
+.statement-view--refreshed .statement-view__identity>div{min-width:0}
+.statement-view--refreshed .statement-view__identity strong{overflow-wrap:anywhere}
