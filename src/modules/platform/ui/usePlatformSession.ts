@@ -29,12 +29,11 @@ export interface PlatformSession {
 
 declare const __GESTAO_APP_VARIANT__: 'primary' | 'secondary';
 const PERSONAL_APP = __GESTAO_APP_VARIANT__ === 'secondary';
-const PERSONAL_COMPANY_ID = '6f4f2ea3-749e-4200-b927-6d04d9d41ef1';
+const PERSONAL_COMPANY_ID = 'a01d9c46-fc5b-46ef-b742-5e54dca94d01';
 function scopeContexts(contexts: readonly AccessContext[]): readonly AccessContext[] {
-  if (!PERSONAL_APP) return contexts;
-  return contexts.map(context => ({...context, companies: context.companies.filter(company => company.id === PERSONAL_COMPANY_ID)})).filter(context => context.companies.length > 0);
+  return contexts.map(context => ({...context, companies: context.companies.filter(company => PERSONAL_APP ? company.id === PERSONAL_COMPANY_ID : company.id !== PERSONAL_COMPANY_ID)})).filter(context => context.companies.length > 0);
 }
-const ACCESS_CACHE_VERSION = PERSONAL_APP ? 'pessoal-v2' : 'v1';
+const ACCESS_CACHE_VERSION = PERSONAL_APP ? 'pessoal-novo-v1' : 'v1';
 function companyStorageKey(userId: string): string { return `gestao.activeCompanyId:${userId}`; }
 function accessStorageKey(userId: string): string { return `gestao.accessContexts:${ACCESS_CACHE_VERSION}:${userId}`; }
 function readStoredContexts(userId: string): readonly AccessContext[] {
