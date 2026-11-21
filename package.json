@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings=0",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:secondary": "node scripts/generate-secondary-icons.mjs && GESTAO_APP_VARIANT=secondary npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.105.0",
