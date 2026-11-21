@@ -1,0 +1,40 @@
+name: Deploy secondary Gestão 3.0 Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-secondary:
+    runs-on: ubuntu-latest
+    environment: secondary-app
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify deployment configuration
+        run: |
+          test -n "$VITE_SUPABASE_URL"
+          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - run: npm install --no-package-lock --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build:secondary
+      - name: Check manifest and Android icons
+        run: |
+          test -s dist/manifest-secondary.webmanifest
+          test -s dist/gestao-secondary-icon-192.png
+          test -s dist/gestao-secondary-icon-512.png
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; const m=JSON.parse(readFileSync('./dist/manifest-secondary.webmanifest','utf8')); if(m.id!=='/gestao-3-0-secondary') process.exit(1)"
+      - name: Deploy only the secondary Worker
+        run: npx wrangler deploy --config wrangler.secondary.jsonc
