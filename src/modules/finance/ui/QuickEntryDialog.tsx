@@ -213,9 +213,11 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     includeInBudget: false,
   });
 
+  // A fresh companies array after a save must not reset the user's retained form.
+  const firstCompanyId = companies[0]?.id ?? '';
   useEffect(() => {
     if (!open) return;
-    setCompanyId(initialCompanyId || companies[0]?.id || '');
+    setCompanyId(initialCompanyId || firstCompanyId);
     manuallyEdited.current.clear();
     manualCompany.current = false;
     setMoreOptions(false);
@@ -228,7 +230,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
       counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
     });
-  }, [companies, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
+  }, [firstCompanyId, initialAccountRef, initialCardRef, initialCompanyId, initialPaymentMethod, initialValues?.amount, initialValues?.counterparty, initialValues?.date, initialValues?.description, initialValues?.notes, open]);
 
   const company = companies.find((item) => item.id === companyId) ?? companies[0];
   const scope = useMemo(() => ({ tenantId: company?.tenantId ?? '', companyId: company?.id ?? '' }), [company?.id, company?.tenantId]);
