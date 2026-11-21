@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { CompanySummary } from '../../platform/domain/AccessContext';
 import { getSupabaseClient } from '../../../shared/infrastructure/supabase/client';
 import { Button } from '../../../shared/ui/Button';
+import { Dialog } from '../../../shared/ui/Dialog';
 import './personal-benefits.css';
 
 export type BenefitCard = { id: string; tenant_id: string; company_id: string; name: string; provider: string; opening_balance: number; status: string };
@@ -83,24 +84,25 @@ export function PersonalBenefits({ companies, createSignal = 0 }: { companies: r
   }
   return <section className="personal-benefits">
     {error && <p role="alert" className="personal-benefits__error">{error}</p>}
-    {creating && <div className="personal-benefits__panel">
-      <div className="personal-benefits__panel-header"><h2>Novo cartão de benefício</h2><Button variant="secondary" onClick={() => setCreating(false)}>Cancelar</Button></div>
+    <Dialog open={creating} title="Novo cartão de benefício" description="VR e outros cartões pré-pagos" onClose={() => setCreating(false)}>
+      
       <div className="personal-benefits__form">
         <label>Nome do cartão<input value={name} onChange={e => setName(e.target.value)} /></label>
         <label>Responsável / empresa<select value={companyId || companies[0]?.id || ''} onChange={e => setCompanyId(e.target.value)}>{companies.map(company => <option key={company.id} value={company.id}>{company.tradeName || company.legalName}</option>)}</select></label>
         <label>Saldo inicial (R$)<input type="number" min="0" step="0.01" value={opening} onChange={e => setOpening(e.target.value)} /></label>
         <Button disabled={busy} onClick={() => { void create(); }}>Salvar benefício</Button>
       </div>
-    </div>}
+    </Dialog>
     {cards.length > 0 && <div className="personal-benefits__cards">
       {cards.map(card => <button type="button" key={card.id} className="personal-benefits__card" onClick={() => { setSelectedCard(card.id); setCreating(false); }}>
-        <span className="personal-benefits__card-top"><span className="personal-benefits__brand">VR</span><span className="personal-benefits__card-name">{card.name}</span></span>
-        <span className="personal-benefits__card-label">Saldo disponível</span><strong className="personal-benefits__card-balance">{brl(benefitBalance(card, movements))}</strong>
-        <span className="personal-benefits__card-foot">Benefício pré-pago <span>Ver extrato ›</span></span>
+        <span className="personal-benefits__card-top"><span className="personal-benefits__brand" aria-label="VR Benefícios">VR</span><span className="personal-benefits__card-name">{card.name}</span><span className="personal-benefits__card-menu" aria-hidden="true">•••</span></span>
+        <span className="personal-benefits__card-provider">{card.provider} Benefícios</span>
+        <span className="personal-benefits__card-stats"><span><small>Saldo disponível</small><strong>{brl(benefitBalance(card, movements))}</strong></span><span><small>Créditos do mês</small><strong>{brl(movements.filter(m => m.card_id === card.id && m.direction === 'credit' && m.movement_date.startsWith(reportMonth)).reduce((sum,m) => sum + Number(m.amount), 0))}</strong></span></span>
       </button>)}
     </div>}
+    <Dialog open={activeCard !== undefined} title={activeCard?.name || "Cartão de benefício"} description="Extrato e informações do benefício" onClose={() => setSelectedCard(null)}>
     {activeCard && <div className="personal-benefits__panel" aria-label="Detalhes do cartão de benefício">
-      <div className="personal-benefits__panel-header"><div><h2>{activeCard.name}</h2><p>Extrato e informações do benefício</p></div><Button variant="secondary" onClick={() => setSelectedCard(null)}>Fechar</Button></div>
+      
       <div className="personal-benefits__summary">
         <div><span>Saldo disponível</span><strong>{brl(benefitBalance(activeCard, movements))}</strong></div>
         <div><span>Créditos do mês</span><strong>{brl(reportCredits)}</strong></div>
@@ -114,5 +116,6 @@ export function PersonalBenefits({ companies, createSignal = 0 }: { companies: r
         {recurring.find(rule => rule.card_id === activeCard.id && rule.active) ? (() => { const rule = recurring.find(item => item.card_id === activeCard.id && item.active)!; const now = new Date(); const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); const credited = movements.some(m => m.card_id === activeCard.id && m.direction === 'credit' && m.movement_date.startsWith(currentMonth) && m.description === rule.description); return <div><p>{brl(Number(rule.amount))} · dia {rule.day_of_month} · {credited ? 'Crédito registrado neste mês' : 'Aguardando confirmação'}</p><Button disabled={busy || credited} onClick={() => { void confirmCredit(activeCard, rule); }}>Confirmar recebimento deste mês</Button></div>; })() : <div className="personal-benefits__form"><label>Valor mensal (R$)<input type="number" min="0.01" step="0.01" value={recurringAmount[activeCard.id] || ''} onChange={e => setRecurringAmount(v => ({ ...v, [activeCard.id]: e.target.value }))} /></label><label>Dia do crédito<input type="number" min="1" max="31" value={recurringDay[activeCard.id] || ''} onChange={e => setRecurringDay(v => ({ ...v, [activeCard.id]: e.target.value }))} /></label><Button disabled={busy} onClick={() => { void saveRecurring(activeCard); }}>Configurar crédito mensal</Button></div>}
       </div>
     </div>}
+    </Dialog>
   </section>;
 }
