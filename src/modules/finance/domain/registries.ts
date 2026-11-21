@@ -1,7 +1,7 @@
 export type RegistryStatus = 'active' | 'inactive';
 export type FinancialCategoryKind = 'income' | 'expense' | 'both';
 export type FinancialAccountType = 'bank' | 'cash' | 'other';
-export type FinancialBankInstitution = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'mercadopago' | 'renner' | 'havan';
+export type FinancialBankInstitution = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'mercadopago' | 'renner' | 'havan' | 'cea';
 
 export interface CompanyScope {
   tenantId: string;
