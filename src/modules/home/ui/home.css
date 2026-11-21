@@ -45,3 +45,19 @@
 .home-approved .budget-limit-row--exceeded .budget-limit-row__meta strong{color:#dc2626}
 .home-approved .budget-limit-row__bar--exceeded::-webkit-progress-value{background:#ef4444}
 .home-approved .budget-limit-row__bar--exceeded::-moz-progress-bar{background:#ef4444}
+
+/* Orçamento mensal aprovado: resumo enxuto e saldo/percentual alinhados. */
+.budget-detail__summary--compact{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.budget-detail__summary--compact>div{min-width:0;border:1px solid var(--border);border-radius:16px;padding:16px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.budget-detail__summary--compact>div.is-success{background:#f0fbf4;border-color:#c7ead0}
+.budget-detail__summary--compact>div.is-danger{background:#fff4f4;border-color:#f5d0d0}
+.budget-detail__summary--compact span{font-size:.88rem;font-weight:650}
+.budget-detail__summary--compact strong{font-size:clamp(1.12rem,1.7vw,1.55rem);font-variant-numeric:tabular-nums}
+.budget-limit-row__head{align-items:center;gap:12px}
+.budget-limit-row__status{display:inline-flex;align-items:center;gap:12px;white-space:nowrap;background:#eaf1ff;color:#1d4ed8;border-radius:12px;padding:9px 12px;font-variant-numeric:tabular-nums}
+.budget-limit-row__status strong{font-size:1rem}
+.budget-limit-row__status b{border-left:1px solid currentColor;padding-left:12px;font-size:.95rem}
+.budget-limit-row__status--exceeded{background:#ffe4e6;color:#b91c1c}
+.budget-limit-row__meta{font-size:.82rem}
+@media(max-width:900px){.budget-detail__summary--compact{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.budget-limit-row__head{flex-wrap:wrap}.budget-limit-row__status{margin-left:auto}.budget-detail__summary--compact>div{padding:12px}}
