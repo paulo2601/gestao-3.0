@@ -47,5 +47,5 @@
 .bank-logo__symbol img{display:block;width:52px;height:42px;object-fit:contain}
 .bank-logo__fallback{display:block;max-width:100%;font-size:.84rem;font-weight:900;line-height:1.1;overflow-wrap:anywhere;text-align:center;color:var(--bank-text)}
 .bank-logo__name{display:block;max-width:100%;font-size:.68rem;font-weight:750;line-height:1.15;letter-spacing:normal;white-space:normal;overflow-wrap:anywhere;text-align:center;color:var(--bank-muted)}
-.bank-brand .bank-brand__mark:has(.bank-logo){background:transparent;border-radius:0;padding:0;min-width:0;white-space:normal;font-style:normal;letter-spacing:normal;text-transform:none}
-.bank-brand--mercadopago .bank-brand__mark:has(.bank-logo){background:transparent;color:#fff;padding:0}
+.bank-brand .bank-brand__mark .bank-logo{background:transparent;border-radius:0;padding:0;min-width:0;white-space:normal;font-style:normal;letter-spacing:normal;text-transform:none}
+.bank-brand--mercadopago .bank-brand__mark .bank-logo{background:transparent;color:#fff;padding:0}
