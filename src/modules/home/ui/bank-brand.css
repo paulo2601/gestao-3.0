@@ -39,3 +39,13 @@
 .daily-summary-detail__actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:0 14px 13px}
 .daily-summary-detail__actions .ui-button{min-width:86px}
 @media(max-width:560px){.daily-summary-detail__entry>.daily-summary-detail__row{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:13px 12px}.daily-summary-detail__actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:0 12px 12px;gap:6px}.daily-summary-detail__actions .ui-button{width:100%;min-width:0;padding-inline:8px}}
+
+
+/* Bank icon above its compact institution label, on both accounts and credit cards. */
+.bank-logo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-width:0;width:100%;max-width:100%;color:var(--bank-text)}
+.bank-logo__symbol{display:flex;align-items:center;justify-content:center;width:62px;height:48px;max-width:100%;overflow:hidden}
+.bank-logo__symbol img{display:block;width:52px;height:42px;object-fit:contain}
+.bank-logo__fallback{display:block;max-width:100%;font-size:.84rem;font-weight:900;line-height:1.1;overflow-wrap:anywhere;text-align:center;color:var(--bank-text)}
+.bank-logo__name{display:block;max-width:100%;font-size:.68rem;font-weight:750;line-height:1.15;letter-spacing:normal;white-space:normal;overflow-wrap:anywhere;text-align:center;color:var(--bank-muted)}
+.bank-brand .bank-brand__mark:has(.bank-logo){background:transparent;border-radius:0;padding:0;min-width:0;white-space:normal;font-style:normal;letter-spacing:normal;text-transform:none}
+.bank-brand--mercadopago .bank-brand__mark:has(.bank-logo){background:transparent;color:#fff;padding:0}
