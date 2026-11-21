@@ -1,24 +1,39 @@
-# Duas instalações do Gestão 3.0 (proposta em branch)
+# Gestão 3.0 — instalação dupla no Android
 
-Esta branch prepara duas variantes de build, sem alterar a branch main.
+## Hospedagem confirmada
 
-## Builds
-- Principal: `npm run build` — mantém o manifesto, ícone e nome existentes.
-- Secundária: `GESTAO_APP_VARIANT=secondary npm run build` — publica nome Gestão 3.0 — 2, ícone verde e manifesto próprio.
+O aplicativo principal usa o Cloudflare **Workers Static Assets**, no Worker `gestao-3-0`, URL:
+`https://gestao-3-0.pauloroberto-87.workers.dev/`.
 
-No Windows PowerShell: `$env:GESTAO_APP_VARIANT='secondary'; npm run build`.
+O projeto usa `wrangler.jsonc` com assets `./dist`. Não migrar o aplicativo principal para Pages.
 
-**Atenção:** cada build substitui o conteúdo de `dist/`. Configure **dois projetos/domínios de publicação separados**, com o mesmo código e as mesmas variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. Não publique os dois builds no mesmo domínio/caminho.
+## Compilação e publicação da segunda versão
 
-## Isolamento
-O Supabase utiliza `storageKey` diferente por variante. Para isolamento completo, utilize **origens HTTPS diferentes**, pois isso também separa cookies, cache, service workers e demais dados locais. O segundo usuário deve ter cadastro e permissões próprias no mesmo projeto Supabase.
+A branch `feature/dual-app-installations` contém:
+- `wrangler.secondary.jsonc`: nome de Worker `gestao-3-0-2`, sem tocar no original.
+- `GESTAO_APP_VARIANT=secondary`: gera nome, manifesto e ícone verde da segunda versão.
+- Chave Supabase distinta apenas para a segunda versão. A primeira preserva a chave padrão atual para evitar deslogar usuários existentes.
 
-## Antes de publicar
-1. Verificar os dois builds com `npm run typecheck`, `npm run test` e `npm run build` em CI/local.
-2. Gerar ícones PNG 192 e 512 para a variante secundária se o navegador Android exigir PNG para instalação; o SVG verde atual é provisório.
-3. Configurar os dois domínios autorizados em Supabase Auth (Site URL/Redirect URLs conforme os fluxos de convite e recuperação).
-4. Testar login simultâneo, logout independente, recuperação de senha, passkey, cache e atualizações.
-5. Testar a instalação de ambas as variantes no mesmo Samsung.
-6. Revisar antes de abrir/mesclar PR na main.
+Exemplo Linux/macOS/CI:
+```sh
+npm ci
+npm run typecheck
+npm run test
+GESTAO_APP_VARIANT=secondary npm run build
+npx wrangler deploy --config wrangler.secondary.jsonc
+```
 
-Nenhum deploy é realizado automaticamente por esta documentação.
+O endereço previsto para a segunda instalação, **somente após deploy**, será `https://gestao-3-0-2.pauloroberto-87.workers.dev/` (confirmar após publicar). O deploy não está autorizado nem executado nesta etapa.
+
+Ambos devem usar o **mesmo projeto Supabase**, com as mesmas variáveis de build `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. Nunca incluir `service_role` no front-end.
+
+## Pendências de validação antes de publicar
+
+1. Conferir `npm run typecheck`, `npm run test`, `npm run build` e build secundário.
+2. Criar ícones PNG 192 e 512 para Android: o SVG verde é provisório e pode não atender a todos os instaladores.
+3. Conferir se a nova URL precisa constar nas Redirect URLs do Supabase Auth (recuperação de senha, convites, passkeys).
+4. Testar logins distintos simultâneos, logout, atualização de sessão, permissões e recuperação.
+5. Confirmar que ambos são instaláveis no Samsung e recebem atualização sem interferência.
+6. Só depois aprovar merge/publicação.
+
+A branch `main` e o Worker `gestao-3-0` devem permanecer intactos até aprovação explícita.
