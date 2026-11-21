@@ -177,7 +177,7 @@ function canonicalCostCenters<T extends { id: string; code: string | null; name:
 }
 
 function recurrenceEnd(start: string, count: number): string {
-  const [year, month, day] = start.split('-').map(Number);
+  const [year = 1970, month = 1, day = 1] = start.split('-').map(Number);
   const first = new Date(Date.UTC(year, month - 1 + Math.max(0, count - 1), 1, 12));
   const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
   first.setUTCDate(Math.min(day, lastDay));
@@ -433,7 +433,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     manualCompany.current = false;
     setForm({
       entryType: 'expense', date: today(), description: '', amountDigits: '', paymentMethod: 'pix', launchType: 'single',
-      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
+      installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12', accountRef: '', cardRef: '', categoryId: '', costCenterId: '',
       counterparty: '', notes: '', includeInBudget: false,
     });
   }
