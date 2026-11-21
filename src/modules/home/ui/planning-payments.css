@@ -408,3 +408,29 @@
     border-radius: 18px;
   }
 }
+
+
+/* Gestão Pessoal approved desktop planning: compact, scannable forecast rows. */
+.planning-forecast{gap:18px}
+.planning-forecast__period{display:flex;flex-wrap:wrap;gap:8px}
+.planning-forecast__totals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.planning-forecast__totals>div{display:grid;gap:8px;padding:18px;border:1px solid var(--border);border-radius:18px;background:var(--surface);min-width:0}
+.planning-forecast__totals span{color:var(--muted);font-size:.86rem;font-weight:750}
+.planning-forecast__totals strong{font-size:clamp(1.1rem,1.5vw,1.55rem);overflow-wrap:anywhere}
+.planning-forecast__positive{color:#087a32}.planning-forecast__negative{color:#c72c35}
+.planning-forecast h3{font-size:1.15rem;margin:10px 0 0}
+.planning-forecast__list{display:grid;gap:12px}
+.planning-forecast__item{display:grid;grid-template-columns:48px minmax(115px,1.2fr) minmax(105px,1fr) minmax(155px,1.25fr) minmax(110px,.85fr) minmax(125px,.9fr) auto;align-items:center;gap:12px;padding:18px;border-left:4px solid #15983c;border-radius:16px;min-width:0}
+.planning-forecast__icon{display:grid;place-items:center;width:46px;height:46px;border-radius:13px;background:#e5f9ea;color:#07872d;font-size:1.6rem;font-weight:900}
+.planning-forecast__name,.planning-forecast__meta,.planning-forecast__amount{display:grid;gap:6px;min-width:0}
+.planning-forecast__name strong{font-size:1.05rem}
+.planning-forecast__name small{color:#087a32;font-size:.74rem;font-weight:750}
+.planning-forecast__meta span{color:var(--muted);font-size:.75rem}
+.planning-forecast__meta strong{font-size:.85rem;overflow-wrap:anywhere}
+.planning-forecast__amount strong{font-size:1.1rem;color:#087a32;white-space:nowrap}
+.planning-forecast__amount small{color:var(--muted)}
+.planning-forecast__actions{display:flex;gap:7px;flex-wrap:wrap}
+.planning-forecast__actions .ui-button{min-width:75px}
+@media(max-width:1450px){.planning-forecast__item{grid-template-columns:45px minmax(120px,1.1fr) repeat(2,minmax(110px,1fr)) minmax(105px,.9fr);gap:10px}.planning-forecast__meta:nth-of-type(4){grid-column:3}.planning-forecast__actions{grid-column:4/-1;justify-content:flex-end}}
+@media(max-width:950px){.planning-forecast__totals{grid-template-columns:repeat(2,minmax(0,1fr))}.planning-forecast__item{grid-template-columns:45px minmax(0,1fr) auto}.planning-forecast__name{grid-column:2}.planning-forecast__meta{grid-column:2/-1}.planning-forecast__amount{grid-column:3;grid-row:1/2}.planning-forecast__actions{grid-column:2/-1;justify-content:flex-start}}
+@media(max-width:520px){.planning-forecast__item{grid-template-columns:40px minmax(0,1fr);padding:13px}.planning-forecast__icon{width:38px;height:38px}.planning-forecast__amount{grid-column:2;grid-row:auto}.planning-forecast__meta,.planning-forecast__actions{grid-column:1/-1}.planning-forecast__totals>div{padding:12px}.planning-forecast__totals strong{font-size:1rem}}
