@@ -98,7 +98,7 @@ export function useHomeOverview(companies:readonly CompanySummary[],refreshToken
     // Recurring personal entries store the selected payment account in their notes.
     // Resolve that existing reference instead of requiring users to choose it again.
     for(const rule of planningRecurrences){
-      const accountId=rule.notes?.match(/\[personal-planned-account:[^\]\n]*::([0-9a-f-]{36})\]/i)?.[1];
+      const accountId=rule.notes?.match(/personal-planned-account:[^:]*::([0-9a-f-]{36})/i)?.[1];
       const account=accountId?balances.find(a=>a.accountId===accountId):undefined;
       if(account)for(const item of planning.filter(i=>i.source_kind==='financial_recurrence_forecast'&&i.item_key.startsWith(`recurring:${rule.id}:`)))plannedAccountNames.set(item.item_key,account.name);
     }
