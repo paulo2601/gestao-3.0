@@ -126,7 +126,7 @@
 /* Personal overview: one authoritative desktop grid; no competing row assignments. */
 @media(min-width:1000px){.home-approved.home-approved--personal{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.home-approved--personal>.home-hero,.home-approved--personal>.personal-home-kpis{grid-column:1/-1}.home-approved--personal>.home-hero{background:transparent;box-shadow:none;color:var(--text);padding:12px 6px}.home-approved--personal>.home-hero .home-hero__greeting{color:var(--text)}}
 /* Personal overview: give the original balance graph its full chart width. */
-@media(min-width:1000px){.home-approved--personal>.home-balance-card{grid-column:1/-1;grid-row:3}.home-approved--personal>.personal-home-category{grid-column:1/-1;grid-row:4}.home-approved--personal>.home-personal-summary-row{grid-column:1/-1;grid-row:5}.home-approved--personal>.home-secondary-finance-row{grid-column:1;grid-row:6}.home-approved--personal>.personal-home-actions{grid-column:2;grid-row:6}}
+@media(min-width:1000px){.home-approved--personal>.home-balance-card{grid-column:1/-1;grid-row:3}.home-approved--personal>.personal-home-category{grid-column:1/-1;grid-row:4}.home-approved--personal>.home-personal-summary-row{grid-column:1/-1;grid-row:5}.home-approved--personal>.home-secondary-finance-row{grid-column:1/-1;grid-row:7;grid-template-columns:repeat(2,minmax(0,1fr))}.home-approved--personal>.personal-home-actions{grid-column:1/-1;grid-row:6}}
 .home-approved--personal .balance-card__value{white-space:nowrap;font-size:clamp(2rem,4.5vw,3.7rem);overflow-wrap:normal;word-break:normal}.home-approved--personal .balance-card{min-width:0}.home-approved--personal .balance-chart{width:100%;min-width:0}.home-approved--personal .balance-range{max-width:550px;margin-inline:auto}.home-approved--personal .personal-home-category{grid-template-columns:minmax(230px,1fr) minmax(250px,1fr)}
 @media(max-width:650px){.home-approved--personal .personal-home-category{grid-template-columns:1fr}.home-approved--personal .balance-card__value{font-size:clamp(1.8rem,7vw,3rem)}}
 
@@ -135,3 +135,6 @@
 
 /* Keep the personal credit-card section compact after removing duplicate shortcuts. */
 @media(min-width:1000px){.home-approved--personal>.home-credit-row{grid-column:1/-1;grid-template-columns:minmax(0,1fr)}.home-approved--personal>.home-credit-row>.ui-card{min-width:0}}
+
+/* Cards, upcoming payments and benefits must not be squeezed into implicit desktop columns. */
+@media(min-width:1000px){.home-approved--personal>.home-credit-row,.home-approved--personal>.home-secondary-finance-row{min-width:0}.home-approved--personal>.home-credit-row{grid-row:auto}.home-approved--personal>.personal-home-actions>div{grid-template-columns:repeat(4,minmax(0,1fr))}.home-approved--personal>.home-secondary-finance-row>.ui-card{min-width:0}}
