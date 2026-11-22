@@ -315,3 +315,20 @@
  .home-approved--personal>.home-secondary-finance-row{order:5}
  .home-approved--personal>.personal-home-category .personal-home-donut{width:min(62vw,220px)}
 }
+
+/* Explicit order for EVERY direct mobile child. Without a default order,
+   unnumbered sections sort ahead of the intended dashboard sections. */
+@media(max-width:760px){
+ .home-approved.home-approved--personal>*{order:20}
+ .home-approved.home-approved--personal>.home-hero{order:0}
+ .home-approved.home-approved--personal>.personal-home-actions{order:1}
+ .home-approved.home-approved--personal>.home-balance-card{order:2}
+ .home-approved.home-approved--personal>.home-personal-summary-row{order:3}
+ .home-approved.home-approved--personal>.personal-home-category{order:4}
+ .home-approved.home-approved--personal>.home-upcoming-card{order:5}
+ .home-approved.home-approved--personal>.home-benefits-card{order:6}
+ .home-approved.home-approved--personal>.home-credit-row{order:7}
+ .home-approved.home-approved--personal>.home-secondary-finance-row{order:8}
+ .home-approved.home-approved--personal>.home-upcoming-card>.ui-card,
+ .home-approved.home-approved--personal>.home-benefits-card>.ui-card{width:100%}
+}
