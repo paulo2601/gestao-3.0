@@ -46,9 +46,7 @@ export function HomePage({companies,canAccess}:HomePageProps){
  const summaryTitle=summaryDetail==='accounts'?'Saldo em contas':summaryDetail==='payToday'?'A pagar hoje':summaryDetail==='receiveToday'?'A receber hoje':summaryDetail==='overdue'?'Contas vencidas':summaryDetail==='next7'?'Próximos 7 dias':summaryDetail==='todayResult'?'Resultado do dia':'';
  const now=new Date(),formattedDate=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit'}).format(now),hour=now.getHours(),greeting=hour<12?'Bom dia':hour<18?'Boa tarde':'Boa noite';
  const personalCategories=(data.categoryExpenses??[]).map(item=>[item.name,item.amount] as [string,number]);
- const visiblePersonalCategories=personalCategories.slice(0,5);
- const remainingPersonalCategories=sum(personalCategories.slice(5).map(item=>item[1]));
- if(remainingPersonalCategories>0)visiblePersonalCategories.push(['Outras categorias',remainingPersonalCategories]);
+ const visiblePersonalCategories=personalCategories;
  const categoryTotal=sum(personalCategories.map(i=>i[1]));
  const categoryColors=['#2563eb','#10b981','#f59e0b','#ef4444','#9333ea','#9ca3af'];
  return <section className={`home-approved${PERSONAL_APP ? " home-approved--personal" : ""}`} aria-label="Painel inicial">
