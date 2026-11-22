@@ -782,7 +782,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           {PERSONAL_APP && <div className="quick-entry__budget-toggle quick-entry__auto-settle-toggle" hidden aria-hidden="true">
             <div><Input label="Ativar baixa automática" type="checkbox" checked={autoSettleEffective} disabled={!autoSettleReady || savingAutoSettle || submitting} onChange={event => { void changeAutoSettle(event.target.checked); }} />
               <span><strong>Baixa automática de Pix, débito e dinheiro</strong><small>{autoSettleEffective ? 'Operação normal: lançamentos únicos com data de hoje ou anterior são pagos automaticamente.' : autoSettleFrom ? `Cadastro inicial até ${autoSettleFrom.split('-').reverse().join('/')}. A baixa automática volta nessa data.` : 'Cadastro inicial: despesas ficam pendentes, mesmo com Pix e conta selecionada.'}</small></span>
-            </label>
+            </div>
           </div>}
         </div>
 
