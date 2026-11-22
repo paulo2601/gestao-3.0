@@ -6,6 +6,10 @@ on:
     branches:
       - feature/dual-app-installations
     paths:
+      - 'src/**'
+      - 'package.json'
+      - 'scripts/**'
+      - 'wrangler.secondary.jsonc'
       - 'src/modules/home/ui/home.css'
       - 'src/modules/home/ui/HomePage.tsx'
       - 'src/modules/home/ui/PlanningPaymentsDialog.tsx'
