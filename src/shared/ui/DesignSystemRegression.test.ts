@@ -133,7 +133,7 @@ describe('Personal home dashboard regression', () => {
   it('refreshes the same cache key used by the overview hook', () => {
     expect(homeOverviewSource).toContain('export const HOME_CACHE_KEY=');
     expect(homeSource).toContain('localStorage.removeItem(HOME_CACHE_KEY)');
-    expect(homeSource).not.toMatch(/localStorage\\.removeItem\\(['\"]gestao-home-overview-v/);
+    expect(homeSource).not.toContain("localStorage.removeItem('gestao-home-overview-v");
   });
 
   it('preserves primary shortcuts without duplicating them on personal home', () => {
