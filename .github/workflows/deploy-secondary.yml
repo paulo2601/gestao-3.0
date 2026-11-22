@@ -2,6 +2,13 @@ name: Deploy secondary Gestão 3.0 Worker
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/dual-app-installations
+    paths:
+      - 'src/modules/home/ui/home.css'
+      - 'src/modules/home/ui/HomePage.tsx'
+      - '.github/workflows/deploy-secondary.yml'
 
 permissions:
   contents: read
