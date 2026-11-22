@@ -132,7 +132,7 @@ export function useHomeOverview(companies:readonly CompanySummary[],refreshToken
       let installmentCount=i.installment_count;
       if(PERSONAL_APP&&i.source_kind==='financial_recurrence_forecast'){
         const rule=recurringRulesById.get(i.item_key.split(':')[1]??'');
-        const match=rule?.notes?.match(/\\[personal-installments:(\\d+)\\/(\\d+)\\]/);
+        const match=rule?.notes?.match(/\[personal-installments:(\d+)\/(\d+)\]/);
         if(rule&&match){
           const initial=Number(match[1]);
           const total=Number(match[2]);
