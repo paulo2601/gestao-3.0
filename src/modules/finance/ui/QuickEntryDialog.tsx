@@ -404,9 +404,20 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       set('description', description);
       return;
     }
-    const match = findSmartTemplate(templates.filter((item) => item.companyId === companyId), query);
+    // Preferir histórico da empresa atual, mas aproveitar fornecedor conhecido
+    // de outras empresas sem trocar a empresa ou importar IDs incompatíveis.
+    const localMatch = findSmartTemplate(templates.filter((item) => item.companyId === companyId), query);
+    const match = localMatch ?? findSmartTemplate(templates, query);
     if (!match) {
       set('description', description);
+      return;
+    }
+    if (!localMatch) {
+      setForm((current) => ({
+        ...current,
+        description,
+        counterparty: manuallyEdited.current.has('counterparty') ? current.counterparty : match.counterparty,
+      }));
       return;
     }
     setForm((current) => {
