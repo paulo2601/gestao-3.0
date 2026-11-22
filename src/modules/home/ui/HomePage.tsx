@@ -45,7 +45,7 @@ export function HomePage({companies,canAccess}:HomePageProps){
  const summaryIncome=sum(summaryEntries.filter(item=>item.entryType==='income').map(item=>item.amount)),summaryExpense=sum(summaryEntries.filter(item=>item.entryType==='expense').map(item=>item.amount));
  const summaryTitle=summaryDetail==='accounts'?'Saldo em contas':summaryDetail==='payToday'?'A pagar hoje':summaryDetail==='receiveToday'?'A receber hoje':summaryDetail==='overdue'?'Contas vencidas':summaryDetail==='next7'?'Próximos 7 dias':summaryDetail==='todayResult'?'Resultado do dia':'';
  const now=new Date(),formattedDate=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit'}).format(now),hour=now.getHours(),greeting=hour<12?'Bom dia':hour<18?'Boa tarde':'Boa noite';
- const personalCategories=Object.entries(data.entries.filter(i=>i.entryType==='expense'&&i.dueDate.slice(0,7)===data.month.slice(0,7)).reduce<Record<string,number>>((acc,i)=>{const name=summaryVisual(i.description,'expense').category;acc[name]=(acc[name]??0)+i.amount;return acc;},{})).sort((a,b)=>b[1]-a[1]);
+ const personalCategories=(data.categoryExpenses??[]).map(item=>[item.name,item.amount] as [string,number]);
  const categoryTotal=sum(personalCategories.map(i=>i[1]));
  const categoryColors=['#2563eb','#10b981','#f59e0b','#ef4444','#9333ea','#9ca3af'];
  return <section className={`home-approved${PERSONAL_APP ? " home-approved--personal" : ""}`} aria-label="Painel inicial">
