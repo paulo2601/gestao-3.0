@@ -8,6 +8,8 @@ on:
     paths:
       - 'src/modules/home/ui/home.css'
       - 'src/modules/home/ui/HomePage.tsx'
+      - 'src/modules/home/ui/PlanningPaymentsDialog.tsx'
+      - 'src/modules/home/ui/planning-payments.css'
       - 'src/app/shell.css'
       - 'src/app/AppShell.tsx'
       - 'src/main.tsx'
