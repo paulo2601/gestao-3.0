@@ -233,6 +233,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     else { setAutoSettle(enabled); setAutoSettleFrom(null); setLocalError(null); }
     setSavingAutoSettle(false);
   }
+  const [ongoingFirstStatement, setOngoingFirstStatement] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+2>12?1:d.getMonth()+2).padStart(2,'0')}`; });
   const [form, setForm] = useState({
     entryType: 'expense' as EntryType,
     date: today(),
@@ -617,7 +618,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
               p_card_company_id: card.companyId,
               p_expense_company_id: company.id,
               p_card_id: card.resourceId,
-              p_first_statement_month: form.date.slice(0, 7) + '-01',
+              p_first_statement_month: ongoingFirstStatement + '-01',
               p_description: form.description.trim(),
               p_counterparty_name: form.counterparty.trim() || null,
               p_category_id: form.categoryId,
@@ -800,7 +801,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           </div>
           {PERSONAL_APP && form.paymentMethod === 'credit' && form.launchType === 'installment' && <label className="quick-entry__budget-toggle"><input type="checkbox" checked={form.ongoingCardInstallment} onChange={event=>set('ongoingCardInstallment',event.target.checked)} /> Compra já parcelada (em andamento)</label>}
           {form.launchType === 'installment' && !(PERSONAL_APP && form.paymentMethod === 'credit' && form.ongoingCardInstallment) && <Input label="Quantidade de parcelas" type="number" min="2" max="120" value={form.installmentCount} onChange={(event) => set('installmentCount', event.target.value)} required />}
-          {PERSONAL_APP && form.paymentMethod === 'credit' && form.launchType === 'installment' && form.ongoingCardInstallment && <div className="quick-entry__ongoing-card"><p>Informe o valor de <strong>uma parcela</strong> no campo Valor. A data acima indica o mês da primeira fatura a cadastrar. As parcelas anteriores não serão recriadas.</p><div className="quick-entry__field-grid"><Input label="Parcela atual" type="number" min="1" max="120" value={form.currentInstallment} onChange={event=>set('currentInstallment',event.target.value)} required /><Input label="Total de parcelas" type="number" min="2" max="120" value={form.totalInstallments} onChange={event=>set('totalInstallments',event.target.value)} required /></div></div>}
+          {PERSONAL_APP && form.paymentMethod === 'credit' && form.launchType === 'installment' && form.ongoingCardInstallment && <div className="quick-entry__ongoing-card"><p>Informe o valor de <strong>uma parcela</strong> no campo Valor. A data acima indica o mês da primeira fatura a cadastrar. As parcelas anteriores não serão recriadas.</p><label className="quick-entry__statement-month">Primeira fatura a cadastrar (mês/ano)<input type="month" value={ongoingFirstStatement} onChange={event => setOngoingFirstStatement(event.target.value)} required /></label><div className="quick-entry__field-grid"><Input label="Parcela atual" type="number" min="1" max="120" value={form.currentInstallment} onChange={event=>set('currentInstallment',event.target.value)} required /><Input label="Total de parcelas" type="number" min="2" max="120" value={form.totalInstallments} onChange={event=>set('totalInstallments',event.target.value)} required /></div></div>}
           {form.launchType === 'recurring' && form.paymentMethod !== 'benefit' && <Select label="Frequência" value={form.recurrenceFrequency} onChange={(event) => set('recurrenceFrequency', event.target.value as 'monthly' | 'weekly')} options={[{ value: 'monthly', label: 'Mensal' }, { value: 'weekly', label: 'Quinzenal (a cada 2 semanas)' }]} />}
           {PERSONAL_APP && form.paymentMethod !== 'benefit' && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && <label className="quick-entry__budget-toggle"><input type="checkbox" checked={form.ongoingInstallment} onChange={event=>set('ongoingInstallment',event.target.checked)} /> Parcelamento em andamento</label>}
           {PERSONAL_APP && form.paymentMethod !== 'benefit' && form.launchType === 'recurring' && form.recurrenceFrequency === 'monthly' && form.ongoingInstallment && <div className="quick-entry__field-grid"><Input label="Parcela atual" type="number" min="1" max="1200" value={form.currentInstallment} onChange={event=>set('currentInstallment',event.target.value)} required /><Input label="Total de parcelas" type="number" min="1" max="1200" value={form.totalInstallments} onChange={event=>set('totalInstallments',event.target.value)} required /></div>}
