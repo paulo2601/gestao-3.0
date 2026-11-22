@@ -22,7 +22,6 @@ import './card-statement-refresh.css';
 import { sharePrintableElement } from '../../../shared/utils/reportShare';
 import { QuickEntryDialog } from './QuickEntryDialog';
 import { PersonalBenefits } from './PersonalBenefits';
-declare const __GESTAO_APP_VARIANT__: 'primary' | 'secondary';
 
 type CardTone = 'itau' | 'nubank' | 'inter' | 'santander' | 'caixa' | 'sicoob' | 'bradesco' | 'bb' | 'sicredi' | 'c6' | 'mercadopago' | 'renner' | 'havan' | 'cea' | 'generic';
 type ListedCard = CreditCardLimit & { companyName: string; bankInstitution: FinancialBankInstitution | null; lastFour: string | null; dueDay: number; closingDay: number; defaultPaymentAccountId: string | null; status: CreditCard['status'] };
