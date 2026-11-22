@@ -56,3 +56,7 @@
 @media(max-width:760px){.app-desktop-finance-shortcuts{display:none}}
 @media(min-width:1200px){.app-desktop-finance-shortcuts{width:calc(100% - 48px);max-width:1560px}}
 @media(min-width:1600px){.app-desktop-finance-shortcuts{width:calc(100% - 64px);max-width:1760px}}
+
+/* Subtle neutral background only for the secondary personal application. */
+.app-shell--personal{background:#f3f5f8;min-height:100dvh}
+.app-shell--personal .app-page{background:transparent}
