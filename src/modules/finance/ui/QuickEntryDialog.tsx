@@ -704,7 +704,9 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       // Recarregar cadastros (categorias, contas e cartões) é uma operação
       // independente e não pode atrasar a atualização de saldos/extratos.
       window.dispatchEvent(new Event('finance-data-changed'));
-      onSaved?.();
+      // Ao manter dados, o callback pode desmontar o formulário e apagar o rascunho.
+      // O evento finance-data-changed já atualiza os demais painéis.
+      if (!keepData) onSaved?.();
       void operations.loadReferences().catch(() => {
         // Falha de atualização de cadastros não desfaz o lançamento salvo.
       });
