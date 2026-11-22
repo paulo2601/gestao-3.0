@@ -612,3 +612,12 @@
  .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions{grid-column:1/-1;grid-row:3;margin-top:2px;align-self:center}
  .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions .ui-button{min-height:30px;padding:4px 8px}
 }
+
+.planning-forecast__mobile-details{display:none}
+@media(max-width:760px){
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item.ui-card>.ui-card__content{grid-template-rows:auto auto auto;row-gap:4px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__meta{display:none!important}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__mobile-details{grid-column:2/-1;grid-row:2;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;min-width:0;font-size:.69rem;line-height:1.2;color:#64748b}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__mobile-details strong{color:#172033;font-size:.7rem;overflow-wrap:anywhere}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions{grid-row:3}
+}
