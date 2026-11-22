@@ -621,3 +621,27 @@
  .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__mobile-details strong{color:#172033;font-size:.7rem;overflow-wrap:anywhere}
  .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions{grid-row:3}
 }
+
+/* Mobile-only final approved card organization: explicit grid areas avoid
+   collision between date, account and buttons at narrow viewport widths. */
+@media(max-width:760px){
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item.ui-card>.ui-card__content{
+  display:grid;grid-template-columns:26px minmax(0,1fr) auto;
+  grid-template-rows:auto auto auto;gap:5px 8px;align-items:start;
+  padding:10px 11px;min-width:0;
+ }
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__icon{grid-column:1;grid-row:1;width:26px;height:26px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__name{grid-column:2;grid-row:1;min-width:0}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__amount{grid-column:3;grid-row:1;justify-self:end;text-align:right}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__mobile-details{
+  grid-column:1/-1;grid-row:2;display:flex;flex-wrap:wrap;
+  gap:3px 12px;align-items:baseline;min-width:0;width:100%;
+  font-size:.7rem;line-height:1.35;
+ }
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__mobile-details span{display:inline-flex;flex-wrap:wrap;gap:3px;min-width:0;max-width:100%}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__mobile-details strong{font-size:.71rem;white-space:normal;overflow-wrap:anywhere;min-width:0}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions{
+  grid-column:1/-1;grid-row:3;display:flex;justify-content:flex-start;
+  align-items:center;gap:5px;flex-wrap:wrap;margin:2px 0 0;
+ }
+}
