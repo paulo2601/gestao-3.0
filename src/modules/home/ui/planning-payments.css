@@ -570,3 +570,22 @@
  .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__meta strong{overflow-wrap:normal;word-break:normal}
  .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions{margin-top:2px}
 }
+
+/* Approved compact mobile mockup — no desktop impact. */
+.planning-forecast__mobile-label{display:none}
+@media(max-width:760px){
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__desktop-label{display:none}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__mobile-label{display:inline}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__totals>div{min-height:70px;padding:8px 6px;justify-content:center}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__totals span{font-size:clamp(.68rem,2.55vw,.83rem);font-weight:700}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__totals strong{font-size:clamp(.75rem,2.8vw,1rem)}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__list-heading{margin-top:0}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item.ui-card{margin:0;border-radius:13px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__list{gap:8px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item.ui-card>.ui-card__content{grid-template-columns:27px minmax(0,1fr) auto;column-gap:7px;row-gap:3px;padding:10px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__name{grid-column:2;grid-row:1}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__meta{grid-column:2/-1;grid-row:auto;display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__meta:first-of-type{display:none}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__amount{grid-column:3;grid-row:1}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions{grid-column:1/-1;grid-row:auto}
+}
