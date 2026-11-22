@@ -33,6 +33,9 @@ const nonCanonicalCssSources = [
   readSource('../../modules/engineering/ui/engineering.css'),
 ];
 
+const homeOverviewSource = readSource('../../modules/home/ui/useHomeOverview.ts');
+const homeStylesSource = readSource('../../modules/home/ui/home.css');
+
 const operationalSources = [homeSource, financeSource, banksSource, monthlyAccountsSource, quickEntrySource, hrSource, engineeringOperationsSource, engineeringMaintenanceSource];
 
 describe('Design System final regression', () => {
@@ -112,5 +115,28 @@ describe('Design System final regression', () => {
     expect(authGatewaySource).toContain('signUpFirstOwner');
     expect(authGatewaySource).toContain("gestao_bootstrap: 'true'");
     expect(authGatewaySource).toContain('gestao_bootstrap_code');
+  });
+});
+
+
+describe('Personal home dashboard regression', () => {
+  it('keeps the approved overview blocks and category breakdown', () => {
+    expect(homeSource).toContain('personal-home-kpis');
+    expect(homeSource).toContain('home-balance-card');
+    expect(homeSource).toContain('Despesas previstas por categoria');
+    expect(homeSource).toContain('home-personal-summary-row');
+    expect(homeSource).toContain('personal-home-actions');
+    expect(homeSource).toContain('home-credit-row');
+    expect(homeStylesSource).toContain('.home-approved--personal');
+  });
+
+  it('refreshes the same cache key used by the overview hook', () => {
+    expect(homeOverviewSource).toContain('export const HOME_CACHE_KEY=');
+    expect(homeSource).toContain('localStorage.removeItem(HOME_CACHE_KEY)');
+    expect(homeSource).not.toMatch(/localStorage\\.removeItem\\(['\"]gestao-home-overview-v/);
+  });
+
+  it('preserves primary shortcuts without duplicating them on personal home', () => {
+    expect(homeSource).toContain('!PERSONAL_APP&&<Card><div className="section-head"><div><span>ATALHOS</span>');
   });
 });
