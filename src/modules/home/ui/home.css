@@ -168,3 +168,15 @@
  .home-approved.home-approved--personal{row-gap:12px}
  .home-approved--personal>.personal-home-category{grid-template-rows:auto 1fr}
 }
+
+/* Personal balance panel: compact balance headline above a full-width graph. */
+@media(min-width:1000px){
+ .home-approved--personal>.home-balance-card .balance-card{display:grid;grid-template-columns:1fr;gap:8px;align-content:start}
+ .home-approved--personal>.home-balance-card .balance-privacy-heading{grid-row:1;display:flex;align-items:center;justify-content:flex-start;gap:10px}
+ .home-approved--personal>.home-balance-card .balance-card__value{grid-row:1;justify-self:end;align-self:center;margin:0;font-size:clamp(1.3rem,1.9vw,1.8rem);line-height:1.2}
+ .home-approved--personal>.home-balance-card .balance-chart-head{grid-row:2}
+ .home-approved--personal>.home-balance-card .balance-legend{grid-row:3}
+ .home-approved--personal>.home-balance-card .balance-chart{grid-row:4;width:100%;max-height:230px;min-height:160px}
+ .home-approved--personal>.home-balance-card .balance-range{grid-row:5}
+ .home-approved--personal>.home-balance-card .balance-card__footer{grid-row:6}
+}
