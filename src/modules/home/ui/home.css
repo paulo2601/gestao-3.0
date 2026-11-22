@@ -299,3 +299,21 @@
   .home-approved--personal .daily-summary > div {min-width:0;min-height:78px;padding:10px}
   .home-approved--personal .personal-home-actions > div {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 }
+
+/* Approved personal mobile order: greeting, shortcuts, balance, budget, daily summary, categories, remaining sections. */
+@media(max-width:760px){
+ .home-approved.home-approved--personal{display:flex;flex-direction:column;gap:14px}
+ .home-approved--personal>.home-hero{order:0}
+ .home-approved--personal>.personal-home-kpis{display:none}
+ .home-approved--personal>.personal-home-actions{order:1;display:block;padding:14px;border:1px solid #d8e0ea;border-radius:18px;background:#fff;box-shadow:0 3px 10px rgba(15,23,42,.06)}
+ .home-approved--personal>.personal-home-actions>h2{display:none}
+ .home-approved--personal>.personal-home-actions>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+ .home-approved--personal>.personal-home-actions>div>.ui-button{min-width:0;min-height:64px;padding:7px 3px;border-radius:11px;background:#2866ed;color:#fff;border:0;font-size:clamp(.65rem,2.45vw,.82rem);line-height:1.25;white-space:normal;text-align:center;box-shadow:0 3px 6px rgba(37,99,235,.16)}
+ .home-approved--personal>.home-balance-card{order:2}
+ .home-approved--personal>.home-personal-summary-row{order:3}
+ .home-approved--personal>.home-personal-summary-row>.ui-card:first-child{order:0}
+ .home-approved--personal>.home-personal-summary-row>.ui-card:nth-child(2){order:1}
+ .home-approved--personal>.personal-home-category{order:4}
+ .home-approved--personal>.home-secondary-finance-row{order:5}
+ .home-approved--personal>.personal-home-category .personal-home-donut{width:min(62vw,220px)}
+}
