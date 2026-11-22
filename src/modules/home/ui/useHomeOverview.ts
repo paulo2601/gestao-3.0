@@ -113,8 +113,9 @@ export function useHomeOverview(companies:readonly CompanySummary[],refreshToken
     }
     for(const item of planning.filter(i=>i.source_kind==='card_statement')){
       const cardId=item.item_key.split(':')[1];
+      if(!cardId) continue;
       const names=cardPayers.get(cardId);
-      if(names?.size===1&&!names.has('__unknown__'))payerByItem.set(item.item_key,[...names][0]);
+      if(names?.size===1&&!names.has('__unknown__')){const payer=[...names][0];if(payer)payerByItem.set(item.item_key,payer);}
     }
     const categoryNameById=new Map(categoryNames.map(category=>[category.id,category.name]));categoryRows.forEach(row=>{const e=row.financial_entries;if(e?.entry_type!=='expense')return;const name=(e.category_id?categoryNameById.get(e.category_id):null)?.trim()||'Sem categoria';categoryExpenseMap.set(name,(categoryExpenseMap.get(name)??0)+Number(row.amount));}); cardCategoryRows.forEach(row=>{const name=(row.card_transactions?.category_id?categoryNameById.get(row.card_transactions.category_id):null)?.trim()||'Sem categoria';categoryExpenseMap.set(name,(categoryExpenseMap.get(name)??0)+Number(row.amount));});
     const recurringCategoryById=new Map(recurrenceCategories.map(rule=>[rule.id,rule.category_id])); planning.filter(i=>i.source_kind==='financial_recurrence_forecast'&&i.entry_type==='expense'&&i.due_date.slice(0,7)===month.slice(0,7)).forEach(i=>{const ruleId=i.item_key.split(':')[1]??'';const categoryId=recurringCategoryById.get(ruleId);const name=(categoryId ? categoryNameById.get(categoryId) : undefined)?.trim()||'Sem categoria';categoryExpenseMap.set(name,(categoryExpenseMap.get(name)??0)+Number(i.amount));});
