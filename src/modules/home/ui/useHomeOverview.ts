@@ -91,15 +91,15 @@ export function useHomeOverview(companies:readonly CompanySummary[],refreshToken
     // Never infer the payer from the bank account name.
     const payerByCostCenter=new Map((planningCostCenters).map(c=>[c.id,c.name]));
     const payerByItem=new Map<string,string>();
-    for(const e of planningEntriesResult.data??[])for(const installment of e.financial_installments??[]){
+    for(const e of planningEntries)for(const installment of e.financial_installments??[]){
       const payer=e.cost_center_id?payerByCostCenter.get(e.cost_center_id):null;
       if(payer)payerByItem.set(`financial:${installment.id}`,payer);
     }
-    for(const rule of planningRecurrencesResult.data??[]){
+    for(const rule of planningRecurrences){
       const payer=rule.cost_center_id?payerByCostCenter.get(rule.cost_center_id):null;
       if(payer)for(const item of planning.filter(i=>i.source_kind==='financial_recurrence_forecast'&&i.item_key.startsWith(`recurring:${rule.id}:`)))payerByItem.set(item.item_key,payer);
     }
-    for(const transaction of planningCardsResult.data??[]){
+    for(const transaction of planningCards){
       const payer=transaction.cost_center_id?payerByCostCenter.get(transaction.cost_center_id):null;
       if(payer)for(const installment of transaction.card_installments??[])payerByItem.set(`card:${installment.id}`,payer);
     }
