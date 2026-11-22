@@ -132,3 +132,6 @@
 
 /* Category chart disclosure spans the card without squeezing the donut. */
 .personal-home-category-note{grid-column:1/-1;margin:0;color:#64748b;font-size:.82rem;line-height:1.45}
+
+/* Keep the personal credit-card section compact after removing duplicate shortcuts. */
+@media(min-width:1000px){.home-approved--personal>.home-credit-row{grid-column:1/-1;grid-template-columns:minmax(0,1fr)}.home-approved--personal>.home-credit-row>.ui-card{min-width:0}}
