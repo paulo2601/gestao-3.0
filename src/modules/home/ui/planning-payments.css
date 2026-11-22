@@ -524,3 +524,29 @@
  .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions .ui-button{min-height:35px;padding:6px 9px;font-size:.76rem}
  .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__selection{position:static;padding:10px}
 }
+
+/* Mobile alignment refinement, scoped to the planning dialog only. */
+@media(max-width:760px){
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .ui-dialog__header-main{display:flex;flex-wrap:nowrap;align-items:center;gap:7px;width:100%}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .ui-dialog__header-main>.ui-button:first-child{order:0;flex:0 0 auto;padding:7px 9px;min-width:0;font-size:.78rem}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .ui-dialog__heading{order:1;flex:1 1 auto;min-width:0}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .ui-dialog__heading h2{font-size:1rem;white-space:nowrap}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .ui-dialog__header-main>.ui-button:nth-child(2){order:2;flex:0 0 auto;width:auto;min-height:36px;min-width:0;padding:7px 8px;font-size:.76rem;white-space:nowrap}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .ui-dialog__close{padding:4px;min-width:28px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__period{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__period .ui-button{width:100%;height:100%;min-height:42px;line-height:1.15}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__list-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__list-heading h3{font-size:clamp(.78rem,3vw,1rem);line-height:1.2;min-width:0}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__mobile-selection{flex-direction:column;align-items:flex-end;justify-content:center;gap:1px;padding:6px 8px;font-size:.67rem;line-height:1.2;white-space:nowrap}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item.ui-card>.ui-card__content{grid-template-columns:28px minmax(0,1fr) auto;gap:3px 7px;padding:9px 10px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__icon{width:27px;height:27px;font-size:1rem}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__name{gap:2px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__name strong{font-size:.87rem;line-height:1.2}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__name small{font-size:.67rem}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__meta{grid-column:2/-1;gap:5px;line-height:1.2}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__meta span{font-size:.67rem}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__meta strong{font-size:.71rem}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__amount strong{font-size:clamp(.72rem,2.5vw,.93rem)}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions{margin-top:3px;gap:4px}
+ .ui-dialog-backdrop[data-variant="planning-forecast"] .planning-forecast__item .planning-forecast__actions .ui-button{min-height:31px;padding:5px 7px;font-size:.7rem}
+}
