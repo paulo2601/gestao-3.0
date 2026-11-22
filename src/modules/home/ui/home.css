@@ -180,3 +180,13 @@
  .home-approved--personal>.home-balance-card .balance-range{grid-row:5}
  .home-approved--personal>.home-balance-card .balance-card__footer{grid-row:6}
 }
+
+/* Personal category card: center donut in its own column and align the legend cleanly. */
+@media(min-width:1201px){
+ .home-approved--personal>.personal-home-category{grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr);grid-template-rows:auto minmax(0,1fr);align-items:center;column-gap:18px}
+ .home-approved--personal>.personal-home-category h2{grid-column:1/-1;align-self:start}
+ .home-approved--personal>.personal-home-category .personal-home-donut{grid-column:1;grid-row:2;justify-self:center;align-self:center;width:min(100%,190px);margin:0}
+ .home-approved--personal>.personal-home-category .personal-home-category-list{grid-column:2;grid-row:2;align-self:center;min-width:0;gap:9px}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div{grid-template-columns:10px minmax(0,1fr) auto;gap:6px;align-items:center;font-size:.78rem}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:2/-1;justify-self:start}
+}
