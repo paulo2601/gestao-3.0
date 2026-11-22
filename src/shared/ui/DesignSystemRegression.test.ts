@@ -130,6 +130,14 @@ describe('Personal home dashboard regression', () => {
     expect(homeStylesSource).toContain('.home-approved--personal');
   });
 
+  it('renders the balance chart before the category donut in the personal overview', () => {
+    const chartPosition = homeSource.indexOf('<Card className="home-balance-card">');
+    const categoryPosition = homeSource.indexOf('{PERSONAL_APP&&<div className="personal-home-category">}');
+    expect(chartPosition).toBeGreaterThan(-1);
+    expect(homeSource.indexOf('className="personal-home-category"', chartPosition)).toBeGreaterThan(chartPosition);
+    expect(categoryPosition).toBe(-1);
+  });
+
   it('refreshes the same cache key used by the overview hook', () => {
     expect(homeOverviewSource).toContain('export const HOME_CACHE_KEY=');
     expect(homeSource).toContain('localStorage.removeItem(HOME_CACHE_KEY)');
