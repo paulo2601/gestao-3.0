@@ -39,3 +39,10 @@ html,body,#root{height:auto!important;min-height:0!important;max-height:none!imp
 @media(min-width:900px){.cards-page .statement-view__dates{grid-template-columns:repeat(2,minmax(0,1fr))}.cards-page .statement-view__top-actions{justify-content:flex-end}}
 @media(max-width:760px){.cards-page .statement-view__top-actions{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.cards-page .statement-view__top-actions .ui-button{width:100%}.cards-page .statement-view__hero{padding:7px}.cards-page .statement-view__dates .ui-card__header,.cards-page .statement-view__totals .ui-card__header{padding:5px 6px 0}.cards-page .statement-view__dates .ui-card__content,.cards-page .statement-view__totals .ui-card__content{padding:2px 6px 6px}}
 @media print{.cards-page .statement-view__top-actions{display:none!important}}
+
+/* Unified card brand tile: same presentation for every issuer. */
+.statement-view__bank-symbol{display:inline-flex;align-items:center;justify-content:center;flex:0 0 50px;width:50px;height:50px;min-width:50px;border:1px solid #d5e3f7;border-radius:10px;background:#fff;box-shadow:0 2px 5px rgba(18,63,122,.07);overflow:hidden}
+.statement-view__bank-symbol .statement-view__mercadopago-logo{display:block;max-width:40px;max-height:36px;width:auto;height:auto;object-fit:contain}
+.statement-view__logo-fallback-text{display:none;font-size:10px;font-weight:800;text-align:center;overflow-wrap:anywhere;line-height:1.1;color:#214b82}
+.statement-view__bank-symbol.statement-view__logo-fallback .statement-view__logo-fallback-text{display:block}
+.statement-view__bank-symbol.statement-view__logo-fallback .statement-view__mercadopago-logo{display:none}
