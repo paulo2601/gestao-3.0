@@ -8,7 +8,16 @@ on:
     paths:
       - 'src/modules/home/ui/home.css'
       - 'src/modules/home/ui/HomePage.tsx'
+      - 'src/app/shell.css'
+      - 'src/app/AppShell.tsx'
+      - 'src/main.tsx'
+      - 'public/sw.js'
+      - 'vite.config.ts'
       - '.github/workflows/deploy-secondary.yml'
+
+concurrency:
+  group: gestao-personal-secondary-deploy
+  cancel-in-progress: false
 
 permissions:
   contents: read
