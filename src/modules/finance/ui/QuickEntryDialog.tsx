@@ -392,10 +392,32 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     // A mudança manual de empresa não deve descartar o lançamento em andamento.
     // Referências de outra empresa são validadas ao salvar, sem perda silenciosa.
     manualCompany.current = true;
+    if (nextCompanyId === companyId) return;
+    const selectedCategory = references?.categories.find((item) => item.id === form.categoryId);
+    const categoryName = selectedCategory?.name.trim() ?? '';
+    const categoryKind = form.entryType;
     setCompanyId(nextCompanyId);
-    // Preservar os campos digitados; limpar apenas referências incompatíveis.
+    // A categoria é vinculada à empresa: localizar a equivalente pelo nome
+    // em vez de descartar a escolha do usuário.
     setForm((current) => ({ ...current, categoryId: '', costCenterId: '' }));
     setLocalError(null);
+    if (categoryName) {
+      void getSupabaseClient()
+        .from('financial_categories')
+        .select('id,name,kind,status')
+        .eq('company_id', nextCompanyId)
+        .eq('status', 'active')
+        .then(({ data, error }) => {
+          if (error) return;
+          const equivalent = data?.find((item) =>
+            normalized(item.name) === normalized(categoryName) &&
+            (item.kind === categoryKind || item.kind === 'both')
+          );
+          if (equivalent) {
+            setForm((current) => ({ ...current, categoryId: equivalent.id }));
+          }
+        });
+    }
   }
 
   function smartFill(description: string) {
