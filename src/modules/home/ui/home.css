@@ -220,3 +220,14 @@
  .home-approved--personal .balance-topline{flex-wrap:wrap}
  .home-approved--personal .balance-topline .balance-card__value{margin-left:auto}
 }
+
+/* Approved donut/legend proportion: prioritize the chart over the category text. */
+@media(min-width:1000px){
+ .home-approved--personal>.personal-home-category{grid-template-columns:minmax(0,55fr) minmax(0,45fr);column-gap:12px}
+ .home-approved--personal>.personal-home-category .personal-home-donut{width:min(100%,280px);max-width:280px;justify-self:center}
+ .home-approved--personal>.personal-home-category .personal-home-category-list{width:100%;min-width:0;gap:8px}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div{display:grid;grid-template-columns:9px minmax(0,1fr) auto;column-gap:6px;row-gap:1px;align-items:center;font-size:.72rem}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div span{overflow-wrap:anywhere}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div b{font-size:.72rem;white-space:nowrap}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:2/-1;font-size:.72rem;white-space:nowrap}
+}
