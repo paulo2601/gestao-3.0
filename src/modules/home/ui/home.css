@@ -231,3 +231,8 @@
  .home-approved--personal>.personal-home-category .personal-home-category-list>div b{font-size:.72rem;white-space:nowrap}
  .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:2/-1;font-size:.72rem;white-space:nowrap}
 }
+
+/* Keep all registered categories accessible without allowing the legend to dominate the donut. */
+@media(min-width:1000px){
+ .home-approved--personal>.personal-home-category .personal-home-category-list{max-height:280px;overflow-y:auto;overflow-x:hidden;padding-right:6px;align-content:start}
+}
