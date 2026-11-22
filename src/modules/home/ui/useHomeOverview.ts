@@ -16,7 +16,7 @@ export interface HomeOverviewData { month:string; bankBalance:number; incomePlan
 type HomeOverviewState = {status:'idle'|'loading';data:HomeOverviewData|null;errorMessage:null}|{status:'ready';data:HomeOverviewData;errorMessage:null}|{status:'error';data:HomeOverviewData|null;errorMessage:string};
 declare const __GESTAO_APP_VARIANT__: 'primary' | 'secondary';
 const PERSONAL_APP = __GESTAO_APP_VARIANT__ === 'secondary';
-export const HOME_CACHE_KEY='gestao-home-overview-v12';
+export const HOME_CACHE_KEY='gestao-home-overview-v13';
 function readHomeCache(companyKey:string):HomeOverviewData|null{try{const raw=localStorage.getItem(HOME_CACHE_KEY);if(!raw)return null;const parsed=JSON.parse(raw) as {companyKey:string;savedAt?:number;data:HomeOverviewData};return parsed.companyKey===companyKey&&typeof parsed.savedAt==='number'&&Date.now()-parsed.savedAt>=0&&Date.now()-parsed.savedAt<5*60*1000?parsed.data:null;}catch{return null;}}
 function writeHomeCache(companyKey:string,data:HomeOverviewData){try{localStorage.setItem(HOME_CACHE_KEY,JSON.stringify({companyKey,data,savedAt:Date.now()}));}catch{/* cache é apenas aceleração visual */}}
 type BudgetLimitConsumptionRow = { limit_id:string; consumed_amount:number|string; remaining_amount:number|string; consumed_percent:number|string; };
