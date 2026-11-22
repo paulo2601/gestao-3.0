@@ -771,9 +771,9 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           </div>}
 
           <div className="quick-entry__registry-field"><div className="quick-entry__registry-control">
-            <Select label="Obra / Centro de custo" value={form.costCenterId} onChange={(event) => set('costCenterId', event.target.value)} options={costCenterOptions} />
-            <Button className="quick-entry__add" aria-label="Adicionar obra ou centro de custo" onClick={() => { setInlineRegistry(inlineRegistry === 'costCenter' ? null : 'costCenter'); setNewRegistryName(''); }}>＋</Button>
-          </div>{inlineRegistry === 'costCenter' && <div className="quick-entry__registry-create"><Input label="Nova obra / centro de custo" value={newRegistryName} onChange={(event) => setNewRegistryName(event.target.value)} /><Button disabled={busy || !newRegistryName.trim()} onClick={() => { void createInlineRegistry('costCenter'); }}>Adicionar</Button></div>}</div>
+            <Select label={PERSONAL_APP ? "Responsável" : "Obra / Centro de custo"} value={form.costCenterId} onChange={(event) => set('costCenterId', event.target.value)} options={costCenterOptions} />
+            <Button className="quick-entry__add" aria-label={PERSONAL_APP ? "Adicionar responsável" : "Adicionar obra ou centro de custo"} onClick={() => { setInlineRegistry(inlineRegistry === 'costCenter' ? null : 'costCenter'); setNewRegistryName(''); }}>＋</Button>
+          </div>{inlineRegistry === 'costCenter' && <div className="quick-entry__registry-create"><Input label={PERSONAL_APP ? "Novo responsável" : "Nova obra / centro de custo"} value={newRegistryName} onChange={(event) => setNewRegistryName(event.target.value)} /><Button disabled={busy || !newRegistryName.trim()} onClick={() => { void createInlineRegistry('costCenter'); }}>Adicionar</Button></div>}</div>
 
           <div className="quick-entry__two-col quick-entry__payment-fields">
             <Select label="Forma de pagamento" value={form.paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)} options={paymentOptions} />
