@@ -243,3 +243,18 @@
  .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:3;grid-row:1;justify-self:end;white-space:nowrap}
  .home-approved--personal>.personal-home-category .personal-home-donut{width:min(100%,290px);max-width:290px}
 }
+
+/* Approved personal top section: compact single-line greeting and richer KPI cards. */
+.home-approved--personal>.home-hero{display:flex;align-items:center;min-height:0;padding:0;margin:0;gap:8px}
+.home-approved--personal .home-hero__greeting{display:flex;flex-direction:row;align-items:baseline;gap:14px;flex-wrap:wrap}
+.home-approved--personal .home-hero__greeting strong{font-size:clamp(1.2rem,1.8vw,1.65rem);line-height:1.2}
+.home-approved--personal .home-hero__greeting>span{font-size:.88rem;white-space:nowrap}
+.home-approved--personal .personal-home-kpi{position:relative;overflow:hidden;display:grid;grid-template-rows:auto auto;gap:6px;padding:13px 17px;border:1px solid rgba(255,255,255,.85);border-radius:19px;box-shadow:0 3px 10px rgba(15,35,65,.08)}
+.home-approved--personal .personal-home-kpi:after{content:"";position:absolute;pointer-events:none;right:-8%;bottom:-70%;width:95%;height:110%;border-radius:50%;background:rgba(255,255,255,.28)}
+.home-approved--personal .personal-home-kpi>span{display:flex;align-items:center;gap:9px;font-size:.91rem;z-index:1}
+.home-approved--personal .personal-home-kpi>span i{font-style:normal;display:inline-flex;align-items:center;justify-content:center;width:31px;height:31px;flex:none;border-radius:50%;background:currentColor;font-size:0}
+.home-approved--personal .personal-home-kpi>span i:before{content:"";display:block;width:15px;height:15px;background:#fff;mask:linear-gradient(#000 0 0);clip-path:polygon(40% 0,60% 0,60% 55%,80% 55%,50% 90%,20% 55%,40% 55%)}
+.home-approved--personal .personal-home-kpi--expense>span i:before{transform:rotate(180deg)}
+.home-approved--personal .personal-home-kpi--month>span i:before,.home-approved--personal .personal-home-kpi--bank>span i:before{clip-path:polygon(10% 20%,90% 20%,90% 35%,10% 35%,10% 55%,90% 55%,90% 70%,10% 70%)}
+.home-approved--personal .personal-home-kpi strong{position:relative;z-index:1;font-size:clamp(1.2rem,1.85vw,1.7rem);line-height:1.2}
+@media(max-width:600px){.home-approved--personal .home-hero__greeting{gap:4px 10px}.home-approved--personal .home-hero__greeting>span{white-space:normal}}
