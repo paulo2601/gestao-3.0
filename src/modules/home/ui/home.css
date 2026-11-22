@@ -190,3 +190,33 @@
  .home-approved--personal>.personal-home-category .personal-home-category-list>div{grid-template-columns:10px minmax(0,1fr) auto;gap:6px;align-items:center;font-size:.78rem}
  .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:2/-1;justify-self:start}
 }
+
+/* Final personal charts alignment: single balance header and proportional category graphic. */
+.home-approved--personal .balance-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.home-approved--personal .balance-topline .balance-privacy-heading{display:flex;align-items:center;gap:8px;min-width:0}
+.home-approved--personal .balance-topline .home-eyebrow{white-space:nowrap;font-size:.86rem}
+.home-approved--personal .balance-topline .balance-privacy-eye{width:36px;min-width:36px;height:36px;padding:5px;display:inline-flex;align-items:center;justify-content:center}
+.home-approved--personal .balance-topline .balance-privacy-eye svg{width:19px;height:19px}
+.home-approved--personal .balance-topline .balance-card__value{margin:0;font-size:clamp(1.15rem,1.8vw,1.65rem);line-height:1.15;text-align:right;white-space:nowrap}
+@media(min-width:1000px){
+ .home-approved--personal>.home-balance-card .balance-card{display:flex;flex-direction:column;gap:11px}
+ .home-approved--personal>.home-balance-card .balance-topline{order:0}
+ .home-approved--personal>.home-balance-card .balance-chart-head{order:1}
+ .home-approved--personal>.home-balance-card .balance-legend{order:2}
+ .home-approved--personal>.home-balance-card .balance-chart{order:3;display:block;align-self:stretch;width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:620/145}
+ .home-approved--personal>.home-balance-card .balance-range{order:4}
+ .home-approved--personal>.home-balance-card .balance-card__footer{order:5}
+ .home-approved--personal>.personal-home-category{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:12px;align-items:center}
+ .home-approved--personal>.personal-home-category .personal-home-donut{grid-column:1;grid-row:2;width:min(100%,230px);justify-self:center;align-self:center}
+ .home-approved--personal>.personal-home-category .personal-home-category-list{grid-column:2;grid-row:2;align-self:center;gap:7px}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div{grid-template-columns:9px minmax(0,1fr) auto;column-gap:5px;row-gap:2px;font-size:.76rem}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:2/-1;font-size:.76rem}
+}
+@media(min-width:1000px) and (max-width:1200px){
+ .home-approved--personal>.personal-home-category{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .home-approved--personal>.personal-home-category .personal-home-donut{width:min(100%,175px)}
+}
+@media(max-width:600px){
+ .home-approved--personal .balance-topline{flex-wrap:wrap}
+ .home-approved--personal .balance-topline .balance-card__value{margin-left:auto}
+}
