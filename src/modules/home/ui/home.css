@@ -236,3 +236,10 @@
 @media(min-width:1000px){
  .home-approved--personal>.personal-home-category .personal-home-category-list{max-height:280px;overflow-y:auto;overflow-x:hidden;padding-right:6px;align-content:start}
 }
+
+/* Category legend without percentages: single-line labels and amounts. */
+@media(min-width:1000px){
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:8px}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:3;grid-row:1;justify-self:end;white-space:nowrap}
+ .home-approved--personal>.personal-home-category .personal-home-donut{width:min(100%,290px);max-width:290px}
+}
