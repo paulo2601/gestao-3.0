@@ -393,6 +393,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     // Referências de outra empresa são validadas ao salvar, sem perda silenciosa.
     manualCompany.current = true;
     setCompanyId(nextCompanyId);
+    // Preservar os campos digitados; limpar apenas referências incompatíveis.
+    setForm((current) => ({ ...current, categoryId: '', costCenterId: '' }));
     setLocalError(null);
   }
 
@@ -402,13 +404,10 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       set('description', description);
       return;
     }
-    const match = findSmartTemplate(templates, query);
+    const match = findSmartTemplate(templates.filter((item) => item.companyId === companyId), query);
     if (!match) {
       set('description', description);
       return;
-    }
-    if (!manualCompany.current && match.companyId && match.companyId !== companyId && companies.some((item) => item.id === match.companyId)) {
-      setCompanyId(match.companyId);
     }
     setForm((current) => {
       const suggested = {
@@ -596,7 +595,9 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       // Recarregar cadastros (categorias, contas e cartões) é uma operação
       // independente e não pode atrasar a atualização de saldos/extratos.
       window.dispatchEvent(new Event('finance-data-changed'));
-      onSaved?.();
+      // O callback do pai pode desmontar o formulário. Em "manter dados",
+      // a atualização já é comunicada pelo evento acima.
+      if (!keepData) onSaved?.();
       void operations.loadReferences().catch(() => {
         // Falha de atualização de cadastros não desfaz o lançamento salvo.
       });
