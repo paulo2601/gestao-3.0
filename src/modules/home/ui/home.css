@@ -138,3 +138,23 @@
 
 /* Cards, upcoming payments and benefits must not be squeezed into implicit desktop columns. */
 @media(min-width:1000px){.home-approved--personal>.home-credit-row,.home-approved--personal>.home-secondary-finance-row{min-width:0}.home-approved--personal>.home-credit-row{grid-row:auto}.home-approved--personal>.personal-home-actions>div{grid-template-columns:repeat(4,minmax(0,1fr))}.home-approved--personal>.home-secondary-finance-row>.ui-card{min-width:0}}
+
+/* Personal desktop: approved compact side-by-side dashboard charts. */
+@media(min-width:1000px){
+ .home-approved.home-approved--personal{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:16px}
+ .home-approved--personal>.home-balance-card{grid-column:1;grid-row:3;min-width:0;height:100%}
+ .home-approved--personal>.personal-home-category{grid-column:2;grid-row:3;min-width:0;height:100%;align-content:start;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:10px;padding:18px}
+ .home-approved--personal>.home-personal-summary-row{grid-column:1/-1;grid-row:4}
+ .home-approved--personal>.personal-home-actions{grid-column:1/-1;grid-row:5}
+ .home-approved--personal>.home-secondary-finance-row{grid-column:1/-1;grid-row:6}
+ .home-approved--personal>.personal-home-category .personal-home-donut{width:min(100%,165px)}
+ .home-approved--personal>.personal-home-category .personal-home-category-list{gap:7px}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div{grid-template-columns:9px minmax(0,1fr) auto;gap:5px;font-size:.75rem}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:2/-1}
+ .home-approved--personal>.home-balance-card .balance-card__value{font-size:clamp(1.65rem,2.8vw,2.8rem)}
+ .home-approved--personal>.home-balance-card .balance-chart{max-height:180px}
+}
+@media(min-width:1000px) and (max-width:1200px){
+ .home-approved--personal>.personal-home-category{grid-template-columns:1fr}
+ .home-approved--personal>.personal-home-category .personal-home-donut{width:145px}
+}
