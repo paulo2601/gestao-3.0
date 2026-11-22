@@ -277,3 +277,28 @@
  .home-approved--personal .personal-home-kpi strong{font-size:1.05rem}
  .home-approved--personal>.personal-home-category .personal-home-category-list{grid-template-columns:1fr}
 }
+
+/* Mobile V2: visually distinct from desktop; preserve all desktop breakpoints. */
+@media(max-width:760px){
+ .home-approved.home-approved--personal{display:flex;flex-direction:column;gap:11px;margin:0;padding:0 0 110px;width:100%;max-width:100%;min-width:0}
+ .home-approved--personal>*{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+ .home-approved--personal>.home-hero{background:transparent;color:var(--text);box-shadow:none;border:0;margin:0;padding:5px 2px 3px;min-height:0}
+ .home-approved--personal .home-hero__greeting{display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:3px 9px}
+ .home-approved--personal .home-hero__greeting strong{font-size:1.2rem;color:var(--text)}
+ .home-approved--personal .home-hero__greeting>span{font-size:.78rem;color:var(--muted);font-weight:500}
+ .home-approved--personal .home-hero__refresh{display:none}
+ .home-approved--personal>.personal-home-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .home-approved--personal .personal-home-kpi{padding:11px 12px;min-height:76px;border-radius:14px;box-shadow:none}
+ .home-approved--personal .personal-home-kpi span{font-size:.77rem}
+ .home-approved--personal .personal-home-kpi strong{font-size:clamp(1.05rem,4.1vw,1.4rem);overflow-wrap:normal;word-break:normal}
+ .home-approved--personal>.home-balance-card .balance-topline{display:flex;align-items:center;flex-wrap:wrap;gap:5px 9px}
+ .home-approved--personal>.home-balance-card .balance-privacy-heading{display:flex;align-items:center;gap:6px}
+ .home-approved--personal>.home-balance-card .balance-card__value{margin-left:auto;font-size:clamp(1.2rem,5vw,1.8rem)}
+ .home-approved--personal>.home-balance-card .balance-chart{height:auto;max-height:165px;min-height:0;aspect-ratio:2.2/1}
+ .home-approved--personal>.personal-home-category{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:14px}
+ .home-approved--personal>.personal-home-category .personal-home-donut{width:min(62vw,215px);max-width:215px;align-self:center}
+ .home-approved--personal>.personal-home-category .personal-home-category-list{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;max-height:240px;overflow-y:auto;padding-right:4px}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #eef1f5;font-size:.8rem}
+ .home-approved--personal>.personal-home-category .personal-home-category-list>div strong{grid-column:3;grid-row:1;justify-self:end;font-size:.8rem}
+ .home-approved--personal>.home-personal-summary-row,.home-approved--personal>.home-secondary-finance-row{grid-template-columns:minmax(0,1fr)}
+}
