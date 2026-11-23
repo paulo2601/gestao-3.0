@@ -411,9 +411,9 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   const activeCostCenters = (references?.costCenters ?? []).filter((item) => item.status === 'active');
   const categories = (references?.categories ?? []).filter((item) => item.status === 'active' && (item.kind === 'both' || item.kind === form.entryType));
   const costCenters = PERSONAL_APP ? activeCostCenters.filter(item => item.name === 'Paulo' || item.name === 'Camila').map(item => ({ item, label: item.name })) : canonicalCostCenters(activeCostCenters);
-  const accountOptions = [{ value: '', label: 'Selecione' }, ...paymentAccounts.map((item) => ({ value: paymentRef(item.companyId, item.id), label: PERSONAL_APP ? item.name : `${item.ownerLabel} · ${item.name}` }))];
+  const accountOptions = [{ value: '', label: 'Selecione' }, ...paymentAccounts.filter(item => !PERSONAL_APP || item.companyId === company?.id).map((item) => ({ value: paymentRef(item.companyId, item.id), label: PERSONAL_APP ? item.name : `${item.ownerLabel} · ${item.name}` }))];
   const benefitOptions = [{ value: '', label: 'Selecione o benefício' }, ...benefitCards.filter(card => card.company_id === company?.id).map(card => ({ value: card.id, label: card.name }))];
-  const cardOptions = [{ value: '', label: 'Selecione o cartão' }, ...paymentCards.map((item) => ({ value: paymentRef(item.companyId, item.id), label: `${item.ownerLabel} · ${item.name}` }))];
+  const cardOptions = [{ value: '', label: 'Selecione o cartão' }, ...paymentCards.filter(item => !PERSONAL_APP || item.companyId === company?.id).map((item) => ({ value: paymentRef(item.companyId, item.id), label: PERSONAL_APP ? item.name : `${item.ownerLabel} · ${item.name}` }))];
   const categoryOptions = [{ value: '', label: 'Selecione' }, ...categories.map((item) => ({ value: item.id, label: item.name }))];
   const costCenterOptions = [{ value: '', label: 'Selecione' }, ...costCenters.map(({ item, label }) => ({ value: item.id, label }))];
   const paymentOptions = [
