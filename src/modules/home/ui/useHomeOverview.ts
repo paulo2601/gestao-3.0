@@ -16,7 +16,7 @@ export interface HomeOverviewData { month:string; bankBalance:number; incomePlan
 type HomeOverviewState = {status:'idle'|'loading';data:HomeOverviewData|null;errorMessage:null}|{status:'ready';data:HomeOverviewData;errorMessage:null}|{status:'error';data:HomeOverviewData|null;errorMessage:string};
 declare const __GESTAO_APP_VARIANT__: 'primary' | 'secondary';
 const PERSONAL_APP = __GESTAO_APP_VARIANT__ === 'secondary';
-export const HOME_CACHE_KEY='gestao-home-overview-v16';
+export const HOME_CACHE_KEY='gestao-home-overview-v17';
 function readHomeCache(companyKey:string):HomeOverviewData|null{try{const raw=localStorage.getItem(HOME_CACHE_KEY);if(!raw)return null;const parsed=JSON.parse(raw) as {companyKey:string;savedAt?:number;data:HomeOverviewData};return parsed.companyKey===companyKey&&typeof parsed.savedAt==='number'&&Date.now()-parsed.savedAt>=0&&Date.now()-parsed.savedAt<5*60*1000?parsed.data:null;}catch{return null;}}
 function writeHomeCache(companyKey:string,data:HomeOverviewData){try{localStorage.setItem(HOME_CACHE_KEY,JSON.stringify({companyKey,data,savedAt:Date.now()}));}catch{/* cache é apenas aceleração visual */}}
 type BudgetLimitConsumptionRow = { limit_id:string; consumed_amount:number|string; remaining_amount:number|string; consumed_percent:number|string; };
@@ -49,29 +49,40 @@ export function useHomeOverview(companies:readonly CompanySummary[],refreshToken
   if(stableCompanies.length===0){setState({status:'idle',data:null,errorMessage:null});return;}
   let cancelled=false; const month=currentMonthStart(); const hrMonth=currentHrCompetence().month; const monthEnd=nextMonthStart(month); const budgetYear=Number(hrMonth.slice(0,4)); const movementTo=new Date(); const movementFrom=new Date(); movementFrom.setDate(movementTo.getDate()-364);
   setState(previous=>({status:'loading',data:previous.data,errorMessage:null}));
-  // Atualize os saldos independentemente das consultas pesadas de RH,
-  // planejamento e gráficos. Não espere o dashboard completo para refletir
-  // pagamentos, transferências e recebimentos.
+  // Saldos, movimentos do gráfico e KPIs devem atualizar juntos, sem depender
+  // das consultas pesadas de RH, cartões ou planejamento.
   void Promise.all(stableCompanies.map(async company => {
-    const balances = await finance.accounts.listBalances({tenantId:company.tenantId,companyId:company.id});
-    return {company,balances};
+    const scope={tenantId:company.tenantId,companyId:company.id};
+    const [balances,movements,summary]=await Promise.all([
+      finance.accounts.listBalances(scope),
+      finance.accounts.listMovements(scope,isoDate(movementFrom),isoDate(movementTo)),
+      finance.monthly.summarize({...scope,competenceFrom:month,competenceTo:month})
+    ]);
+    return {company,balances,movements,summary};
   })).then(results => {
     if(cancelled)return;
     setState(previous => {
-      if(!previous.data)return previous;
       const bankAccounts:HomeBankAccount[]=[];
-      let bankBalance=0;
-      results.forEach(({company,balances})=>{
+      const balanceMovements:HomeBalanceMovement[]=[];
+      let bankBalance=0,incomePlanned=0,incomeRealized=0,expensePlanned=0,expenseRealized=0;
+      results.forEach(({company,balances,movements,summary})=>{
         const label=companyName(company);
-        balances.filter(i=>i.status==='active'&&i.includeInDashboard&&(PERSONAL_APP||!isPersonalCompany(label)||isPersonalBalanceAccount(i.name))).forEach(i=>{
+        const included=balances.filter(i=>i.status==='active'&&i.includeInDashboard&&(PERSONAL_APP||!isPersonalCompany(label)||isPersonalBalanceAccount(i.name)));
+        const ids=new Set(included.map(i=>i.accountId));
+        included.forEach(i=>{
           bankBalance+=i.currentBalance;
           bankAccounts.push({tenantId:company.tenantId,companyId:company.id,companyName:label,accountId:i.accountId,name:i.name,bankInstitution:i.bankInstitution,currentBalance:i.currentBalance,sortOrder:i.sortOrder});
         });
+        movements.filter(i=>ids.has(i.accountId)).forEach(i=>balanceMovements.push({movementOn:i.movementOn,signedAmount:i.direction==='inflow'?i.amount:-i.amount}));
+        summary.forEach(i=>{if(i.entryType==='income'){incomePlanned+=i.plannedAmount;incomeRealized+=i.realizedAmount;}else{expensePlanned+=i.plannedAmount;expenseRealized+=i.realizedAmount;}});
       });
       bankAccounts.sort((a,b)=>a.tenantId.localeCompare(b.tenantId)||a.sortOrder-b.sortOrder||a.name.localeCompare(b.name));
-      return {...previous,data:{...previous.data,bankBalance,bankAccounts}};
+      if(!previous.data)return previous;
+      const data={...previous.data,bankBalance,bankAccounts,balanceMovements,incomePlanned,incomeRealized,expensePlanned,expenseRealized};
+      writeHomeCache(companyKey,data);
+      return {...previous,data};
     });
-  }).catch(()=>{ /* O carregamento completo continua sendo a alternativa. */ });
+  }).catch(()=>{ /* A consulta completa permanece como alternativa. */ });
   void Promise.all(stableCompanies.map(async company=>{const scope={tenantId:company.tenantId,companyId:company.id}; const [summary,balances,movements,budget,operational,cardLimits,limitConsumptionResult,plannedIncomeResult,actualIncomeResult,budgetPricingResult,planningResult,plannedAccountsResult,categoryRowsResult,categoryNamesResult,cardCategoryRowsResult,recurrenceCategoriesResult,planningEntriesResult,planningRecurrencesResult,planningCostCentersResult,planningCardsResult]=await Promise.all([
    finance.monthly.summarize({...scope,competenceFrom:month,competenceTo:month}),finance.accounts.listBalances(scope),finance.accounts.listMovements(scope,isoDate(movementFrom),isoDate(movementTo)),hr.getOverview({...scope,competenceMonth:hrMonth,year:budgetYear}),hrOperations.getSnapshot(scope,hrMonth),finance.cards.listLimits(scope),supabase.from('budget_limit_control_v2').select('limit_id,consumed_amount,remaining_amount,consumed_percent').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('competence_month',hrMonth).returns<BudgetLimitConsumptionRow[]>(),supabase.from('budget_plans').select('cost_center_id,category_id,planned_amount').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('competence_month',hrMonth).eq('flow_type','income').returns<BudgetPlanRow[]>(),supabase.from('financial_settlements').select('amount,settled_on,financial_installments!inner(financial_entries!inner(cost_center_id,category_id,entry_type,include_in_budget))').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).gte('settled_on',hrMonth).lt('settled_on',monthEnd).returns<BudgetSettlementRow[]>(),supabase.from('budget_planning_settings').select('cost_center_id,target_net_margin_percent').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('budget_year',budgetYear).returns<BudgetPricingSettingsRow[]>(),supabase.from('finance_planning_items').select('item_key,source_kind,entry_type,description,counterparty_name,installment_number,installment_count,due_date,amount,payment_status').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).order('due_date').returns<PlanningRow[]>(),PERSONAL_APP?supabase.from('financial_entries').select('id,planned_account_id,financial_installments(id)').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).not('planned_account_id','is',null).returns<PlannedAccountRow[]>():Promise.resolve({data:[],error:null}),PERSONAL_APP?supabase.from('financial_installments').select('amount,financial_entries!inner(entry_type,category_id)').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).gte('due_date',month).lt('due_date',monthEnd).returns<{amount:number|string;financial_entries:{entry_type:string;category_id:string|null}|null}[]>():Promise.resolve({data:[],error:null}),PERSONAL_APP?supabase.from('financial_categories').select('id,name').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).returns<{id:string;name:string}[]>():Promise.resolve({data:[],error:null}),PERSONAL_APP?supabase.from('card_installments').select('amount,card_transactions!inner(category_id)').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).gte('statement_month',month).lt('statement_month',monthEnd).returns<{amount:number|string;card_transactions:{category_id:string|null}|null}[]>():Promise.resolve({data:[],error:null}),PERSONAL_APP?supabase.from('financial_recurrence_rules').select('id,category_id').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).eq('status','active').returns<{id:string;category_id:string|null}[]>():Promise.resolve({data:[],error:null}),PERSONAL_APP?supabase.from('financial_entries').select('id,cost_center_id,planned_account_id,financial_installments(id)').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).returns<PlanningSourceEntry[]>():Promise.resolve({data:[],error:null}),PERSONAL_APP?supabase.from('financial_recurrence_rules').select('id,cost_center_id,notes,start_date,frequency,interval_count').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).returns<PlanningSourceRecurrence[]>():Promise.resolve({data:[],error:null}),PERSONAL_APP?supabase.from('cost_centers').select('id,name').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).returns<PlanningCostCenter[]>():Promise.resolve({data:[],error:null}),PERSONAL_APP?supabase.from('card_transactions').select('id,card_id,cost_center_id,card_installments(id)').eq('tenant_id',scope.tenantId).eq('company_id',scope.companyId).returns<PlanningSourceCard[]>():Promise.resolve({data:[],error:null})]);
    if(limitConsumptionResult.error)throw limitConsumptionResult.error; if(plannedIncomeResult.error)throw plannedIncomeResult.error; if(actualIncomeResult.error)throw actualIncomeResult.error; if(budgetPricingResult.error)throw budgetPricingResult.error; if(planningResult.error)throw planningResult.error; if(plannedAccountsResult.error)throw plannedAccountsResult.error; if(categoryRowsResult.error)throw categoryRowsResult.error; if(categoryNamesResult.error)throw categoryNamesResult.error; if(cardCategoryRowsResult.error)throw cardCategoryRowsResult.error; if(recurrenceCategoriesResult.error)throw recurrenceCategoriesResult.error; if(planningEntriesResult.error)throw planningEntriesResult.error; if(planningRecurrencesResult.error)throw planningRecurrencesResult.error; if(planningCostCentersResult.error)throw planningCostCentersResult.error; if(planningCardsResult.error)throw planningCardsResult.error;
