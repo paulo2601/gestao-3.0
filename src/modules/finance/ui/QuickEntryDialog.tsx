@@ -410,11 +410,12 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         .then(({ data, error }) => {
           if (error) return;
           const equivalent = data?.find((item) =>
-            normalized(item.name) === normalized(categoryName) &&
+            typeof item.name === 'string' && normalized(item.name) === normalized(categoryName) &&
             (item.kind === categoryKind || item.kind === 'both')
           );
-          if (equivalent) {
-            setForm((current) => ({ ...current, categoryId: equivalent.id }));
+          const equivalentId: unknown = equivalent?.id;
+          if (typeof equivalentId === 'string') {
+            setForm((current) => ({ ...current, categoryId: equivalentId }));
           }
         });
     }
