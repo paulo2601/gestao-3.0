@@ -25,6 +25,23 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+// Multiple dialogs may overlap during a transition. Restore scrolling only when the last closes.
+let activeScrollLocks = 0;
+let originalBodyOverflow = '';
+function lockPageScroll() {
+  if (activeScrollLocks === 0) {
+    originalBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  activeScrollLocks += 1;
+  return () => {
+    activeScrollLocks = Math.max(0, activeScrollLocks - 1);
+    if (activeScrollLocks === 0) {
+      document.body.style.overflow = originalBodyOverflow;
+    }
+  };
+}
+
 export function Dialog({
   open,
   title,
@@ -50,14 +67,13 @@ export function Dialog({
     const previousActiveElement = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const unlockPageScroll = lockPageScroll();
 
     const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(focusableSelector);
     firstFocusable?.focus({ preventScroll: true });
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      unlockPageScroll();
       previousActiveElement?.focus();
     };
   }, [open]);
