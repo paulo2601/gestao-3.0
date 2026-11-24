@@ -72,18 +72,3 @@
  .app-shell--personal .app-mobile-nav__link--active::after{bottom:-3px;height:3px;width:24px}
 }
 
-/* Personal mobile: keep the same safe viewport for the shell and full-screen dialogs. */
-@media(max-width:760px){
- :root:has(.app-shell--personal){--personal-safe-top:env(safe-area-inset-top,0px);--personal-safe-bottom:env(safe-area-inset-bottom,0px)}
- .app-shell--personal{--personal-system-top:var(--personal-safe-top);--personal-system-bottom:var(--personal-safe-bottom)}
- .app-shell--personal .app-header{padding-block-start:var(--personal-safe-top)}
- .app-shell--personal .app-mobile-nav{bottom:calc(5px + var(--personal-safe-bottom));left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px))}
- .app-shell--personal .app-page{padding-bottom:calc(90px + var(--personal-safe-bottom))}
- :root:has(.app-shell--personal) .ui-dialog-backdrop:not([data-variant="central-menu"]){top:var(--personal-safe-top);bottom:var(--personal-safe-bottom);height:auto;max-height:none;padding-block:0;box-sizing:border-box}
- :root:has(.app-shell--personal) .ui-dialog-backdrop:not([data-variant="central-menu"]) .ui-dialog{height:100%;max-height:100%;min-height:0}
- :root:has(.app-shell--personal) .ui-dialog-backdrop:not([data-variant="central-menu"]) .ui-dialog__content{min-height:0;overflow-y:auto;overscroll-behavior:contain}
- :root:has(.app-shell--personal) .ui-dialog-backdrop:not([data-variant="central-menu"]) .ui-dialog__footer{flex-shrink:0;padding-bottom:12px}
-}
-@media(max-width:760px) and (display-mode:standalone){
- :root:has(.app-shell--personal){--personal-safe-top:max(env(safe-area-inset-top,0px),28px);--personal-safe-bottom:max(env(safe-area-inset-bottom,0px),28px)}
-}
