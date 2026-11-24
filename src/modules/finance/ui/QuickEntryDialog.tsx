@@ -58,6 +58,18 @@ type CardTemplateRow = {
   created_at: string;
 };
 
+// Preserve the last successful keep-data draft across parent refresh/remount.
+let retainedQuickEntryDraft: { companyId: string; form: QuickEntryForm } | null = null;
+type QuickEntryForm = {
+  entryType: EntryType; date: string; description: string; amountDigits: string;
+  paymentMethod: PaymentMethod; launchType: LaunchType; installmentCount: string;
+  recurrenceCount: string; recurrenceFrequency: 'monthly' | 'weekly';
+  ongoingInstallment: boolean; currentInstallment: string; totalInstallments: string;
+  ongoingCardInstallment: boolean; accountRef: string; cardRef: string;
+  categoryId: string; costCenterId: string; counterparty: string; notes: string;
+  includeInBudget: boolean;
+};
+
 interface QuickEntryDialogProps {
   open: boolean;
   companies: readonly CompanySummary[];
@@ -263,7 +275,8 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     }
     if (wasOpen.current) return;
     wasOpen.current = true;
-    setCompanyId(initialCompanyId || firstCompanyId);
+    const retained = retainedQuickEntryDraft;
+    setCompanyId(retained && companies.some(item => item.id === retained.companyId) ? retained.companyId : (initialCompanyId || firstCompanyId));
     manuallyEdited.current.clear();
     manualCompany.current = false;
     setMoreOptions(false);
@@ -271,7 +284,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
     setNewRegistryName('');
     setLocalError(null);
     setLocalSuccess(null);
-    setForm({
+    setForm(retained && companies.some(item => item.id === retained.companyId) ? retained.form : {
       entryType: 'expense', date: initialValues?.date ?? today(), description: initialValues?.description ?? '', amountDigits: initialValues?.amount ? String(Math.round(initialValues.amount * 100)) : '', paymentMethod: initialPaymentMethod ?? 'pix', launchType: 'single',
       installmentCount: '2', recurrenceCount: '12', recurrenceFrequency: 'monthly', ongoingInstallment: false, currentInstallment: '1', totalInstallments: '12', ongoingCardInstallment: false, accountRef: initialAccountRef, cardRef: initialCardRef, categoryId: '', costCenterId: '',
       counterparty: initialValues?.counterparty ?? '', notes: initialValues?.notes ?? '', includeInBudget: false,
@@ -484,6 +497,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   function resetAfterSave(keepData: boolean) {
     setLocalSuccess(null);
     if (keepData) return;
+    retainedQuickEntryDraft = null;
     manuallyEdited.current.clear();
     manualCompany.current = false;
     setForm({
@@ -502,6 +516,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
   }
 
   function exitQuickEntry() {
+    retainedQuickEntryDraft = null;
     onClose();
     if (!embedded) void navigate('/');
   }
@@ -699,6 +714,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
 
       // A gravação já foi confirmada. Falhas de atualização visual não podem
       // transformar um lançamento concluído em erro nem incentivar duplicação.
+      if (keepData) retainedQuickEntryDraft = { companyId: company.id, form: { ...form } };
       resetAfterSave(keepData);
       setLocalSuccess(keepData ? 'Lançamento concluído. Todos os dados foram mantidos.' : 'Lançamento concluído. Pronto para o próximo lançamento.');
       // Notifique as telas imediatamente após a confirmação da gravação.
