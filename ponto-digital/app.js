@@ -109,19 +109,15 @@ async function syncPending(){
 }
 function offlineAccount(){const cached=getJson(ACCOUNT_KEY,null);if(!cached?.account?.enabled)return false;account=cached.account;session={user:{id:cached.user_id},access_token:null};return true}
 window.addEventListener('online',()=>{void (async()=>{await recoverBackgroundQueue().catch(console.warn);if(!session?.access_token){await restoreSession();return}await syncPending();if(account)await home()})().catch(console.warn)});
-async function retryPontoSync(){if(!navigator.onLine||document.hidden||!account||syncing||restoringSession)return; if(!session?.access_token||(session.expires_at&&session.expires_at*1000<Date.now()+60000)||localStorage.getItem('ponto-last-sync-error')?.match(/401|JWT expired/i)){await restoreSession();return}await syncPending()}
-document.addEventListener('visibilitychange',()=>{void retryPontoSync().catch(console.warn)});
-setInterval(()=>{void retryPontoSync().catch(console.warn)},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&session?.access_token)void syncPending()});
 async function loadAccount(){const a=await api('/rest/v1/employee_clock_accounts?select=*&user_id=eq.'+encodeURIComponent(session.user.id));if(a.length!==1||!a[0].enabled)throw Error('Conta ainda não habilitada pelo RH');account=a[0];try{const name=await api('/rest/v1/rpc/ponto_digital_my_name','POST',{});if(typeof name==='string'&&name.trim())account.full_name=name.trim()}catch(error){console.warn('Nome do colaborador indisponível:',error)}cacheAccount();}
-let restoringSession=null;
-function restoreSession(){if(!restoringSession)restoringSession=restoreSessionInternal().finally(()=>{restoringSession=null});return restoringSession}
-async function restoreSessionInternal(){
+async function restoreSession(){
  await recoverBackgroundQueue().catch(console.warn);
  // Never block iOS startup on Background Sync (unsupported in Safari).
  void requestBackgroundSync().catch(console.warn);
  let local;try{local=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{local=null}
  const backgroundToken=await readBackgroundAuth().catch(()=>null);
- const candidates=[backgroundToken,local?.refresh_token].filter((v,i,a)=>v&&a.indexOf(v)===i);
+ const candidates=[local?.refresh_token,backgroundToken].filter((v,i,a)=>v&&a.indexOf(v)===i);
  if(!candidates.length){if(offlineAccount()){await home();message('Modo offline: os pontos estão preservados neste aparelho. Entre novamente quando houver internet.')}return}
  let lastError=null;
  for(const refresh_token of candidates){
@@ -270,8 +266,6 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
   const action=document.querySelector('.clock-action-card');
   if(action)action.after(diagButton);
  }
- if(unsentCount)message('⚠ '+unsentCount+' marcação(ões) aguardando confirmação do RH. Não apague os dados do aplicativo.');
- if(!session?.access_token){const reconnect=document.createElement('button');reconnect.type='button';reconnect.textContent='Reconectar conta (preserva os pontos)';reconnect.onclick=()=>{clearSession();location.replace(location.pathname)};diagButton.after(reconnect)}
  diagButton.onclick=async()=>{
   diagButton.disabled=true;diagButton.textContent='Verificando pontos...';
   try{
@@ -298,7 +292,7 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
    if(!window.confirm('Confirmar '+labels[next]+' às '+nowLocal+'?'+explanation+'\\nO horário será registrado agora e não será preenchido retroativamente.'))return;
   }
   el('mark').disabled=true;
-  const record={id:crypto.randomUUID(),user_id:session.user.id,employment_contract_id:account.employment_contract_id,punch_kind:next,captured_at:new Date().toISOString(),device_id:localStorage.getItem('ponto_device')||(()=>{const id=crypto.randomUUID();localStorage.setItem('ponto_device',id);return id})(),offline:!navigator.onLine||!session.access_token};
+  const record={id:crypto.randomUUID(),user_id:session.user.id,employment_contract_id:account.employment_contract_id,punch_kind:next,captured_at:new Date().toISOString(),device_id:localStorage.getItem('ponto_device')||(()=>{const id=crypto.randomUUID();localStorage.setItem('ponto_device',id);return id})(),offline:false};
   try{
    // Persistir primeiro: a marcação sobrevive ao fechamento do aplicativo.
    const queue=offlineQueue();queue.push(record);saveQueue(queue);await mirrorPending(record).catch(console.warn);
