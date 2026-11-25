@@ -24,7 +24,7 @@ async function renderPontoNotificationButton(){
 
 const U='https://ogmtzxotpukddzowhqwl.supabase.co';const K='sb_publishable_vkhFOCSIvSbWifFCy6DjIg_9QJeYd38';let session=null,account=null;const el=id=>document.getElementById(id);const labels={entry:'Entrada',lunch_out:'Saída para almoço',lunch_in:'Retorno do almoço',exit:'Saída'};const kinds=Object.keys(labels);const day=iso=>{const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(iso));const get=type=>parts.find(p=>p.type===type)?.value;return get('year')+'-'+get('month')+'-'+get('day')};async function api(path,method='GET',data){const r=await fetch(U+path,{method,headers:{apikey:K,'Content-Type':'application/json',...(session?{Authorization:'Bearer '+session.access_token}:{})},...(data?{body:JSON.stringify(data)}:{})});if(!r.ok){const d=await r.json().catch(()=>({}));throw Error('HTTP '+r.status+': '+(d.msg||d.message||d.error_description||d.details||'Falha no envio'))}return r.status===204?null:r.text().then(t=>t?JSON.parse(t):null)}function message(t){el('message').textContent=t}const SESSION_KEY='ponto-digital-session-v1';
 function saveSession(value){if(value?.refresh_token){localStorage.setItem(SESSION_KEY,JSON.stringify({refresh_token:value.refresh_token}));void storeBackgroundAuth(value.refresh_token).catch(console.warn);}}
-function clearSession(){localStorage.removeItem(SESSION_KEY);void clearBackgroundAuth().catch(console.warn);session=null;account=null;}
+async function clearSession(){localStorage.setItem('ponto-explicit-logout','1');localStorage.removeItem(SESSION_KEY);await clearBackgroundAuth().catch(console.warn);session=null;account=null;}
 
 // Fila offline por colaborador: IDs fixos permitem reenvio idempotente.
 const OFFLINE_KEY='ponto-digital-offline-v1',ACCOUNT_KEY='ponto-digital-account-v1',EVENTS_KEY='ponto-digital-events-v1';
@@ -112,6 +112,7 @@ window.addEventListener('online',()=>{void (async()=>{await recoverBackgroundQue
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&session?.access_token)void syncPending()});
 async function loadAccount(){const a=await api('/rest/v1/employee_clock_accounts?select=*&user_id=eq.'+encodeURIComponent(session.user.id));if(a.length!==1||!a[0].enabled)throw Error('Conta ainda não habilitada pelo RH');account=a[0];try{const name=await api('/rest/v1/rpc/ponto_digital_my_name','POST',{});if(typeof name==='string'&&name.trim())account.full_name=name.trim()}catch(error){console.warn('Nome do colaborador indisponível:',error)}cacheAccount();}
 async function restoreSession(){
+ if(localStorage.getItem('ponto-explicit-logout')==='1')return;
  await recoverBackgroundQueue().catch(console.warn);
  // Never block iOS startup on Background Sync (unsupported in Safari).
  void requestBackgroundSync().catch(console.warn);
@@ -404,9 +405,9 @@ async function events(){let remote=cachedEvents();if(navigator.onLine&&session?.
  };
  // Notificações temporariamente desativadas para isolar falha de inicialização.
  // A assinatura push existente não é apagada; registros de ponto permanecem intactos.
- el('logout').onclick=async()=>{const token=session?.access_token;clearSession();if(token){try{await fetch(U+'/auth/v1/logout',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+token}})}catch{}}location.replace(location.pathname)};
+ el('logout').onclick=async()=>{const token=session?.access_token;await clearSession();if(token){try{await fetch(U+'/auth/v1/logout',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+token}})}catch{}}location.replace(location.pathname)};
 }
-el('login').onsubmit=async e=>{e.preventDefault();try{session=await api('/auth/v1/token?grant_type=password','POST',{email:el('email').value,password:el('password').value});await loadAccount();saveSession(session);await syncPending();await home()}catch(err){message(err.message)}};const h=new URLSearchParams(location.hash.slice(1));if(h.has('access_token')&&['invite','recovery'].includes(h.get('type'))){session={access_token:h.get('access_token')};el('login').innerHTML='<h2>Definir senha</h2><input id="newpass" type="password" minlength="8" placeholder="Nova senha" required><button>Salvar senha</button>';el('login').onsubmit=async e=>{e.preventDefault();try{await api('/auth/v1/user','PUT',{password:el('newpass').value});location.replace(location.pathname)}catch(err){message(err.message)}}}
+el('login').onsubmit=async e=>{e.preventDefault();try{session=await api('/auth/v1/token?grant_type=password','POST',{email:el('email').value,password:el('password').value});await loadAccount();saveSession(session);localStorage.removeItem('ponto-explicit-logout');await syncPending();await home()}catch(err){message(err.message)}};const h=new URLSearchParams(location.hash.slice(1));if(h.has('access_token')&&['invite','recovery'].includes(h.get('type'))){session={access_token:h.get('access_token')};el('login').innerHTML='<h2>Definir senha</h2><input id="newpass" type="password" minlength="8" placeholder="Nova senha" required><button>Salvar senha</button>';el('login').onsubmit=async e=>{e.preventDefault();try{await api('/auth/v1/user','PUT',{password:el('newpass').value});location.replace(location.pathname)}catch(err){message(err.message)}}}
 
 // Fluxo independente de recuperação de senha do Ponto Digital.
 if(!new URLSearchParams(location.hash.slice(1)).has('access_token')){
