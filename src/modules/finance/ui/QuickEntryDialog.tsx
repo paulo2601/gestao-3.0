@@ -579,6 +579,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
       }
     }
     setSubmitting(true);
+    let entrySaved = false;
     try {
       if (PERSONAL_APP && form.paymentMethod === 'benefit') {
         const benefit = benefitCards.find(card => card.id === form.cardRef && card.company_id === company.id);
@@ -666,6 +667,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
           installmentCount: form.launchType === 'installment' ? Math.max(2, Math.trunc(Number(form.installmentCount || '2'))) : 1,
           notes: form.notes.trim() || null,
         });
+        entrySaved = true;
         const includeInBudget = isCrIncome ? form.includeInBudget : true;
         const budgetUpdate = await getSupabaseClient()
           .from('financial_entries')
@@ -693,6 +695,7 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         }
       }
 
+      entrySaved = true;
       const learnedTemplate: SmartTemplate = {
         description: form.description.trim(),
         companyId: company.id,
@@ -728,7 +731,14 @@ export function QuickEntryDialog({ open, companies, initialCompanyId = '', initi
         // Falha de atualização de cadastros não desfaz o lançamento salvo.
       });
     } catch (error) {
-      setLocalError(error instanceof Error && error.message ? error.message : 'Não foi possível concluir o lançamento.');
+      if (PERSONAL_APP && entrySaved) {
+        if (keepData) retainedQuickEntryDraft = { companyId: company.id, form: { ...form } };
+        resetAfterSave(keepData);
+        setLocalError('Lançamento já registrado. Não lance novamente. Confira a conta bancária e a baixa: ' + (error instanceof Error ? error.message : 'não foi possível confirmar todas as etapas.'));
+        window.dispatchEvent(new Event('finance-data-changed'));
+      } else {
+        setLocalError(error instanceof Error && error.message ? error.message : 'Não foi possível concluir o lançamento.');
+      }
     } finally {
       setSubmitting(false);
     }
