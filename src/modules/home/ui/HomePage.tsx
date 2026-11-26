@@ -80,6 +80,6 @@ export function HomePage({companies,canAccess}:HomePageProps){
     {summaryDetail!=='accounts'&&filteredSummaryEntries.length===0&&<p className="ui-muted">Nenhum lançamento encontrado.</p>}</div>
    </div>
   </Dialog>
-  <PlanningPaymentsDialog open={planningOpen} entries={data.entries} onClose={()=>{setPlanningOpen(false);setPaymentReturnDetail(null);}} onChanged={()=>setOrderRefreshToken(value=>value+1)} onActionCompleted={()=>{if(paymentReturnDetail){setPlanningOpen(false);setSummaryDetail(paymentReturnDetail);setPaymentReturnDetail(null);}}} directAction={directAction} onDirectActionConsumed={()=>setDirectAction(null)}/>
+  <PlanningPaymentsDialog open={planningOpen} directOnly={PERSONAL_APP&&paymentReturnDetail!==null} entries={data.entries} onClose={()=>{setPlanningOpen(false);if(PERSONAL_APP&&paymentReturnDetail)setSummaryDetail(paymentReturnDetail);setPaymentReturnDetail(null);}} onChanged={()=>setOrderRefreshToken(value=>value+1)} onActionCompleted={()=>{if(paymentReturnDetail){setPlanningOpen(false);setSummaryDetail(paymentReturnDetail);setPaymentReturnDetail(null);}}} directAction={directAction} onDirectActionConsumed={()=>setDirectAction(null)}/>
  </section>;
 }
