@@ -1203,3 +1203,9 @@
  .guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card > strong {font-size:17px!important}
  .guided-measurement-unit-picker .measurement-unit-redesign .aup-fin-card--final {grid-column:1/-1!important}
 }
+
+/* Launched measurement editor: independent scrolling and visible footer. */
+.guided-measurement-picker > .approved-measurement-origin-modal.measurement-redesign:has(> .measurement-batch-editor){display:flex!important;flex-direction:column!important;min-height:0!important;overflow:hidden!important}
+.guided-measurement-picker > .approved-measurement-origin-modal.measurement-redesign > .measurement-batch-editor{flex:1 1 0!important;min-height:0!important;max-height:none!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:16px!important;box-sizing:border-box!important}
+.guided-measurement-picker > .approved-measurement-origin-modal.measurement-redesign:has(> .measurement-batch-editor) > .approved-measurement-origin-modal__footer{flex:0 0 auto!important;position:relative!important;bottom:auto!important}
+@media (max-width:767px), (max-height:600px){.guided-measurement-picker > .approved-measurement-origin-modal.measurement-redesign:has(> .measurement-batch-editor) > .approved-measurement-origin-modal__summary{flex:0 1 auto!important;min-height:0!important;max-height:40%!important;overflow-y:auto!important}}
